@@ -17,6 +17,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
@@ -29,7 +30,7 @@ import java.util.List;
 
 import static android.app.Activity.RESULT_OK;
 
-public class EmergencyContactsFragment extends Fragment {
+public class EmergencyContactsFragment extends Fragment implements OnContactDeleteListener{
     FloatingActionButton fab;
     EmergencyContactsRecyclerAdapter emergencyContactsRecyclerAdapter;
     RecyclerView contactsList;
@@ -77,7 +78,7 @@ public class EmergencyContactsFragment extends Fragment {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            setupAdatper();
+                            setupAdapter();
                         }
                     });
                 }
@@ -101,9 +102,12 @@ public class EmergencyContactsFragment extends Fragment {
         return emergencyContactsFragmentView;
     }
 
-    public void setupAdatper() {
-        emergencyContactsRecyclerAdapter = new EmergencyContactsRecyclerAdapter(getContext(), contacts);
+    public void setupAdapter() {
+        emergencyContactsRecyclerAdapter = new EmergencyContactsRecyclerAdapter(getContext(), contacts, this);
         contactsList.setAdapter(emergencyContactsRecyclerAdapter);
+        ItemTouchHelper itemTouchHelper = new
+                ItemTouchHelper(new SwipeToDeleteCallback(emergencyContactsRecyclerAdapter));
+        itemTouchHelper.attachToRecyclerView(contactsList);
     }
 
     @Override
@@ -113,7 +117,7 @@ public class EmergencyContactsFragment extends Fragment {
         if(requestCode == 0){
             if(resultCode == RESULT_OK){
                 loadContacts();
-                setupAdatper();
+                setupAdapter();
             }
         } else if (requestCode == 1) {
             if (resultCode == RESULT_OK) {
@@ -124,7 +128,7 @@ public class EmergencyContactsFragment extends Fragment {
                     //make sure id doesn't already exist in DB
                     for(Contact contact: contacts)
                         if(contact.id.equalsIgnoreCase(id))
-                            return;
+                                return;
                     String hasPhone = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER));
                     if (hasPhone.equalsIgnoreCase("1")) {
                         Cursor phones = getActivity().getContentResolver().query(
@@ -201,5 +205,25 @@ public class EmergencyContactsFragment extends Fragment {
                 }
             }
         }
+    }
+
+    @Override
+    public void onDeleteContact(Contact contact) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                db.contactDao().delete(contact);
+            }
+        }).start();
+    }
+
+    @Override
+    public void onUndoDeleteContact(Contact contact) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                db.contactDao().insertAll(contact);
+            }
+        }).start();
     }
 }
