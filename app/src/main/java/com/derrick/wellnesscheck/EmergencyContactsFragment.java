@@ -117,29 +117,19 @@ public class EmergencyContactsFragment extends Fragment {
             }
         } else if (requestCode == 1) {
             if (resultCode == RESULT_OK) {
-//                Uri contactData = data.getData();
-//                Cursor cursor = new CursorLoader(getActivity(), contactData, null, null, null, null).loadInBackground();
-//                if(cursor != null && cursor.moveToFirst()) {
-//                    String ID = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
-//                    int id = Integer.parseInt(ID);
-//                    String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
-//                    String number = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
-//
-//                    Contact contact = new Contact(id, name, number);
-//
-//                    if (!emergencyContactsRecyclerAdapter.contains(contact.id)) {
-//                        emergencyContactsRecyclerAdapter.add(contact);
-//                    }
-//                }
-
                 Uri contactData = data.getData();
                 Cursor cursor = new CursorLoader(getActivity(), contactData, null, null, null, null).loadInBackground();
                 if (cursor.moveToFirst()) {
-                    String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
+                    String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
+                    //todo: make sure id doesn't already exist in DB
                     String hasPhone = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER));
                     if (hasPhone.equalsIgnoreCase("1")) {
-                        Cursor phones = getActivity().getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,
-                                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = " + id, null, null);
+                        Cursor phones = getActivity().getContentResolver().query(
+                                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                                null,
+                                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                                new String[]{id},
+                                null);
                         phones.moveToFirst();
                         String number = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
                         String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
@@ -179,6 +169,7 @@ public class EmergencyContactsFragment extends Fragment {
                 android_contact.name = contact_display_name;
                 int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)));
                 if (hasPhoneNumber > 0) {
+
                     Cursor phoneCursor = contentResolver.query(
                             ContactsContract.CommonDataKinds.Phone.CONTENT_URI
                             , null
@@ -193,7 +184,7 @@ public class EmergencyContactsFragment extends Fragment {
                 }
                 contacts.add(android_contact);
             }
-            for (int i = 0; i < dbData.size()-1; i++) {
+            for (int i = 0; i < dbData.size(); i++) {
                 Contact contact = dbData.get(i);
                 Contact mContact = contacts.get(i);
                 if (contact.number != mContact.number || contact.name != mContact.name)
