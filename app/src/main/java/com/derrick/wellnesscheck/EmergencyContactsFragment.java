@@ -47,10 +47,8 @@ public class EmergencyContactsFragment extends Fragment {
             public void onClick(View view) {
                 if(ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_CONTACTS)
                         == PackageManager.PERMISSION_GRANTED) {
-                    Intent intent = new Intent(Intent.ACTION_GET_CONTENT, ContactsContract.Contacts.CONTENT_URI);
-//                Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
-//                    Intent intent = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts/people"));
-                    intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
+                    Intent intent = new Intent(Intent.ACTION_PICK);
+                    intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);
                     startActivityForResult(intent, 1);
                 }else{
                     // todo: Add contact manually
@@ -71,7 +69,7 @@ public class EmergencyContactsFragment extends Fragment {
             @Override
             public void run() {
                 //use to clear db
-//                db.contactDao().nukeTable();
+                //db.contactDao().nukeTable();
                 contacts = new ArrayList<>(db.contactDao().getAll());
                 if(ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_CONTACTS)
                         == PackageManager.PERMISSION_GRANTED) {
@@ -86,7 +84,7 @@ public class EmergencyContactsFragment extends Fragment {
             }
         }).start();
 
-        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_CONTACTS)
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.READ_CONTACTS)
                 != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
                     Manifest.permission.READ_CONTACTS)) {
@@ -175,8 +173,8 @@ public class EmergencyContactsFragment extends Fragment {
                 Contact android_contact = new Contact("", "", "");
                 String contact_id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
                 android_contact.id = contact_id;
-//                if (!tempContacts.containsKey(contact_id))
-//                    continue;
+                if (!tempContacts.containsKey(contact_id))
+                    continue;
                 String contact_display_name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
                 android_contact.name = contact_display_name;
                 int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)));
