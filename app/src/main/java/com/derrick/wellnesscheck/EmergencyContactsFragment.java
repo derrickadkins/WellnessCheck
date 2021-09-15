@@ -121,7 +121,10 @@ public class EmergencyContactsFragment extends Fragment {
                 Cursor cursor = new CursorLoader(getActivity(), contactData, null, null, null, null).loadInBackground();
                 if (cursor.moveToFirst()) {
                     String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
-                    //todo: make sure id doesn't already exist in DB
+                    //make sure id doesn't already exist in DB
+                    for(Contact contact: contacts)
+                        if(contact.id.equalsIgnoreCase(id))
+                            return;
                     String hasPhone = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER));
                     if (hasPhone.equalsIgnoreCase("1")) {
                         Cursor phones = getActivity().getContentResolver().query(
