@@ -11,7 +11,7 @@ public class AppSettings {
     @PrimaryKey
     public int id = 1;
     public int checkInHours, respondMinutes, fromHour, fromMinute, toHour, toMinute;
-    public boolean fallDetection, allDay;
+    public boolean fallDetection, allDay, monitoringOn;
 
     public AppSettings(){
         checkInHours = 1;
@@ -22,17 +22,6 @@ public class AppSettings {
         toMinute = 0;
         fallDetection = false;
         allDay = false;
-    }
-
-    @Ignore
-    public AppSettings(int checkInHours, int respondMinutes, int fromHour, int fromMinute, int toHour, int toMinute, boolean fallDetection, boolean allDay){
-        this.checkInHours = checkInHours;
-        this.respondMinutes = respondMinutes;
-        this.fromHour = fromHour;
-        this.fromMinute = fromMinute;
-        this.toHour = toHour;
-        this.toMinute = toMinute;
-        this.fallDetection = fallDetection;
-        this.allDay = allDay;
+        monitoringOn = false;
     }
 }

@@ -1,11 +1,14 @@
 package com.derrick.wellnesscheck;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.room.Room;
+
 import android.view.MenuItem;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
@@ -21,10 +24,37 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     ArrayList<Fragment> fragments = new ArrayList<>();
     int currentFragmentIndex = 0;
     BottomNavigationView bottomNavigationView;
+    public static DB db;
+    public static AppSettings settings;
+    boolean dbReady = false;
+
+    void InitDB(Context context){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                db = Room.databaseBuilder(context,
+                        DB.class, "database-name")
+                        .fallbackToDestructiveMigration()
+                        .build();
+
+                AppSettings tmpSettings = db.settingsDao().getSettings();
+                if(tmpSettings != null) settings = tmpSettings;
+                else{
+                    settings = new AppSettings();
+                    db.settingsDao().insert(settings);
+                }
+                dbReady = true;
+            }
+        }).start();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        InitDB(this);
+        while(!dbReady);
+
         setContentView(R.layout.activity_main);
 
         fragments.add(homeFragment);

@@ -1,7 +1,7 @@
 package com.derrick.wellnesscheck;
 
-import static com.derrick.wellnesscheck.App.db;
-import static com.derrick.wellnesscheck.App.settings;
+import static com.derrick.wellnesscheck.MainActivity.db;
+import static com.derrick.wellnesscheck.MainActivity.settings;
 
 import android.app.TimePickerDialog;
 import android.os.Bundle;
