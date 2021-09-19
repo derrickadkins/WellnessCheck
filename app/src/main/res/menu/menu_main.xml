@@ -1,16 +1,22 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.derrick.wellnesscheck.MainActivity">
+
     <item
-        android:id="@+id/action_settings"
+        android:id="@+id/action_emergency_contacts"
         android:orderInCategory="100"
-        android:title="@string/action_settings"
-        app:showAsAction="never" />
+        android:icon="@android:drawable/ic_menu_call"
+        android:title="Emergency Contacts" />
+
+    <item
+        android:id="@+id/action_home"
+        android:orderInCategory="110"
+        android:title="Home"
+        android:icon="@drawable/ic_home"/>
 
     <item
         android:id="@+id/action_mental_health_resources"
-        android:orderInCategory="110"
-        android:title="Mental Health Resources"
-        app:showAsAction="never" />
+        android:orderInCategory="120"
+        android:icon="@drawable/ic_mental_health_resources"
+        android:title="Mental Health Resources" />
 </menu>

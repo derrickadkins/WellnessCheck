@@ -10,12 +10,12 @@ import androidx.room.Update;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-import java.util.ArrayList;
 import java.util.List;
 
-@Database(entities = {Contact.class}, version = 2)
+@Database(entities = {Contact.class, AppSettings.class}, version = 1, exportSchema = false)
 public abstract class DB extends RoomDatabase {
     public abstract ContactDao contactDao();
+    public abstract SettingsDao settingsDao();
 
     @Dao
     public interface ContactDao {
@@ -38,7 +38,19 @@ public abstract class DB extends RoomDatabase {
         void delete(Contact contact);
 
         @Query("DELETE FROM contact")
-        public void nukeTable();
+        void nukeTable();
+    }
+
+    @Dao
+    public interface SettingsDao {
+        @Query("SELECT * FROM appsettings LIMIT 1")
+        AppSettings getSettings();
+
+        @Update
+        void update(AppSettings appSettings);
+
+        @Insert
+        void insert(AppSettings appSettings);
     }
 
     static final Migration MIGRATION_1_2 = new Migration(1, 2) {

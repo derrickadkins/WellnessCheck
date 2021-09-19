@@ -12,25 +12,9 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class SwipeToDeleteCallback extends ItemTouchHelper.SimpleCallback {
-    /**
-     * Creates a Callback for the given drag and swipe allowance. These values serve as
-     * defaults
-     * and if you want to customize behavior per ViewHolder, you can override
-     * {@link #getSwipeDirs(RecyclerView, ViewHolder)}
-     * and / or {@link #getDragDirs(RecyclerView, ViewHolder)}.
-     *
-     * @param dragDirs  Binary OR of direction flags in which the Views can be dragged. Must be
-     *                  composed of {@link #LEFT}, {@link #RIGHT}, {@link #START}, {@link
-     *                  #END},
-     *                  {@link #UP} and {@link #DOWN}.
-     * @param swipeDirs Binary OR of direction flags in which the Views can be swiped. Must be
-     *                  composed of {@link #LEFT}, {@link #RIGHT}, {@link #START}, {@link
-     *                  #END},
-     *                  {@link #UP} and {@link #DOWN}.
-     */
 
-    private EmergencyContactsRecyclerAdapter adapter;
-    private Drawable icon;
+    private final EmergencyContactsRecyclerAdapter adapter;
+    private final Drawable icon;
     private final ColorDrawable background = new ColorDrawable(Color.RED);
 
     public SwipeToDeleteCallback(EmergencyContactsRecyclerAdapter adapter){
@@ -40,10 +24,6 @@ public class SwipeToDeleteCallback extends ItemTouchHelper.SimpleCallback {
                 android.R.drawable.ic_menu_delete);
     }
 
-    public SwipeToDeleteCallback(int dragDirs, int swipeDirs) {
-        super(dragDirs, swipeDirs);
-    }
-
     @Override
     public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
         return false;
@@ -51,7 +31,7 @@ public class SwipeToDeleteCallback extends ItemTouchHelper.SimpleCallback {
 
     @Override
     public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-        int pos = viewHolder.getAdapterPosition();
+        int pos = viewHolder.getBindingAdapterPosition();
         adapter.delete(pos);
     }
 
