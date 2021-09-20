@@ -2,7 +2,6 @@ package com.derrick.wellnesscheck;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
-import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 @Entity
@@ -11,6 +10,7 @@ public class AppSettings {
     @PrimaryKey
     public int id = 1;
     public int checkInHours, respondMinutes, fromHour, fromMinute, toHour, toMinute;
+    public long nextCheckIn;
     public boolean fallDetection, allDay, monitoringOn;
 
     public AppSettings(){
@@ -23,5 +23,6 @@ public class AppSettings {
         fallDetection = false;
         allDay = false;
         monitoringOn = false;
+        nextCheckIn = 0;
     }
 }

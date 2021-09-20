@@ -48,6 +48,15 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
         }).start();
     }
 
+    static void updateSettings(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                db.settingsDao().update(settings);
+            }
+        }).start();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
