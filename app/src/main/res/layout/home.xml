@@ -51,4 +51,15 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:textSize="24dp"/>
+
+    <TextView
+        android:id="@+id/tvTimerType"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Next Wellness Check In"
+        app:layout_constraintBottom_toTopOf="@+id/progressBarText"
+        app:layout_constraintLeft_toLeftOf="@id/progressBarText"
+        app:layout_constraintRight_toRightOf="@id/progressBarText"
+        android:textSize="18dp"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

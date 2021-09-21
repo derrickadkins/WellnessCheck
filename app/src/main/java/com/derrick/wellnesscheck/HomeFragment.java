@@ -22,35 +22,47 @@ import java.util.Date;
 
 public class HomeFragment extends Fragment {
     CircularProgressIndicator progressBar;
-    TextView tvProgressBar;
+    TextView tvProgressBar, tvTimerLabel;
     Button btnTurnOff;
     CountDownTimer timer;
     long checkInInterval, responseInterval;
     boolean inResponseTimer = false;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        checkInInterval = (long) settings.checkInHours * 60 * 60 * 1000;
+        responseInterval = (long) settings.respondMinutes * 60 * 1000;
+
+        //for testing only
+        checkInInterval = 90 * 1000;
+        responseInterval = 20 * 1000;
+    }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View homeFragmentView = inflater.inflate(R.layout.home, container, false);
 
-        checkInInterval = (long) settings.checkInHours * 60 * 60 * 1000;
-        responseInterval = (long) settings.respondMinutes * 60 * 1000;
+/*
+        Log.d("HomeFragment", "is timer null ? " + (timer == null));
 
-        //for testing only
-//        checkInInterval = 30 * 1000;
-//        responseInterval = 10 * 1000;
+        if(progressBar != null)
+            Log.d("HomeFragment", "progressMax = " + progressBar.getMax());
+*/
 
         btnTurnOff = (Button) homeFragmentView.findViewById(R.id.btnTurnOff);
         btnTurnOff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 settings.monitoringOn = false;
-                if(timer != null) {
+                if (timer != null) {
                     timer.cancel();
                     timer = null;
                 }
                 updateSettings();
-                refreshLayout();
+                setTimerVisibility();
             }
         });
 
@@ -58,42 +70,45 @@ public class HomeFragment extends Fragment {
         tvProgressBar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(settings.monitoringOn) return;
+                if (settings.monitoringOn) return;
                 settings.monitoringOn = true;
                 inResponseTimer = false;
                 settings.nextCheckIn = new Date().getTime() + checkInInterval;
-                Log.d("Start Timer", "called from tvProgressBar onClickListener");
+//                Log.d("Start Timer", "called from tvProgressBar onClickListener");
                 startTimer(checkInInterval);
                 updateSettings();
-                refreshLayout();
+                setTimerVisibility();
             }
         });
 
         progressBar = (CircularProgressIndicator) homeFragmentView.findViewById(R.id.progressBar);
+        tvTimerLabel = (TextView) homeFragmentView.findViewById(R.id.tvTimerType);
 
-        refreshLayout();
+        setTimerVisibility();
+
+        long now = new Date().getTime();
+        long millis = settings.nextCheckIn - now;
+        if (settings.nextCheckIn == 0) settings.nextCheckIn = now + checkInInterval;
+        if (millis <= 0) {
+            while (settings.nextCheckIn <= now)
+                settings.nextCheckIn += checkInInterval;
+            updateSettings();
+            millis = settings.nextCheckIn - now;
+        }
+
+        inResponseTimer = settings.nextCheckIn - checkInInterval + responseInterval > now;
+        if (inResponseTimer) {
+            millis = settings.nextCheckIn - checkInInterval + responseInterval - now;
+        }
+
+        progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
 
         if(settings.monitoringOn && timer == null) {
-            long now = new Date().getTime();
-            long millis = settings.nextCheckIn - now;
-            if (settings.nextCheckIn == 0) settings.nextCheckIn = now + checkInInterval;
-            if (millis <= 0) {
-                while (settings.nextCheckIn <= now)
-                    settings.nextCheckIn += checkInInterval;
-                updateSettings();
-                millis = settings.nextCheckIn - now;
-            }
-
-            inResponseTimer = settings.nextCheckIn - checkInInterval + responseInterval > now;
-            if (inResponseTimer) {
-                millis = settings.nextCheckIn - checkInInterval + responseInterval - now;
-            }
-
-            Log.d("Start Timer", "called from onCreateView"
+            /*Log.d("Start Timer", "called from onCreateView"
                     + ", inResponseTimer = " + inResponseTimer
                     + ", millis = " + millis
                     + ", settings.nextCheckIn = " + settings.nextCheckIn
-                    + ", now = " + now);
+                    + ", now = " + now);*/
             startTimer(millis);
         }
 
@@ -106,10 +121,11 @@ public class HomeFragment extends Fragment {
     }
 
     void startTimer(long ms){
-        Log.d("Start Timer", "inResponseTimer = " + inResponseTimer
+        /*Log.d("Start Timer", "inResponseTimer = " + inResponseTimer
                 + ", responseInterval = " + responseInterval
                 + ", checkInInterval = " + checkInInterval
-                + ", ms = " + ms);
+                + ", ms = " + ms);*/
+        tvTimerLabel.setText(inResponseTimer ? "Time to Check In" : "Next Wellness Check In");
         progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
         timer = new CountDownTimer(ms, 10) {
             @Override
@@ -121,6 +137,7 @@ public class HomeFragment extends Fragment {
                 progressText += String.format("%02d:%02d", minutes, seconds);
                 tvProgressBar.setText(progressText);
                 progressBar.setProgress((int) millisUntilFinished);
+//                Log.d("Timer Tick", progressText + ", progressMax = " + progressBar.getMax());
             }
 
             @Override
@@ -129,20 +146,21 @@ public class HomeFragment extends Fragment {
                 if(inResponseTimer) {
                     settings.nextCheckIn += checkInInterval;
                     updateSettings();
-                    Log.d("Start Timer", "called from timer onFinish : response");
+//                    Log.d("Start Timer", "called from timer onFinish : response");
                     startTimer(responseInterval);
                 }else{
-                    Log.d("Start Timer", "called from timer onFinish : checkIn");
+//                    Log.d("Start Timer", "called from timer onFinish : checkIn");
                     startTimer(settings.nextCheckIn - new Date().getTime());
                 }
             }
         }.start();
     }
 
-    void refreshLayout(){
+    void setTimerVisibility(){
         int visibility = settings.monitoringOn ? View.VISIBLE : View.GONE;
         progressBar.setVisibility(visibility);
         btnTurnOff.setVisibility(visibility);
+        tvTimerLabel.setVisibility(visibility);
 
         if(!settings.monitoringOn)
             tvProgressBar.setText("Setup Monitoring");
