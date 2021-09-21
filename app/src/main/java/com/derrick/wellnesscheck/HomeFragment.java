@@ -5,6 +5,7 @@ import static com.derrick.wellnesscheck.MainActivity.updateSettings;
 
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,15 +37,18 @@ public class HomeFragment extends Fragment {
         responseInterval = (long) settings.respondMinutes * 60 * 1000;
 
         //for testing only
-        checkInInterval = 30 * 1000;
-        responseInterval = 10 * 1000;
+//        checkInInterval = 30 * 1000;
+//        responseInterval = 10 * 1000;
 
         btnTurnOff = (Button) homeFragmentView.findViewById(R.id.btnTurnOff);
         btnTurnOff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 settings.monitoringOn = false;
-                if(timer != null) timer.cancel();
+                if(timer != null) {
+                    timer.cancel();
+                    timer = null;
+                }
                 updateSettings();
                 refreshLayout();
             }
@@ -58,6 +62,7 @@ public class HomeFragment extends Fragment {
                 settings.monitoringOn = true;
                 inResponseTimer = false;
                 settings.nextCheckIn = new Date().getTime() + checkInInterval;
+                Log.d("Start Timer", "called from tvProgressBar onClickListener");
                 startTimer(checkInInterval);
                 updateSettings();
                 refreshLayout();
@@ -68,7 +73,7 @@ public class HomeFragment extends Fragment {
 
         refreshLayout();
 
-        if(settings.monitoringOn) {
+        if(settings.monitoringOn && timer == null) {
             long now = new Date().getTime();
             long millis = settings.nextCheckIn - now;
             if (settings.nextCheckIn == 0) settings.nextCheckIn = now + checkInInterval;
@@ -76,7 +81,7 @@ public class HomeFragment extends Fragment {
                 while (settings.nextCheckIn <= now)
                     settings.nextCheckIn += checkInInterval;
                 updateSettings();
-                millis = settings.nextCheckIn;
+                millis = settings.nextCheckIn - now;
             }
 
             inResponseTimer = settings.nextCheckIn - checkInInterval + responseInterval > now;
@@ -84,6 +89,11 @@ public class HomeFragment extends Fragment {
                 millis = settings.nextCheckIn - checkInInterval + responseInterval - now;
             }
 
+            Log.d("Start Timer", "called from onCreateView"
+                    + ", inResponseTimer = " + inResponseTimer
+                    + ", millis = " + millis
+                    + ", settings.nextCheckIn = " + settings.nextCheckIn
+                    + ", now = " + now);
             startTimer(millis);
         }
 
@@ -96,6 +106,10 @@ public class HomeFragment extends Fragment {
     }
 
     void startTimer(long ms){
+        Log.d("Start Timer", "inResponseTimer = " + inResponseTimer
+                + ", responseInterval = " + responseInterval
+                + ", checkInInterval = " + checkInInterval
+                + ", ms = " + ms);
         progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
         timer = new CountDownTimer(ms, 10) {
             @Override
@@ -115,8 +129,10 @@ public class HomeFragment extends Fragment {
                 if(inResponseTimer) {
                     settings.nextCheckIn += checkInInterval;
                     updateSettings();
+                    Log.d("Start Timer", "called from timer onFinish : response");
                     startTimer(responseInterval);
                 }else{
+                    Log.d("Start Timer", "called from timer onFinish : checkIn");
                     startTimer(settings.nextCheckIn - new Date().getTime());
                 }
             }
