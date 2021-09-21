@@ -35,6 +35,10 @@ public class HomeFragment extends Fragment {
         checkInInterval = (long) settings.checkInHours * 60 * 60 * 1000;
         responseInterval = (long) settings.respondMinutes * 60 * 1000;
 
+        //for testing only
+        checkInInterval = 30 * 1000;
+        responseInterval = 10 * 1000;
+
         btnTurnOff = (Button) homeFragmentView.findViewById(R.id.btnTurnOff);
         btnTurnOff.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -50,6 +54,7 @@ public class HomeFragment extends Fragment {
         tvProgressBar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if(settings.monitoringOn) return;
                 settings.monitoringOn = true;
                 inResponseTimer = false;
                 settings.nextCheckIn = new Date().getTime() + checkInInterval;
@@ -63,23 +68,36 @@ public class HomeFragment extends Fragment {
 
         refreshLayout();
 
-        long now = new Date().getTime();
-        if(settings.nextCheckIn == 0) settings.nextCheckIn = now + checkInInterval;
-        long millis = settings.nextCheckIn - now;
-        if(millis <= 0){
-            while(settings.nextCheckIn <= now)
-                settings.nextCheckIn += checkInInterval;
-            updateSettings();
-            millis = settings.nextCheckIn;
+        if(settings.monitoringOn) {
+            long now = new Date().getTime();
+            long millis = settings.nextCheckIn - now;
+            if (settings.nextCheckIn == 0) settings.nextCheckIn = now + checkInInterval;
+            if (millis <= 0) {
+                while (settings.nextCheckIn <= now)
+                    settings.nextCheckIn += checkInInterval;
+                updateSettings();
+                millis = settings.nextCheckIn;
+            }
+
+            inResponseTimer = settings.nextCheckIn - checkInInterval + responseInterval > now;
+            if (inResponseTimer) {
+                millis = settings.nextCheckIn - checkInInterval + responseInterval - now;
+            }
+
+            startTimer(millis);
         }
-        startTimer(millis);
 
         return homeFragmentView;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+    }
+
     void startTimer(long ms){
         progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
-        timer = new CountDownTimer(ms, 1000) {
+        timer = new CountDownTimer(ms, 10) {
             @Override
             public void onTick(long millisUntilFinished) {
                 long hours = millisUntilFinished / (60 * 60 * 1000) % 24;
