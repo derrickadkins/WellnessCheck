@@ -2,6 +2,7 @@ package com.derrick.wellnesscheck;
 
 import android.Manifest;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -11,6 +12,9 @@ import android.provider.ContactsContract;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.contract.ActivityResultContract;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
@@ -50,7 +54,27 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                         == PackageManager.PERMISSION_GRANTED) {
                     Intent intent = new Intent(Intent.ACTION_PICK);
                     intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);
-                    startActivityForResult(intent, 1);
+                    getActivity().startActivityForResult(intent, 1);
+                    /*
+                    todo: implement
+                    registerForActivityResult(new ActivityResultContract<Object, Object>() {
+                        @NonNull
+                        @Override
+                        public Intent createIntent(@NonNull Context context, Object input) {
+                            return null;
+                        }
+
+                        @Override
+                        public Object parseResult(int resultCode, @Nullable Intent intent) {
+                            return null;
+                        }
+                    }, new ActivityResultCallback<Object>() {
+                        @Override
+                        public void onActivityResult(Object result) {
+
+                        }
+                    });
+                     */
                 }else{
                     // todo: Add contact manually
 

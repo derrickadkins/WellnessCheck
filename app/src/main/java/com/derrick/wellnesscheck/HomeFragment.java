@@ -3,6 +3,12 @@ package com.derrick.wellnesscheck;
 import static com.derrick.wellnesscheck.MainActivity.settings;
 import static com.derrick.wellnesscheck.MainActivity.updateSettings;
 
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
@@ -36,8 +42,8 @@ public class HomeFragment extends Fragment {
         responseInterval = (long) settings.respondMinutes * 60 * 1000;
 
         //for testing only
-        checkInInterval = 90 * 1000;
-        responseInterval = 20 * 1000;
+        checkInInterval = 30 * 1000;
+        responseInterval = 10 * 1000;
     }
 
     @Nullable
@@ -51,38 +57,37 @@ public class HomeFragment extends Fragment {
         if(progressBar != null)
             Log.d("HomeFragment", "progressMax = " + progressBar.getMax());
 */
+        homeFragmentView.findViewById(R.id.btnStartService).setOnClickListener(v -> startService());
 
-        btnTurnOff = (Button) homeFragmentView.findViewById(R.id.btnTurnOff);
-        btnTurnOff.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                settings.monitoringOn = false;
-                if (timer != null) {
-                    timer.cancel();
-                    timer = null;
-                }
-                updateSettings();
-                setTimerVisibility();
+        homeFragmentView.findViewById(R.id.btnStopService).setOnClickListener(v -> stopService());
+
+        btnTurnOff = homeFragmentView.findViewById(R.id.btnTurnOff);
+        btnTurnOff.setOnClickListener(v -> {
+            settings.monitoringOn = false;
+            if (timer != null) {
+                timer.cancel();
+                timer = null;
             }
+            updateSettings();
+            setTimerVisibility();
+            stopService();
         });
 
-        tvProgressBar = (TextView) homeFragmentView.findViewById(R.id.progressBarText);
-        tvProgressBar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (settings.monitoringOn) return;
-                settings.monitoringOn = true;
-                inResponseTimer = false;
-                settings.nextCheckIn = new Date().getTime() + checkInInterval;
+        tvProgressBar = homeFragmentView.findViewById(R.id.progressBarText);
+        tvProgressBar.setOnClickListener(v -> {
+            if (settings.monitoringOn) return;
+            settings.monitoringOn = true;
+            inResponseTimer = false;
+            settings.nextCheckIn = new Date().getTime() + checkInInterval;
 //                Log.d("Start Timer", "called from tvProgressBar onClickListener");
-                startTimer(checkInInterval);
-                updateSettings();
-                setTimerVisibility();
-            }
+            startTimer(checkInInterval);
+            updateSettings();
+            setTimerVisibility();
+            startService();
         });
 
-        progressBar = (CircularProgressIndicator) homeFragmentView.findViewById(R.id.progressBar);
-        tvTimerLabel = (TextView) homeFragmentView.findViewById(R.id.tvTimerType);
+        progressBar = homeFragmentView.findViewById(R.id.progressBar);
+        tvTimerLabel = homeFragmentView.findViewById(R.id.tvTimerType);
 
         setTimerVisibility();
 
@@ -102,6 +107,7 @@ public class HomeFragment extends Fragment {
         }
 
         progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
+        tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
 
         if(settings.monitoringOn && timer == null) {
             /*Log.d("Start Timer", "called from onCreateView"
@@ -125,7 +131,7 @@ public class HomeFragment extends Fragment {
                 + ", responseInterval = " + responseInterval
                 + ", checkInInterval = " + checkInInterval
                 + ", ms = " + ms);*/
-        tvTimerLabel.setText(inResponseTimer ? "Time to Check In" : "Next Wellness Check In");
+        tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
         progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
         timer = new CountDownTimer(ms, 10) {
             @Override
@@ -164,5 +170,26 @@ public class HomeFragment extends Fragment {
 
         if(!settings.monitoringOn)
             tvProgressBar.setText("Setup Monitoring");
+    }
+
+    void startService(){
+        Intent intent = new Intent(getActivity(), MonitoringService.class)
+                .setAction(MonitoringService.START_ACTION)
+                .putExtra(MonitoringService.INTERVAL1_EXTRA, checkInInterval)
+                .putExtra(MonitoringService.INTERVAL2_EXTRA, responseInterval);
+
+        getActivity().startService(intent);
+
+        /*
+        JobInfo.Builder jobInfoBuilder = new JobInfo.Builder(1, new ComponentName(getActivity(), MonitoringService.class));
+        jobInfoBuilder.setPeriodic(checkInInterval);
+        JobInfo jobInfo = jobInfoBuilder.build();
+        JobScheduler jobScheduler = (JobScheduler) getActivity().getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(jobInfo);
+         */
+    }
+
+    void stopService(){
+        getActivity().stopService(new Intent(getActivity(), MonitoringService.class));
     }
 }

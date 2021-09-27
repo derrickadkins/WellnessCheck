@@ -27,34 +27,27 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     public static DB db;
     public static AppSettings settings;
     boolean dbReady = false;
+    public static final String UPDATE_TIMER_INTENT = "update_timer";
 
     void InitDB(Context context){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                db = Room.databaseBuilder(context,
-                        DB.class, "database-name")
-                        .fallbackToDestructiveMigration()
-                        .build();
+        new Thread(() -> {
+            db = Room.databaseBuilder(context,
+                    DB.class, "database-name")
+                    .fallbackToDestructiveMigration()
+                    .build();
 
-                AppSettings tmpSettings = db.settingsDao().getSettings();
-                if(tmpSettings != null) settings = tmpSettings;
-                else{
-                    settings = new AppSettings();
-                    db.settingsDao().insert(settings);
-                }
-                dbReady = true;
+            AppSettings tmpSettings = db.settingsDao().getSettings();
+            if(tmpSettings != null) settings = tmpSettings;
+            else{
+                settings = new AppSettings();
+                db.settingsDao().insert(settings);
             }
+            dbReady = true;
         }).start();
     }
 
     static void updateSettings(){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                db.settingsDao().update(settings);
-            }
-        }).start();
+        new Thread(() -> db.settingsDao().update(settings)).start();
     }
 
     @Override
