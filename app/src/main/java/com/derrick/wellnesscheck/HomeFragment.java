@@ -3,10 +3,6 @@ package com.derrick.wellnesscheck;
 import static com.derrick.wellnesscheck.MainActivity.settings;
 import static com.derrick.wellnesscheck.MainActivity.updateSettings;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.app.job.JobScheduler;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
