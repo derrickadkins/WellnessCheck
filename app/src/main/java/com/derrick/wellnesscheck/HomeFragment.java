@@ -3,12 +3,12 @@ package com.derrick.wellnesscheck;
 import static com.derrick.wellnesscheck.MainActivity.settings;
 import static com.derrick.wellnesscheck.MainActivity.updateSettings;
 
-import android.app.job.JobInfo;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.job.JobScheduler;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
@@ -24,15 +24,21 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 
-import java.util.Date;
-
-public class HomeFragment extends Fragment {
+public class HomeFragment extends Fragment implements MonitorReceiver.CheckInListener {
     CircularProgressIndicator progressBar;
     TextView tvProgressBar, tvTimerLabel;
     Button btnTurnOff;
     CountDownTimer timer;
     long checkInInterval, responseInterval;
     boolean inResponseTimer = false;
+    /*
+    JobScheduler jobScheduler;
+    AlarmManager alarmManager;
+    PendingIntent checkInIntent;
+     */
+    MonitorReceiver monitorReceiver;
+    final String TAG = "HomeFragment";
+    Intent serviceIntent;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -42,8 +48,10 @@ public class HomeFragment extends Fragment {
         responseInterval = (long) settings.respondMinutes * 60 * 1000;
 
         //for testing only
-        checkInInterval = 30 * 1000;
-        responseInterval = 10 * 1000;
+        checkInInterval = 10 * 1000;
+        responseInterval = 5 * 1000;
+
+        serviceIntent = new Intent(getActivity(), MonitoringService.class);
     }
 
     @Nullable
@@ -51,6 +59,13 @@ public class HomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View homeFragmentView = inflater.inflate(R.layout.home, container, false);
 
+        /*
+        Intent intent = new Intent(getActivity(), MonitoringService.class)
+                .setAction(Intent.ACTION_DEFAULT)
+                .putExtra(MonitoringService.INTERVAL1_EXTRA, checkInInterval)
+                .putExtra(MonitoringService.INTERVAL2_EXTRA, responseInterval);
+        checkInIntent = PendingIntent.getService(getActivity(), 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+         */
 /*
         Log.d("HomeFragment", "is timer null ? " + (timer == null));
 
@@ -71,14 +86,24 @@ public class HomeFragment extends Fragment {
             updateSettings();
             setTimerVisibility();
             stopService();
+            //if(jobScheduler != null) jobScheduler.cancel(1);
+            //if(alarmManager != null) alarmManager.cancel(checkInIntent);
         });
 
         tvProgressBar = homeFragmentView.findViewById(R.id.progressBarText);
         tvProgressBar.setOnClickListener(v -> {
-            if (settings.monitoringOn) return;
+            if (settings.monitoringOn) {
+                if (inResponseTimer) {
+                    onCheckIn();
+                    getActivity().startService(serviceIntent.setAction(MonitoringService.RESPONSE_ACTION));
+                }
+                return;
+            }
+
+            //Start Monitoring
             settings.monitoringOn = true;
             inResponseTimer = false;
-            settings.nextCheckIn = new Date().getTime() + checkInInterval;
+            settings.nextCheckIn = System.currentTimeMillis() + checkInInterval;
 //                Log.d("Start Timer", "called from tvProgressBar onClickListener");
             startTimer(checkInInterval);
             updateSettings();
@@ -91,7 +116,7 @@ public class HomeFragment extends Fragment {
 
         setTimerVisibility();
 
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         long millis = settings.nextCheckIn - now;
         if (settings.nextCheckIn == 0) settings.nextCheckIn = now + checkInInterval;
         if (millis <= 0) {
@@ -123,7 +148,19 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onResume() {
+        Log.d(TAG, "onResume");
         super.onResume();
+
+        if(monitorReceiver == null) monitorReceiver = new MonitorReceiver(this);
+        getActivity().registerReceiver(monitorReceiver, new IntentFilter(MonitoringService.BROADCAST_CHECK_IN));
+    }
+
+    @Override
+    public void onPause() {
+        Log.d(TAG, "onPause");
+        super.onPause();
+
+        if(monitorReceiver != null) getActivity().unregisterReceiver(monitorReceiver);
     }
 
     void startTimer(long ms){
@@ -156,7 +193,7 @@ public class HomeFragment extends Fragment {
                     startTimer(responseInterval);
                 }else{
 //                    Log.d("Start Timer", "called from timer onFinish : checkIn");
-                    startTimer(settings.nextCheckIn - new Date().getTime());
+                    startTimer(settings.nextCheckIn - System.currentTimeMillis());
                 }
             }
         }.start();
@@ -173,23 +210,27 @@ public class HomeFragment extends Fragment {
     }
 
     void startService(){
-        Intent intent = new Intent(getActivity(), MonitoringService.class)
-                .setAction(MonitoringService.START_ACTION)
-                .putExtra(MonitoringService.INTERVAL1_EXTRA, checkInInterval)
-                .putExtra(MonitoringService.INTERVAL2_EXTRA, responseInterval);
-
-        getActivity().startService(intent);
-
         /*
-        JobInfo.Builder jobInfoBuilder = new JobInfo.Builder(1, new ComponentName(getActivity(), MonitoringService.class));
-        jobInfoBuilder.setPeriodic(checkInInterval);
-        JobInfo jobInfo = jobInfoBuilder.build();
-        JobScheduler jobScheduler = (JobScheduler) getActivity().getSystemService(Context.JOB_SCHEDULER_SERVICE);
-        jobScheduler.schedule(jobInfo);
-         */
+        long triggerMillis = checkInInterval + System.currentTimeMillis();
+        alarmManager = (AlarmManager)getActivity().getSystemService(Context.ALARM_SERVICE);
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMillis, checkInIntent);
+        */
+        getActivity().startService(serviceIntent
+                .setAction(MonitoringService.ACTION_FIRST)
+                .putExtra(MonitoringService.INTERVAL1_EXTRA, checkInInterval)
+                .putExtra(MonitoringService.INTERVAL2_EXTRA, responseInterval));
     }
 
     void stopService(){
-        getActivity().stopService(new Intent(getActivity(), MonitoringService.class));
+        getActivity().startService(serviceIntent.setAction(Intent.ACTION_DELETE));
+        //if(alarmManager != null) alarmManager.cancel(checkInIntent);
+    }
+
+    @Override
+    public void onCheckIn() {
+        Log.d(TAG, "onCheckIn");
+        if(timer != null) timer.cancel();
+        inResponseTimer = false;
+        startTimer(settings.nextCheckIn - System.currentTimeMillis());
     }
 }
