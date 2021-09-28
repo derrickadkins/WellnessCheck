@@ -31,11 +31,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     CountDownTimer timer;
     long checkInInterval, responseInterval;
     boolean inResponseTimer = false;
-    /*
-    JobScheduler jobScheduler;
-    AlarmManager alarmManager;
-    PendingIntent checkInIntent;
-     */
     MonitorReceiver monitorReceiver;
     final String TAG = "HomeFragment";
     Intent serviceIntent;
@@ -59,13 +54,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View homeFragmentView = inflater.inflate(R.layout.home, container, false);
 
-        /*
-        Intent intent = new Intent(getActivity(), MonitoringService.class)
-                .setAction(Intent.ACTION_DEFAULT)
-                .putExtra(MonitoringService.INTERVAL1_EXTRA, checkInInterval)
-                .putExtra(MonitoringService.INTERVAL2_EXTRA, responseInterval);
-        checkInIntent = PendingIntent.getService(getActivity(), 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
-         */
 /*
         Log.d("HomeFragment", "is timer null ? " + (timer == null));
 
@@ -86,8 +74,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             updateSettings();
             setTimerVisibility();
             stopService();
-            //if(jobScheduler != null) jobScheduler.cancel(1);
-            //if(alarmManager != null) alarmManager.cancel(checkInIntent);
         });
 
         tvProgressBar = homeFragmentView.findViewById(R.id.progressBarText);
@@ -210,11 +196,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     }
 
     void startService(){
-        /*
-        long triggerMillis = checkInInterval + System.currentTimeMillis();
-        alarmManager = (AlarmManager)getActivity().getSystemService(Context.ALARM_SERVICE);
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMillis, checkInIntent);
-        */
         getActivity().startService(serviceIntent
                 .setAction(MonitoringService.ACTION_FIRST)
                 .putExtra(MonitoringService.INTERVAL1_EXTRA, checkInInterval)
@@ -223,7 +204,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
     void stopService(){
         getActivity().startService(serviceIntent.setAction(Intent.ACTION_DELETE));
-        //if(alarmManager != null) alarmManager.cancel(checkInIntent);
     }
 
     @Override
