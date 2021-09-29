@@ -3,6 +3,9 @@ package com.derrick.wellnesscheck;
 import static com.derrick.wellnesscheck.MainActivity.settings;
 import static com.derrick.wellnesscheck.MainActivity.updateSettings;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
@@ -29,7 +32,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     boolean inResponseTimer = false;
     MonitorReceiver monitorReceiver;
     final String TAG = "HomeFragment";
-    Intent serviceIntent;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -41,8 +43,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         //for testing only
         checkInInterval = 10 * 1000;
         responseInterval = 5 * 1000;
-
-        serviceIntent = new Intent(getActivity(), MonitoringService.class);
     }
 
     @Nullable
@@ -77,7 +77,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             if (settings.monitoringOn) {
                 if (inResponseTimer) {
                     onCheckIn();
-                    getActivity().startService(serviceIntent.setAction(MonitoringService.RESPONSE_ACTION));
+                    getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(MonitorReceiver.RESPONSE_ACTION));
                 }
                 return;
             }
@@ -128,23 +128,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         return homeFragmentView;
     }
 
-    @Override
-    public void onResume() {
-        Log.d(TAG, "onResume");
-        super.onResume();
-
-        if(monitorReceiver == null) monitorReceiver = new MonitorReceiver(this);
-        getActivity().registerReceiver(monitorReceiver, new IntentFilter(MonitoringService.BROADCAST_CHECK_IN));
-    }
-
-    @Override
-    public void onPause() {
-        Log.d(TAG, "onPause");
-        super.onPause();
-
-        if(monitorReceiver != null) getActivity().unregisterReceiver(monitorReceiver);
-    }
-
     void startTimer(long ms){
         /*Log.d("Start Timer", "inResponseTimer = " + inResponseTimer
                 + ", responseInterval = " + responseInterval
@@ -192,14 +175,30 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     }
 
     void startService(){
-        getActivity().startService(serviceIntent
-                .setAction(MonitoringService.ACTION_FIRST)
-                .putExtra(MonitoringService.INTERVAL1_EXTRA, checkInInterval)
-                .putExtra(MonitoringService.INTERVAL2_EXTRA, responseInterval));
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(MonitorReceiver.BROADCAST_ALARM);
+        intentFilter.addAction(MonitorReceiver.RESPONSE_ACTION);
+        intentFilter.addAction(Intent.ACTION_DELETE);
+        getActivity().registerReceiver(monitorReceiver, intentFilter);
+
+        AlarmManager alarmManager = (AlarmManager) getActivity().getSystemService(Service.ALARM_SERVICE);
+        //Log.d(TAG, "triggering first alarm in " + (settings.nextCheckIn - System.currentTimeMillis()) + " millis");
+        PendingIntent pendingNotifyIntent;
+        Intent intent = new Intent(getActivity(), MonitorReceiver.class).setAction("alarm.triggered")
+                .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                .putExtra(MonitorReceiver.INTERVAL1_EXTRA, checkInInterval)
+                .putExtra(MonitorReceiver.INTERVAL2_EXTRA, responseInterval);
+        pendingNotifyIntent = PendingIntent.getBroadcast(getActivity(), 0,
+                intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(settings.nextCheckIn, pendingNotifyIntent), pendingNotifyIntent);
     }
 
     void stopService(){
-        getActivity().startService(serviceIntent.setAction(Intent.ACTION_DELETE));
+        getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(Intent.ACTION_DELETE));
+/*        if(monitorReceiver != null) {
+            try{getActivity().unregisterReceiver(monitorReceiver);}catch (Exception ex){}
+        }*/
     }
 
     @Override

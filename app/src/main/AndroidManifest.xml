@@ -8,7 +8,6 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.READ_CONTACTS"/>
 
-
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -17,14 +16,24 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <service android:name=".MonitoringService"
-            android:permission="android.permission.BIND_JOB_SERVICE"
-            android:exported="false">
+        <receiver android:enabled="true" android:exported="true" android:name=".MonitorReceiver">
+            <intent-filter>
+                <action android:name="alarm.triggered"/>
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
-        </service>
+            <intent-filter>
+                <action android:name="com.derrick.wellnesscheck.CANCEL_TIMER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.DELETE" />
+            </intent-filter>
+        </receiver>
 
         <activity
             android:name=".MainActivity"
