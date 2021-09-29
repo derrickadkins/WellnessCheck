@@ -77,7 +77,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             if (settings.monitoringOn) {
                 if (inResponseTimer) {
                     onCheckIn();
-                    getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(MonitorReceiver.RESPONSE_ACTION));
+                    getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(MonitorReceiver.ACTION_RESPONSE));
                 }
                 return;
             }
@@ -137,7 +137,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     @Override
     public void onPause() {
         super.onPause();
-        //MonitorReceiver.checkInListener = null;
     }
 
     void startTimer(long ms){
@@ -188,18 +187,18 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
     void startService(){
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(MonitorReceiver.BROADCAST_ALARM);
-        intentFilter.addAction(MonitorReceiver.RESPONSE_ACTION);
+        intentFilter.addAction(MonitorReceiver.ACTION_ALARM);
+        intentFilter.addAction(MonitorReceiver.ACTION_RESPONSE);
         intentFilter.addAction(Intent.ACTION_DELETE);
         getActivity().registerReceiver(monitorReceiver, intentFilter);
 
         AlarmManager alarmManager = (AlarmManager) getActivity().getSystemService(Service.ALARM_SERVICE);
         //Log.d(TAG, "triggering first alarm in " + (settings.nextCheckIn - System.currentTimeMillis()) + " millis");
         PendingIntent pendingNotifyIntent;
-        Intent intent = new Intent(getActivity(), MonitorReceiver.class).setAction("alarm.triggered")
+        Intent intent = new Intent(getActivity(), MonitorReceiver.class).setAction(MonitorReceiver.ACTION_ALARM)
                 .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
-                .putExtra(MonitorReceiver.INTERVAL1_EXTRA, checkInInterval)
-                .putExtra(MonitorReceiver.INTERVAL2_EXTRA, responseInterval);
+                .putExtra(MonitorReceiver.EXTRA_INTERVAL1, checkInInterval)
+                .putExtra(MonitorReceiver.EXTRA_INTERVAL2, responseInterval);
         pendingNotifyIntent = PendingIntent.getBroadcast(getActivity(), 0,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
 

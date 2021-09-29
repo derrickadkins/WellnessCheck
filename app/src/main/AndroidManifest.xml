@@ -18,11 +18,11 @@
 
         <receiver android:enabled="true" android:exported="true" android:name=".MonitorReceiver">
             <intent-filter>
-                <action android:name="alarm.triggered"/>
-            </intent-filter>
-            <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.derrick.wellnesscheck.ALARM_TRIGGERED"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="com.derrick.wellnesscheck.CANCEL_TIMER" />

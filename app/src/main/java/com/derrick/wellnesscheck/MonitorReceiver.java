@@ -21,10 +21,10 @@ import androidx.core.app.NotificationManagerCompat;
 
 public class MonitorReceiver extends BroadcastReceiver {
     final String CHANNEL_ID = "WellnessCheck.MonitorReceiver";
-    public static final String RESPONSE_ACTION = "com.derrick.wellnesscheck.CANCEL_TIMER";
-    public static final String INTERVAL1_EXTRA = "mainInterval";
-    public static final String INTERVAL2_EXTRA = "responseInterval";
-    public static final String BROADCAST_ALARM = "alarm.triggered";
+    public static final String ACTION_RESPONSE = "com.derrick.wellnesscheck.CANCEL_TIMER";
+    public static final String ACTION_ALARM = "com.derrick.wellnesscheck.ALARM_TRIGGERED";
+    public static final String EXTRA_INTERVAL1 = "mainInterval";
+    public static final String EXTRA_INTERVAL2 = "responseInterval";
     static CountDownTimer countDownTimer;
     long mainInterval, responseInterval;
     NotificationCompat.Builder builder;
@@ -33,9 +33,6 @@ public class MonitorReceiver extends BroadcastReceiver {
     final String TAG = "MonitorReceiver";
     public static CheckInListener checkInListener;
     public MonitorReceiver(){}
-    MonitorReceiver(CheckInListener checkInListener){
-        this.checkInListener = checkInListener;
-    }
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -46,21 +43,21 @@ public class MonitorReceiver extends BroadcastReceiver {
 
         alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
-        mainInterval = intent.getLongExtra(INTERVAL1_EXTRA, 60 * 60 * 1000);
-        responseInterval = intent.getLongExtra(INTERVAL2_EXTRA, 60 * 1000);
+        mainInterval = intent.getLongExtra(EXTRA_INTERVAL1, 60 * 60 * 1000);
+        responseInterval = intent.getLongExtra(EXTRA_INTERVAL2, 60 * 1000);
 
         Log.d(TAG, "interval 1 = " + mainInterval);
         Log.d(TAG, "interval 2 = " + responseInterval);
 
         switch (intent.getAction()){
-            case BROADCAST_ALARM:
+            case ACTION_ALARM:
                 long minutes = responseInterval / (60 * 1000) % 60;
                 long seconds = responseInterval / 1000 % 60;
                 String timeLeft = minutes > 0 ? minutes + ":" : "";
                 timeLeft += String.format("%02d", seconds);
 
                 PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(context, 0,
-                        new Intent(context, MonitorReceiver.class).setAction(BROADCAST_ALARM)
+                        new Intent(context, MonitorReceiver.class).setAction(ACTION_ALARM)
                                 .putExtras(intent),
                         PendingIntent.FLAG_UPDATE_CURRENT);
 
@@ -74,26 +71,26 @@ public class MonitorReceiver extends BroadcastReceiver {
                         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                         .setContentIntent(PendingIntent.getBroadcast(context, 0,
                                 new Intent(context, MonitorReceiver.class)
-                                        .setAction(RESPONSE_ACTION),
+                                        .setAction(ACTION_RESPONSE),
                                 PendingIntent.FLAG_UPDATE_CURRENT))
                         .setOnlyAlertOnce(true)
                         .setAutoCancel(true);
 
                 startCheckIn();
                 break;
-            case RESPONSE_ACTION:
+            case ACTION_RESPONSE:
                 Log.d(TAG, "response timer requested");
                 if (countDownTimer != null) {
                     countDownTimer.cancel();
                     if(checkInListener != null) checkInListener.onCheckIn();
-                    notificationManagerCompat.deleteNotificationChannel(CHANNEL_ID);
+                    notificationManagerCompat.cancel(1);
                 }
                 break;
             case ACTION_DELETE:
                 notificationManagerCompat.deleteNotificationChannel(CHANNEL_ID);
                 if(countDownTimer != null) countDownTimer.cancel();
                 alarmManager.cancel(PendingIntent.getBroadcast(context, 0,
-                        new Intent(context, MonitorReceiver.class).setAction(BROADCAST_ALARM)
+                        new Intent(context, MonitorReceiver.class).setAction(ACTION_ALARM)
                                 .putExtras(intent),
                         PendingIntent.FLAG_UPDATE_CURRENT));
                 break;
