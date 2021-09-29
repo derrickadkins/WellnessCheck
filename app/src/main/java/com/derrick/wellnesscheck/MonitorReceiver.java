@@ -25,13 +25,13 @@ public class MonitorReceiver extends BroadcastReceiver {
     public static final String INTERVAL1_EXTRA = "mainInterval";
     public static final String INTERVAL2_EXTRA = "responseInterval";
     public static final String BROADCAST_ALARM = "alarm.triggered";
-    CountDownTimer countDownTimer;
+    static CountDownTimer countDownTimer;
     long mainInterval, responseInterval;
     NotificationCompat.Builder builder;
     NotificationManagerCompat notificationManagerCompat;
     AlarmManager alarmManager;
     final String TAG = "MonitorReceiver";
-    CheckInListener checkInListener;
+    public static CheckInListener checkInListener;
     public MonitorReceiver(){}
     MonitorReceiver(CheckInListener checkInListener){
         this.checkInListener = checkInListener;
@@ -52,16 +52,17 @@ public class MonitorReceiver extends BroadcastReceiver {
         Log.d(TAG, "interval 1 = " + mainInterval);
         Log.d(TAG, "interval 2 = " + responseInterval);
 
-        PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(context, 0,
-                new Intent(context, MonitorReceiver.class).setAction(BROADCAST_ALARM),
-                PendingIntent.FLAG_UPDATE_CURRENT);
-
         switch (intent.getAction()){
             case BROADCAST_ALARM:
                 long minutes = responseInterval / (60 * 1000) % 60;
                 long seconds = responseInterval / 1000 % 60;
                 String timeLeft = minutes > 0 ? minutes + ":" : "";
                 timeLeft += String.format("%02d", seconds);
+
+                PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(context, 0,
+                        new Intent(context, MonitorReceiver.class).setAction(BROADCAST_ALARM)
+                                .putExtras(intent),
+                        PendingIntent.FLAG_UPDATE_CURRENT);
 
                 //setup next one
                 long triggerMillis = mainInterval + System.currentTimeMillis();
@@ -84,14 +85,17 @@ public class MonitorReceiver extends BroadcastReceiver {
                 Log.d(TAG, "response timer requested");
                 if (countDownTimer != null) {
                     countDownTimer.cancel();
-                    checkInListener.onCheckIn();
+                    if(checkInListener != null) checkInListener.onCheckIn();
                     notificationManagerCompat.deleteNotificationChannel(CHANNEL_ID);
                 }
                 break;
             case ACTION_DELETE:
                 notificationManagerCompat.deleteNotificationChannel(CHANNEL_ID);
                 if(countDownTimer != null) countDownTimer.cancel();
-                alarmManager.cancel(alarmPendingIntent);
+                alarmManager.cancel(PendingIntent.getBroadcast(context, 0,
+                        new Intent(context, MonitorReceiver.class).setAction(BROADCAST_ALARM)
+                                .putExtras(intent),
+                        PendingIntent.FLAG_UPDATE_CURRENT));
                 break;
             case ACTION_DEFAULT:
                 break;

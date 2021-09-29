@@ -128,6 +128,18 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         return homeFragmentView;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        MonitorReceiver.checkInListener = this;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        //MonitorReceiver.checkInListener = null;
+    }
+
     void startTimer(long ms){
         /*Log.d("Start Timer", "inResponseTimer = " + inResponseTimer
                 + ", responseInterval = " + responseInterval
