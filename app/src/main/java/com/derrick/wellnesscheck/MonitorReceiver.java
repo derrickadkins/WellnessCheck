@@ -21,6 +21,7 @@ import androidx.core.app.NotificationManagerCompat;
 
 public class MonitorReceiver extends BroadcastReceiver {
     final String CHANNEL_ID = "WellnessCheck.MonitorReceiver";
+    final int NOTIFICATION_ID = 0;
     public static final String ACTION_RESPONSE = "com.derrick.wellnesscheck.CANCEL_TIMER";
     public static final String ACTION_ALARM = "com.derrick.wellnesscheck.ALARM_TRIGGERED";
     public static final String EXTRA_INTERVAL1 = "mainInterval";
@@ -83,7 +84,7 @@ public class MonitorReceiver extends BroadcastReceiver {
                 if (countDownTimer != null) {
                     countDownTimer.cancel();
                     if(checkInListener != null) checkInListener.onCheckIn();
-                    notificationManagerCompat.cancel(1);
+                    notificationManagerCompat.cancel(NOTIFICATION_ID);
                 }
                 break;
             case ACTION_DELETE:
@@ -114,14 +115,14 @@ public class MonitorReceiver extends BroadcastReceiver {
                         timeLeft += String.format("%02d", seconds);
 
                         builder.setContentText("Click to check in. Notifying Emergency Contact in " + timeLeft);
-                        notificationManagerCompat.notify(1, builder.build());
+                        notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
                     }
 
                     @Override
                     public void onFinish() {
                         //todo: Message Emergency Contact
                         builder.setContentText("Message has been sent to your emergency contacts");
-                        notificationManagerCompat.notify(1, builder.build());
+                        notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
                     }
                 }.start();
             }
