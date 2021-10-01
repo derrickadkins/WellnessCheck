@@ -12,10 +12,11 @@ import android.provider.ContactsContract;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 
 import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContract;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
@@ -25,7 +26,6 @@ import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.room.Room;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -34,14 +34,79 @@ import java.util.Hashtable;
 import java.util.List;
 
 import static android.app.Activity.RESULT_OK;
+import static com.derrick.wellnesscheck.MainActivity.db;
 
 public class EmergencyContactsFragment extends Fragment implements OnContactDeleteListener{
     FloatingActionButton fab;
     EmergencyContactsRecyclerAdapter emergencyContactsRecyclerAdapter;
     RecyclerView contactsList;
-    DB db;
     ArrayList<Contact> contacts;
     FragmentListener fragmentListener;
+    ActivityResultLauncher<String> permissionResult = registerForActivityResult(new ActivityResultContracts.RequestPermission(),
+            new ActivityResultCallback<Boolean>() {
+                @Override
+                public void onActivityResult(Boolean result) {
+                    if(result) {
+                        loadContacts();
+                        setupAdapter();
+                    } else {
+                        //Log.e(TAG, "onActivityResult: PERMISSION DENIED");
+                    }
+                }
+            });
+
+    ActivityResultLauncher<Object> contactChooserResult = registerForActivityResult(new ActivityResultContract<Object, Object>() {
+        @NonNull
+        @Override
+        public Intent createIntent(@NonNull Context context, Object input) {
+            Intent intent = new Intent(Intent.ACTION_PICK);
+            intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);
+            return intent;
+        }
+
+        @Override
+        public Object parseResult(int resultCode, @Nullable Intent intent) {
+            if (resultCode == RESULT_OK) {
+                Uri contactData = intent.getData();
+                Cursor cursor = new CursorLoader(getActivity(), contactData, null, null, null, null).loadInBackground();
+                if (cursor.moveToFirst()) {
+                    String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
+                    //make sure id doesn't already exist in DB
+                    for (Contact contact : contacts)
+                        if (contact.id.equalsIgnoreCase(id))
+                            return null;
+                    String hasPhone = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER));
+                    if (hasPhone.equalsIgnoreCase("1")) {
+                        Cursor phones = getActivity().getContentResolver().query(
+                                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                                null,
+                                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                                new String[]{id},
+                                null);
+                        phones.moveToFirst();
+                        String number = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                        String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
+                        final Contact contact = new Contact(id, name, number);
+                        if (!emergencyContactsRecyclerAdapter.contains(contact.id)) {
+                            emergencyContactsRecyclerAdapter.add(contact);
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    db.contactDao().insertAll(contact);
+                                }
+                            }).start();
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+    }, new ActivityResultCallback<Object>() {
+        @Override
+        public void onActivityResult(Object result) {
+
+        }
+    });
 
     EmergencyContactsFragment(){super();}
     EmergencyContactsFragment(FragmentListener fragmentListener){super(); this.fragmentListener = fragmentListener;}
@@ -57,29 +122,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
             public void onClick(View view) {
                 if(ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_CONTACTS)
                         == PackageManager.PERMISSION_GRANTED) {
-                    Intent intent = new Intent(Intent.ACTION_PICK);
-                    intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);
-                    getActivity().startActivityForResult(intent, 1);
-                    /*
-                    todo: implement
-                    registerForActivityResult(new ActivityResultContract<Object, Object>() {
-                        @NonNull
-                        @Override
-                        public Intent createIntent(@NonNull Context context, Object input) {
-                            return null;
-                        }
-
-                        @Override
-                        public Object parseResult(int resultCode, @Nullable Intent intent) {
-                            return null;
-                        }
-                    }, new ActivityResultCallback<Object>() {
-                        @Override
-                        public void onActivityResult(Object result) {
-
-                        }
-                    });
-                     */
+                    contactChooserResult.launch(null);
                 }else{
                     // todo: Add contact manually
 
@@ -91,10 +134,6 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
         contactsList = emergencyContactsFragmentView.findViewById(R.id.emergency_contacts_recyclerview);
         contactsList.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        db = Room.databaseBuilder(getContext(),
-                DB.class, "database-name")
-                .fallbackToDestructiveMigration()
-                .build();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -122,13 +161,11 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
             } else {
-                ActivityCompat.requestPermissions(getActivity(),
-                        new String[]{Manifest.permission.READ_CONTACTS},
-                        0);
+                permissionResult.launch(Manifest.permission.READ_CONTACTS);
             }
         }
 
-        fragmentListener.onViewCreated(emergencyContactsFragmentView);
+        if(fragmentListener != null) fragmentListener.onViewCreated(emergencyContactsFragmentView);
         return emergencyContactsFragmentView;
     }
 
@@ -138,52 +175,6 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
         ItemTouchHelper itemTouchHelper = new
                 ItemTouchHelper(new SwipeToDeleteCallback(emergencyContactsRecyclerAdapter));
         itemTouchHelper.attachToRecyclerView(contactsList);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if(requestCode == 0){
-            if(resultCode == RESULT_OK){
-                loadContacts();
-                setupAdapter();
-            }
-        } else if (requestCode == 1) {
-            if (resultCode == RESULT_OK) {
-                Uri contactData = data.getData();
-                Cursor cursor = new CursorLoader(getActivity(), contactData, null, null, null, null).loadInBackground();
-                if (cursor.moveToFirst()) {
-                    String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
-                    //make sure id doesn't already exist in DB
-                    for(Contact contact: contacts)
-                        if(contact.id.equalsIgnoreCase(id))
-                                return;
-                    String hasPhone = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER));
-                    if (hasPhone.equalsIgnoreCase("1")) {
-                        Cursor phones = getActivity().getContentResolver().query(
-                                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                                null,
-                                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
-                                new String[]{id},
-                                null);
-                        phones.moveToFirst();
-                        String number = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
-                        String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
-                        final Contact contact = new Contact(id, name, number);
-                        if (!emergencyContactsRecyclerAdapter.contains(contact.id)) {
-                            emergencyContactsRecyclerAdapter.add(contact);
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    db.contactDao().insertAll(contact);
-                                }
-                            }).start();
-                        }
-                    }
-                }
-            }
-        }
     }
 
     public void loadContacts(){

@@ -11,7 +11,7 @@ public class AppSettings {
     public int id = 1;
     public int checkInHours, respondMinutes, fromHour, fromMinute, toHour, toMinute;
     public long nextCheckIn;
-    public boolean fallDetection, allDay, monitoringOn;
+    public boolean fallDetection, allDay, monitoringOn, checkedIn;
 
     public AppSettings(){
         checkInHours = 1;
@@ -24,5 +24,6 @@ public class AppSettings {
         allDay = false;
         monitoringOn = false;
         nextCheckIn = 0;
+        checkedIn = false;
     }
 }

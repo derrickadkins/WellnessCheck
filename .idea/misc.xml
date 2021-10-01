@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/button_rounded_corners.xml" value="0.3828125" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/ic_delete_white_36.xml" value="0.3828125" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/ic_home.xml" value="0.3828125" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/ic_mental_health_resources.xml" value="0.3828125" />
@@ -14,6 +15,7 @@
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/layout/emergency_contacts_fragment.xml" value="0.3070652173913043" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/layout/home.xml" value="0.33" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/layout/mental_health_resources_fragment.xml" value="0.3070652173913043" />
+        <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/layout/settings_activity.xml" value="0.34556159420289856" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/layout/settings_fragment.xml" value="0.36666666666666664" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/menu/menu_main.xml" value="0.36666666666666664" />
       </map>

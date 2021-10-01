@@ -3,6 +3,11 @@ package com.derrick.wellnesscheck;
 import static android.content.Intent.ACTION_DEFAULT;
 import static android.content.Intent.ACTION_DELETE;
 
+import static com.derrick.wellnesscheck.MainActivity.InitDB;
+import static com.derrick.wellnesscheck.MainActivity.db;
+import static com.derrick.wellnesscheck.MainActivity.settings;
+import static com.derrick.wellnesscheck.MainActivity.updateSettings;
+
 import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -77,11 +82,18 @@ public class MonitorReceiver extends BroadcastReceiver {
                         .setOnlyAlertOnce(true)
                         .setAutoCancel(true);
 
+                if(db == null) InitDB(context);
+                settings.checkedIn = false;
+                updateSettings();
+
                 startCheckIn();
                 break;
             case ACTION_RESPONSE:
                 Log.d(TAG, "response timer requested");
                 if (countDownTimer != null) {
+                    if(db == null) InitDB(context);
+                    settings.checkedIn = true;
+                    updateSettings();
                     countDownTimer.cancel();
                     if(checkInListener != null) checkInListener.onCheckIn();
                     notificationManagerCompat.cancel(NOTIFICATION_ID);

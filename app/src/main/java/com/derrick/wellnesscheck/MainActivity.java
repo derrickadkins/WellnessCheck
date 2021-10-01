@@ -26,9 +26,9 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     BottomNavigationView bottomNavigationView;
     public static DB db;
     public static AppSettings settings;
-    boolean dbReady = false;
+    static boolean dbReady = false;
 
-    void InitDB(Context context){
+    static void InitDB(Context context){
         new Thread(() -> {
             db = Room.databaseBuilder(context,
                     DB.class, "database-name")
@@ -41,6 +41,8 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
                 settings = new AppSettings();
                 db.settingsDao().insert(settings);
             }
+
+
             dbReady = true;
         }).start();
     }

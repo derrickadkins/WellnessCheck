@@ -80,18 +80,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             }
 
             startActivity(new Intent(getActivity(), SetupContactsActivity.class));
-
-            /*
-            //Start Monitoring
-            settings.monitoringOn = true;
-            inResponseTimer = false;
-            settings.nextCheckIn = System.currentTimeMillis() + checkInInterval;
-            //Log.d("Start Timer", "called from tvProgressBar onClickListener");
-            startTimer(checkInInterval);
-            updateSettings();
-            setTimerVisibility();
-            startMonitoring();
-            */
         });
 
         progressBar = homeFragmentView.findViewById(R.id.progressBar);
@@ -99,31 +87,37 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
         setTimerVisibility();
 
-        long now = System.currentTimeMillis();
-        long millis = settings.nextCheckIn - now;
-        if (settings.nextCheckIn == 0) settings.nextCheckIn = now + checkInInterval;
-        if (millis <= 0) {
-            while (settings.nextCheckIn <= now)
-                settings.nextCheckIn += checkInInterval;
-            updateSettings();
-            millis = settings.nextCheckIn - now;
-        }
+        if(settings.monitoringOn) {
+            long now = System.currentTimeMillis();
+            long millis = settings.nextCheckIn - now;
+            //todo: setup custom start time
+            if (settings.nextCheckIn == 0)
+                settings.nextCheckIn = now + checkInInterval;
+            if (millis <= 0) {
+                while (settings.nextCheckIn <= now)
+                    settings.nextCheckIn += checkInInterval;
+                updateSettings();
+                millis = settings.nextCheckIn - now;
+            }
 
-        inResponseTimer = settings.nextCheckIn - checkInInterval + responseInterval > now;
-        if (inResponseTimer) {
-            millis = settings.nextCheckIn - checkInInterval + responseInterval - now;
-        }
+            if(!settings.checkedIn) {
+                inResponseTimer = settings.nextCheckIn - checkInInterval + responseInterval > now;
+                if (inResponseTimer) {
+                    millis = settings.nextCheckIn - checkInInterval + responseInterval - now;
+                }
+            }
 
-        progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
-        tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
+            progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
+            tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
 
-        if(settings.monitoringOn && timer == null) {
+            if (timer == null) {
             /*Log.d("Start Timer", "called from onCreateView"
                     + ", inResponseTimer = " + inResponseTimer
                     + ", millis = " + millis
                     + ", settings.nextCheckIn = " + settings.nextCheckIn
                     + ", now = " + now);*/
-            startTimer(millis);
+                startTimer(millis);
+            }
         }
 
         return homeFragmentView;
@@ -183,34 +177,11 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         tvTimerLabel.setVisibility(visibility);
 
         if(!settings.monitoringOn)
-            tvProgressBar.setText("Setup Monitoring");
-    }
-
-    void startMonitoring(){
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(MonitorReceiver.ACTION_ALARM);
-        intentFilter.addAction(MonitorReceiver.ACTION_RESPONSE);
-        intentFilter.addAction(Intent.ACTION_DELETE);
-        getActivity().registerReceiver(monitorReceiver, intentFilter);
-
-        AlarmManager alarmManager = (AlarmManager) getActivity().getSystemService(Service.ALARM_SERVICE);
-        //Log.d(TAG, "triggering first alarm in " + (settings.nextCheckIn - System.currentTimeMillis()) + " millis");
-        PendingIntent pendingNotifyIntent;
-        Intent intent = new Intent(getActivity(), MonitorReceiver.class).setAction(MonitorReceiver.ACTION_ALARM)
-                .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
-                .putExtra(MonitorReceiver.EXTRA_INTERVAL1, checkInInterval)
-                .putExtra(MonitorReceiver.EXTRA_INTERVAL2, responseInterval);
-        pendingNotifyIntent = PendingIntent.getBroadcast(getActivity(), 0,
-                intent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(settings.nextCheckIn, pendingNotifyIntent), pendingNotifyIntent);
+            tvProgressBar.setText("Tap Here to Start Monitoring");
     }
 
     void stopMonitoring(){
         getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(Intent.ACTION_DELETE));
-/*        if(monitorReceiver != null) {
-            try{getActivity().unregisterReceiver(monitorReceiver);}catch (Exception ex){}
-        }*/
     }
 
     @Override
