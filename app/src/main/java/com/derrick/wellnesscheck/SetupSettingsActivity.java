@@ -1,37 +1,52 @@
 package com.derrick.wellnesscheck;
 
-import static com.derrick.wellnesscheck.MainActivity.db;
 import static com.derrick.wellnesscheck.MainActivity.settings;
+import static com.derrick.wellnesscheck.MainActivity.updateSettings;
 
 import android.app.TimePickerDialog;
+import android.content.Intent;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.NumberPicker;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+import androidx.appcompat.app.AppCompatActivity;
 
-public class SettingsFragment extends Fragment{
+public class SetupSettingsActivity extends AppCompatActivity {
     NumberPicker checkInHours, respondMinutes;
     TextView fromTime, toTime, tvFrom, tvTo;
     Switch allDay, fallDetection;
+    Button finishSetup;
 
-    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View settingsFragmentView = inflater.inflate(R.layout.settings_fragment, container, false);
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-        tvFrom = (TextView) settingsFragmentView.findViewById(R.id.textView17);
-        tvTo = (TextView) settingsFragmentView.findViewById(R.id.textView18);
+        setContentView(R.layout.settings_activity);
 
-        checkInHours = (NumberPicker) settingsFragmentView.findViewById(R.id.numberPicker1);
+        finishSetup = findViewById(R.id.btnFinishSetup);
+        finishSetup.setVisibility(View.VISIBLE);
+        finishSetup.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                settings.monitoringOn = true;
+                settings.nextCheckIn = 0;
+                updateSettings();
+                startActivity(new Intent(SetupSettingsActivity.this, MainActivity.class)
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK));
+                SetupSettingsActivity.this.finish();
+            }
+        });
+
+        tvFrom = (TextView) findViewById(R.id.textView17);
+        tvTo = (TextView) findViewById(R.id.textView18);
+
+        checkInHours = (NumberPicker) findViewById(R.id.numberPicker1);
         checkInHours.setMinValue(1);
         checkInHours.setMaxValue(24);
         checkInHours.setValue(settings.checkInHours);
@@ -39,11 +54,11 @@ public class SettingsFragment extends Fragment{
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
                 settings.checkInHours = newVal;
-                db.settingsDao().update(settings);
+                updateSettings();
             }
         });
 
-        respondMinutes = (NumberPicker) settingsFragmentView.findViewById(R.id.numberPicker2);
+        respondMinutes = (NumberPicker) findViewById(R.id.numberPicker2);
         respondMinutes.setMinValue(1);
         respondMinutes.setMaxValue(60);
         respondMinutes.setValue(settings.respondMinutes);
@@ -51,7 +66,7 @@ public class SettingsFragment extends Fragment{
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
                 settings.respondMinutes = newVal;
-                db.settingsDao().update(settings);
+                updateSettings();
             }
         });
 
@@ -72,7 +87,7 @@ public class SettingsFragment extends Fragment{
                         hourOfDay = 0;
                         minute = 0;
                 }
-                new TimePickerDialog(getContext(),
+                new TimePickerDialog(SetupSettingsActivity.this,
                         new TimePickerDialog.OnTimeSetListener() {
                             @Override
                             public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
@@ -86,17 +101,17 @@ public class SettingsFragment extends Fragment{
                                         settings.toHour = hourOfDay;
                                         settings.toMinute = minute;
                                 }
-                                db.settingsDao().update(settings);
+                                updateSettings();
                             }
                         }, hourOfDay, minute, true).show();
             }
         };
 
-        fromTime = (TextView) settingsFragmentView.findViewById(R.id.textView19);
+        fromTime = (TextView) findViewById(R.id.textView19);
         fromTime.setOnClickListener(onTimeClickListener);
         fromTime.setText(settings.fromHour + ":" + settings.fromMinute);
 
-        toTime = (TextView) settingsFragmentView.findViewById(R.id.textView20);
+        toTime = (TextView) findViewById(R.id.textView20);
         toTime.setOnClickListener(onTimeClickListener);
         toTime.setText(settings.toHour + ":" + settings.toMinute);
 
@@ -120,17 +135,15 @@ public class SettingsFragment extends Fragment{
                         break;
                 }
 
-                db.settingsDao().update(settings);
+                updateSettings();
             }
         };
 
-        allDay = (Switch) settingsFragmentView.findViewById(R.id.switch2);
+        allDay = (Switch) findViewById(R.id.switch2);
         allDay.setChecked(settings.allDay);
         allDay.setOnCheckedChangeListener(checkedChangeListener);
 
-        fallDetection = (Switch) settingsFragmentView.findViewById(R.id.switch1);
+        fallDetection = (Switch) findViewById(R.id.switch1);
         fallDetection.setChecked(settings.fallDetection);
-
-        return settingsFragmentView;
     }
 }

@@ -1,6 +1,7 @@
 package com.derrick.wellnesscheck;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -19,7 +20,6 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     HomeFragment homeFragment = new HomeFragment();
     EmergencyContactsFragment emergencyContactsFragment = new EmergencyContactsFragment();
     MentalHealthResourcesFragment mentalHealthResourcesFragment = new MentalHealthResourcesFragment();
-    SettingsFragment settingsFragment = new SettingsFragment();
     FragmentManager fragmentManager = getSupportFragmentManager();
     ArrayList<Fragment> fragments = new ArrayList<>();
     int currentFragmentIndex = 0;
@@ -27,7 +27,6 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     public static DB db;
     public static AppSettings settings;
     boolean dbReady = false;
-    public static final String UPDATE_TIMER_INTENT = "update_timer";
 
     void InitDB(Context context){
         new Thread(() -> {
@@ -62,7 +61,6 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
         fragments.add(homeFragment);
         fragments.add(emergencyContactsFragment);
         fragments.add(mentalHealthResourcesFragment);
-        fragments.add(settingsFragment);
 
         bottomNavigationView = (BottomNavigationView) findViewById(R.id.nav);
         bottomNavigationView.setOnItemSelectedListener(this);

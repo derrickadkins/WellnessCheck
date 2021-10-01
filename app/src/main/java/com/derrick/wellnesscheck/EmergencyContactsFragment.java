@@ -12,6 +12,7 @@ import android.provider.ContactsContract;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.contract.ActivityResultContract;
@@ -40,6 +41,10 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
     RecyclerView contactsList;
     DB db;
     ArrayList<Contact> contacts;
+    FragmentListener fragmentListener;
+
+    EmergencyContactsFragment(){super();}
+    EmergencyContactsFragment(FragmentListener fragmentListener){super(); this.fragmentListener = fragmentListener;}
 
     @Nullable
     @Override
@@ -123,6 +128,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
             }
         }
 
+        fragmentListener.onViewCreated(emergencyContactsFragmentView);
         return emergencyContactsFragmentView;
     }
 
@@ -249,5 +255,9 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                 db.contactDao().insertAll(contact);
             }
         }).start();
+    }
+
+    public interface FragmentListener{
+        void onViewCreated(View v);
     }
 }

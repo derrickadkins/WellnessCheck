@@ -41,8 +41,8 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         responseInterval = (long) settings.respondMinutes * 60 * 1000;
 
         //for testing only
-        checkInInterval = 10 * 1000;
-        responseInterval = 5 * 1000;
+        //checkInInterval = 10 * 1000;
+        //responseInterval = 5 * 1000;
     }
 
     @Nullable
@@ -56,9 +56,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         if(progressBar != null)
             Log.d("HomeFragment", "progressMax = " + progressBar.getMax());
 */
-        homeFragmentView.findViewById(R.id.btnStartService).setOnClickListener(v -> startService());
-
-        homeFragmentView.findViewById(R.id.btnStopService).setOnClickListener(v -> stopService());
 
         btnTurnOff = homeFragmentView.findViewById(R.id.btnTurnOff);
         btnTurnOff.setOnClickListener(v -> {
@@ -69,7 +66,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             }
             updateSettings();
             setTimerVisibility();
-            stopService();
+            stopMonitoring();
         });
 
         tvProgressBar = homeFragmentView.findViewById(R.id.progressBarText);
@@ -82,15 +79,19 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 return;
             }
 
+            startActivity(new Intent(getActivity(), SetupContactsActivity.class));
+
+            /*
             //Start Monitoring
             settings.monitoringOn = true;
             inResponseTimer = false;
             settings.nextCheckIn = System.currentTimeMillis() + checkInInterval;
-//                Log.d("Start Timer", "called from tvProgressBar onClickListener");
+            //Log.d("Start Timer", "called from tvProgressBar onClickListener");
             startTimer(checkInInterval);
             updateSettings();
             setTimerVisibility();
-            startService();
+            startMonitoring();
+            */
         });
 
         progressBar = homeFragmentView.findViewById(R.id.progressBar);
@@ -185,7 +186,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             tvProgressBar.setText("Setup Monitoring");
     }
 
-    void startService(){
+    void startMonitoring(){
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(MonitorReceiver.ACTION_ALARM);
         intentFilter.addAction(MonitorReceiver.ACTION_RESPONSE);
@@ -205,7 +206,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(settings.nextCheckIn, pendingNotifyIntent), pendingNotifyIntent);
     }
 
-    void stopService(){
+    void stopMonitoring(){
         getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(Intent.ACTION_DELETE));
 /*        if(monitorReceiver != null) {
             try{getActivity().unregisterReceiver(monitorReceiver);}catch (Exception ex){}
