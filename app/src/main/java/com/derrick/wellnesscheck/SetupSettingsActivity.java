@@ -8,7 +8,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.app.TimePickerDialog;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -16,14 +15,14 @@ import android.widget.CompoundButton;
 import android.widget.NumberPicker;
 import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.TimePicker;
-
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.Calendar;
+
 public class SetupSettingsActivity extends AppCompatActivity {
     NumberPicker checkInHours, respondMinutes;
-    TextView fromTime, toTime, tvFrom, tvTo;
+    TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck;
     Switch allDay, fallDetection;
     Button finishSetup;
     final int HOUR_IN_MILLIS = 60 * 60 * 1000;
@@ -137,6 +136,9 @@ public class SetupSettingsActivity extends AppCompatActivity {
         toTime.setText(String.format("%02d:%02d", settings.toHour, settings.toMinute));
         toTime.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
 
+        tvFirstCheck = findViewById(R.id.tvFirstCheck);
+        tvFirstCheck.setText("First wellness check will be at ");
+
         fallDetection = findViewById(R.id.switch1);
         fallDetection.setChecked(settings.fallDetection);
     }
@@ -148,12 +150,71 @@ public class SetupSettingsActivity extends AppCompatActivity {
         Intent intent = new Intent(this, MonitorReceiver.class).setAction(MonitorReceiver.ACTION_ALARM)
                 .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
                 .putExtra(MonitorReceiver.EXTRA_INTERVAL1, settings.checkInHours * HOUR_IN_MILLIS)
-                .putExtra(MonitorReceiver.EXTRA_INTERVAL2, settings.respondMinutes * MINUTE_IN_MILLIS);
+                .putExtra(MonitorReceiver.EXTRA_INTERVAL2, settings.respondMinutes * MINUTE_IN_MILLIS)
+                .putExtra(MonitorReceiver.EXTRA_FROM_HOUR, settings.fromHour)
+                .putExtra(MonitorReceiver.EXTRA_FROM_MINUTE, settings.fromMinute)
+                .putExtra(MonitorReceiver.EXTRA_TO_HOUR, settings.toHour)
+                .putExtra(MonitorReceiver.EXTRA_TO_MINUTE, settings.toMinute);
         pendingNotifyIntent = PendingIntent.getBroadcast(this, 0,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        //todo: set custom start time
-        alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(
-                System.currentTimeMillis() + settings.checkInHours * HOUR_IN_MILLIS,
+
+        alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(getFirstCheckIn(),
                 pendingNotifyIntent), pendingNotifyIntent);
+    }
+
+    private long getFirstCheckIn(){
+        final long DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
+        final int INTERVAL = settings.checkInHours * HOUR_IN_MILLIS;
+
+        //used to get excluded time boundaries
+        Calendar calendar = Calendar.getInstance();
+        final long now = calendar.getTimeInMillis();
+
+        //get to time
+        calendar.set(Calendar.HOUR_OF_DAY, settings.toHour);
+        calendar.set(Calendar.MINUTE, settings.toMinute);
+        long endOfDay = calendar.getTimeInMillis();
+
+        //get first check as from time
+        calendar.set(Calendar.HOUR_OF_DAY, settings.fromHour);
+        calendar.set(Calendar.MINUTE, settings.fromMinute);
+        long firstCheckIn = calendar.getTimeInMillis();
+
+        //use next start if after end and previous start if between
+
+
+        /*
+        set first to one interval after midnight if all day
+        because midnight will always be behind now. if not
+        all day, set it to the start
+         */
+        if(settings.allDay){
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            firstCheckIn = calendar.getTimeInMillis() + INTERVAL;
+        }else if(firstCheckIn < endOfDay && now > endOfDay){
+            firstCheckIn += DAY_IN_MILLIS;
+        }else if(firstCheckIn > endOfDay && now < endOfDay){
+            firstCheckIn -= DAY_IN_MILLIS;
+        }
+
+        //reminder: INTERVAL <= 24
+        while(firstCheckIn < now)
+            firstCheckIn += INTERVAL;
+
+        //if all day and first check in is after midnight, set it to midnight
+        if(settings.allDay){
+            /*
+            add one minute from midnight because day of month or
+            year might be the last one, so adding a minute is easier
+             */
+            calendar.set(Calendar.HOUR_OF_DAY, 23);
+            calendar.set(Calendar.MINUTE, 59);
+            calendar.add(Calendar.MINUTE, 1);
+            long midnight = calendar.getTimeInMillis();
+            if(firstCheckIn > midnight) firstCheckIn = midnight;
+        }
+
+        return firstCheckIn;
     }
 }

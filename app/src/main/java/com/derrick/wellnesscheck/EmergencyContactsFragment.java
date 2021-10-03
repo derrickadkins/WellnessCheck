@@ -125,9 +125,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                     contactChooserResult.launch(null);
                 }else{
                     // todo: Add contact manually
-
                 }
-
             }
         });
 
