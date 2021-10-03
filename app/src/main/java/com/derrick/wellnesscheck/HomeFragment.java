@@ -23,9 +23,11 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 
+import java.util.Calendar;
+
 public class HomeFragment extends Fragment implements MonitorReceiver.CheckInListener {
     CircularProgressIndicator progressBar;
-    TextView tvProgressBar, tvTimerLabel;
+    TextView tvProgressBar, tvTimerLabel, tvNextCheckIn;
     Button btnTurnOff;
     CountDownTimer timer;
     long checkInInterval, responseInterval;
@@ -84,15 +86,15 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
         progressBar = homeFragmentView.findViewById(R.id.progressBar);
         tvTimerLabel = homeFragmentView.findViewById(R.id.tvTimerType);
+        tvNextCheckIn = homeFragmentView.findViewById(R.id.tvNextCheckIn);
 
         setTimerVisibility();
 
         if(settings.monitoringOn) {
             long now = System.currentTimeMillis();
-            long millis = settings.nextCheckIn - now;
-            //todo: setup custom start time
             if (settings.nextCheckIn == 0)
-                settings.nextCheckIn = now + checkInInterval;
+                settings.nextCheckIn = settings.firstCheckIn;
+            long millis = settings.nextCheckIn - now;
             if (millis <= 0) {
                 while (settings.nextCheckIn <= now)
                     settings.nextCheckIn += checkInInterval;
@@ -139,6 +141,9 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 + ", responseInterval = " + responseInterval
                 + ", checkInInterval = " + checkInInterval
                 + ", ms = " + ms);*/
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis() + ms);
+        tvNextCheckIn.setText("at " + String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)));
         tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
         progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
         timer = new CountDownTimer(ms, 10) {
@@ -175,6 +180,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         progressBar.setVisibility(visibility);
         btnTurnOff.setVisibility(visibility);
         tvTimerLabel.setVisibility(visibility);
+        tvNextCheckIn.setVisibility(visibility);
 
         if(!settings.monitoringOn)
             tvProgressBar.setText("Tap Here to Start Monitoring");

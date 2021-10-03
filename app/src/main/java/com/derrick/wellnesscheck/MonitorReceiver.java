@@ -33,6 +33,7 @@ public class MonitorReceiver extends BroadcastReceiver {
     public static final String ACTION_ALARM = "com.derrick.wellnesscheck.ALARM_TRIGGERED";
     public static final String EXTRA_INTERVAL1 = "mainInterval";
     public static final String EXTRA_INTERVAL2 = "responseInterval";
+    public static final String EXTRA_ALL_DAY = "allDay";
     public static final String EXTRA_FROM_HOUR = "fromHour";
     public static final String EXTRA_FROM_MINUTE = "fromMinute";
     public static final String EXTRA_TO_HOUR = "toHour";
@@ -40,6 +41,7 @@ public class MonitorReceiver extends BroadcastReceiver {
     static CountDownTimer countDownTimer;
     long mainInterval, responseInterval;
     int fromHour, fromMinute, toHour, toMinute;
+    boolean allDay;
     NotificationCompat.Builder builder;
     NotificationManagerCompat notificationManagerCompat;
     AlarmManager alarmManager;
@@ -58,6 +60,7 @@ public class MonitorReceiver extends BroadcastReceiver {
             case ACTION_ALARM:
                 mainInterval = intent.getLongExtra(EXTRA_INTERVAL1, 60 * 60 * 1000);
                 responseInterval = intent.getLongExtra(EXTRA_INTERVAL2, 60 * 1000);
+                allDay = intent.getBooleanExtra(EXTRA_ALL_DAY, false);
                 fromHour = intent.getIntExtra(EXTRA_FROM_HOUR, 8);
                 fromMinute = intent.getIntExtra(EXTRA_FROM_MINUTE, 0);
                 toHour = intent.getIntExtra(EXTRA_TO_HOUR, 20);
@@ -200,7 +203,9 @@ public class MonitorReceiver extends BroadcastReceiver {
         long midnight = calendar.getTimeInMillis();
 
         //put excluded time boundaries on either side of next check-in
-        if(startOfDay < endOfDay) {
+        if(allDay && nextCheckIn > midnight){
+            nextCheckIn = midnight;
+        }else if(startOfDay < endOfDay) {
             if(nextCheckIn > endOfDay)
                 startOfDay += DAY_IN_MILLIS;
             else if(nextCheckIn < startOfDay)
@@ -210,8 +215,6 @@ public class MonitorReceiver extends BroadcastReceiver {
                 endOfDay += DAY_IN_MILLIS;
             else if(nextCheckIn < endOfDay)
                 startOfDay -= DAY_IN_MILLIS;
-        }else if(nextCheckIn > midnight){
-            nextCheckIn = midnight;
         }
 
         //return default if all day or not in excluded time, otherwise return next start time

@@ -10,7 +10,7 @@ public class AppSettings {
     @PrimaryKey
     public int id = 1;
     public int checkInHours, respondMinutes, fromHour, fromMinute, toHour, toMinute;
-    public long nextCheckIn;
+    public long firstCheckIn, nextCheckIn;
     public boolean fallDetection, allDay, monitoringOn, checkedIn;
 
     public AppSettings(){
@@ -23,6 +23,7 @@ public class AppSettings {
         fallDetection = false;
         allDay = false;
         monitoringOn = false;
+        firstCheckIn = 0;
         nextCheckIn = 0;
         checkedIn = false;
     }

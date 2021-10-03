@@ -15,6 +15,8 @@ import android.widget.CompoundButton;
 import android.widget.NumberPicker;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.TimePicker;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -44,6 +46,7 @@ public class SetupSettingsActivity extends AppCompatActivity {
             settings.monitoringOn = true;
             settings.nextCheckIn = 0;
             settings.checkedIn = true;
+            settings.firstCheckIn = getFirstCheckIn();
             updateSettings();
             startMonitoring();
             startActivity(new Intent(SetupSettingsActivity.this, MainActivity.class)
@@ -51,7 +54,7 @@ public class SetupSettingsActivity extends AppCompatActivity {
             SetupSettingsActivity.this.finish();
         });
 
-        checkInHours = (NumberPicker) findViewById(R.id.numberPicker1);
+        checkInHours = (NumberPicker) findViewById(R.id.numberPickerHours);
         checkInHours.setMinValue(1);
         checkInHours.setMaxValue(24);
         checkInHours.setValue(settings.checkInHours);
@@ -61,7 +64,7 @@ public class SetupSettingsActivity extends AppCompatActivity {
             setFirstCheckText();
         });
 
-        respondMinutes = (NumberPicker) findViewById(R.id.numberPicker2);
+        respondMinutes = (NumberPicker) findViewById(R.id.numberPickerMinutes);
         respondMinutes.setMinValue(1);
         respondMinutes.setMaxValue(60);
         respondMinutes.setValue(settings.respondMinutes);
@@ -73,11 +76,11 @@ public class SetupSettingsActivity extends AppCompatActivity {
         View.OnClickListener onTimeClickListener = v -> {
             int hourOfDay, minute;
             switch (v.getId()){
-                case R.id.textView19:
+                case R.id.tvFromTime:
                     hourOfDay = settings.fromHour;
                     minute = settings.fromMinute;
                     break;
-                case R.id.textView20:
+                case R.id.tvToTime:
                     hourOfDay = settings.toHour;
                     minute = settings.toMinute;
                     break;
@@ -85,60 +88,63 @@ public class SetupSettingsActivity extends AppCompatActivity {
                     hourOfDay = 0;
                     minute = 0;
             }
-            new TimePickerDialog(SetupSettingsActivity.this,
+            new TimePickerDialog(SetupSettingsActivity.this, android.R.style.Theme_DeviceDefault_Dialog,
                     (view, hourOfDay1, minute1) -> {
-                        ((TextView)v).setText(hourOfDay1 + ":" + minute1);
-                        switch (view.getId()){
-                            case R.id.textView19:
+                        ((TextView) v).setText(String.format("%02d:%02d", hourOfDay1, minute1));
+                        switch (v.getId()) {
+                            case R.id.tvFromTime:
                                 settings.fromHour = hourOfDay1;
                                 settings.fromMinute = minute1;
                                 break;
-                            case R.id.textView20:
+                            case R.id.tvToTime:
                                 settings.toHour = hourOfDay1;
                                 settings.toMinute = minute1;
                         }
-                        updateSettings();
+                        checkInterval();
                         setFirstCheckText();
+                        updateSettings();
                     }, hourOfDay, minute, true).show();
         };
 
         CompoundButton.OnCheckedChangeListener checkedChangeListener = (buttonView, isChecked) -> {
-            switch (buttonView.getId()){
-                case R.id.switch1:
+            switch (buttonView.getId()) {
+                case R.id.switchFallDetection:
                     settings.fallDetection = isChecked;
                     break;
-                case R.id.switch2:
+                case R.id.switchAllDay:
                     settings.allDay = isChecked;
                     int visibility = View.VISIBLE;
-                    if(isChecked){
+                    if (isChecked) {
                         visibility = View.GONE;
                     }
                     tvFrom.setVisibility(visibility);
                     fromTime.setVisibility(visibility);
                     tvTo.setVisibility(visibility);
                     toTime.setVisibility(visibility);
+
+                    checkInterval();
+                    setFirstCheckText();
                     break;
             }
 
             updateSettings();
-            setFirstCheckText();
         };
 
-        allDay = findViewById(R.id.switch2);
+        allDay = findViewById(R.id.switchAllDay);
         allDay.setChecked(settings.allDay);
         allDay.setOnCheckedChangeListener(checkedChangeListener);
 
-        tvFrom = findViewById(R.id.textView17);
+        tvFrom = findViewById(R.id.tvFrom);
         tvFrom.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
-        tvTo = findViewById(R.id.textView18);
+        tvTo = findViewById(R.id.tvTo);
         tvTo.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
 
-        fromTime = findViewById(R.id.textView19);
+        fromTime = findViewById(R.id.tvFromTime);
         fromTime.setOnClickListener(onTimeClickListener);
         fromTime.setText(String.format("%02d:%02d", settings.fromHour, settings.fromMinute));
         fromTime.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
 
-        toTime = findViewById(R.id.textView20);
+        toTime = findViewById(R.id.tvToTime);
         toTime.setOnClickListener(onTimeClickListener);
         toTime.setText(String.format("%02d:%02d", settings.toHour, settings.toMinute));
         toTime.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
@@ -146,7 +152,7 @@ public class SetupSettingsActivity extends AppCompatActivity {
         tvFirstCheck = findViewById(R.id.tvFirstCheck);
         setFirstCheckText();
 
-        fallDetection = findViewById(R.id.switch1);
+        fallDetection = findViewById(R.id.switchFallDetection);
         fallDetection.setChecked(settings.fallDetection);
     }
 
@@ -156,10 +162,33 @@ public class SetupSettingsActivity extends AppCompatActivity {
         setFirstCheckText();
     }
 
+    void checkInterval(){
+        //if interval is larger than non-excluded hours, set to 24
+        if(!settings.allDay) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+            calendar.set(Calendar.HOUR_OF_DAY, settings.fromHour);
+            calendar.set(Calendar.MINUTE, settings.fromMinute);
+            long fromTime = calendar.getTimeInMillis();
+            calendar.set(Calendar.HOUR_OF_DAY, settings.toHour);
+            calendar.set(Calendar.MINUTE, settings.toMinute);
+            long toTime = calendar.getTimeInMillis();
+            long interval = settings.checkInHours * HOUR_IN_MILLIS;
+            if (fromTime < toTime) {
+                if (toTime - fromTime < interval)
+                    checkInHours.setValue(24);
+            } else if ((24 * HOUR_IN_MILLIS) - (fromTime - toTime) < interval) {
+                checkInHours.setValue(24);
+            }
+        }
+    }
+
     void setFirstCheckText(){
         long firstCheckIn = getFirstCheckIn();
         tvFirstCheck.setText("First wellness check will be at " + getFirstCheckInString(firstCheckIn));
         timer.cancel();
+        timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -179,11 +208,12 @@ public class SetupSettingsActivity extends AppCompatActivity {
                 .putExtra(MonitorReceiver.EXTRA_FROM_HOUR, settings.fromHour)
                 .putExtra(MonitorReceiver.EXTRA_FROM_MINUTE, settings.fromMinute)
                 .putExtra(MonitorReceiver.EXTRA_TO_HOUR, settings.toHour)
-                .putExtra(MonitorReceiver.EXTRA_TO_MINUTE, settings.toMinute);
+                .putExtra(MonitorReceiver.EXTRA_TO_MINUTE, settings.toMinute)
+                .putExtra(MonitorReceiver.EXTRA_ALL_DAY, settings.allDay);
         pendingNotifyIntent = PendingIntent.getBroadcast(this, 0,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(getFirstCheckIn(),
+        alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(settings.firstCheckIn,
                 pendingNotifyIntent), pendingNotifyIntent);
     }
 
@@ -204,7 +234,7 @@ public class SetupSettingsActivity extends AppCompatActivity {
         Calendar calendar = Calendar.getInstance();
         boolean isTomorrow = firstCheckIn > getMidnight(calendar);
         calendar.setTimeInMillis(firstCheckIn);
-        String time = calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE);
+        String time = String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
         if(isTomorrow) time += " tomorrow";
         return time;
     }
@@ -228,13 +258,14 @@ public class SetupSettingsActivity extends AppCompatActivity {
         //get first check as from time
         calendar.set(Calendar.HOUR_OF_DAY, settings.fromHour);
         calendar.set(Calendar.MINUTE, settings.fromMinute);
-        long firstCheckIn = calendar.getTimeInMillis();
+        long startOfDay = calendar.getTimeInMillis();
 
         /*
         set first to one interval after midnight if all day
         because midnight will always be behind now. if not
         all day, set it to the start
          */
+        long firstCheckIn = startOfDay;
         if(settings.allDay){
             calendar.set(Calendar.HOUR_OF_DAY, 0);
             calendar.set(Calendar.MINUTE, 0);
@@ -253,6 +284,10 @@ public class SetupSettingsActivity extends AppCompatActivity {
         if(settings.allDay){
             long midnight = getMidnight(calendar);
             if(firstCheckIn > midnight) firstCheckIn = midnight;
+        }
+        //if after end of day push to next start
+        else if (firstCheckIn > endOfDay) {
+            firstCheckIn = startOfDay + DAY_IN_MILLIS;
         }
 
         return firstCheckIn;
