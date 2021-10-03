@@ -12,6 +12,7 @@ import android.provider.ContactsContract;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -42,6 +43,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
     RecyclerView contactsList;
     ArrayList<Contact> contacts;
     FragmentListener fragmentListener;
+
     ActivityResultLauncher<String> permissionResult = registerForActivityResult(new ActivityResultContracts.RequestPermission(),
             new ActivityResultCallback<Boolean>() {
                 @Override
@@ -89,6 +91,10 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                         final Contact contact = new Contact(id, name, number);
                         if (!emergencyContactsRecyclerAdapter.contains(contact.id)) {
                             emergencyContactsRecyclerAdapter.add(contact);
+                            if(fragmentListener != null){
+                                fragmentListener.onTryAddContact(number);
+                                fragmentListener.onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
+                            }
                             new Thread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -168,6 +174,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
     }
 
     public void setupAdapter() {
+        if(fragmentListener != null) fragmentListener.onContactListSizeChange(contacts.size());
         emergencyContactsRecyclerAdapter = new EmergencyContactsRecyclerAdapter(getContext(), contacts, this);
         contactsList.setAdapter(emergencyContactsRecyclerAdapter);
         ItemTouchHelper itemTouchHelper = new
@@ -228,6 +235,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
 
     @Override
     public void onDeleteContact(Contact contact) {
+        if(fragmentListener != null) fragmentListener.onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -238,6 +246,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
 
     @Override
     public void onUndoDeleteContact(Contact contact) {
+        if(fragmentListener != null) fragmentListener.onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -248,5 +257,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
 
     public interface FragmentListener{
         void onViewCreated(View v);
+        void onContactListSizeChange(int size);
+        void onTryAddContact(String destinationAddress);
     }
 }
