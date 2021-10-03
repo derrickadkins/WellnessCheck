@@ -171,10 +171,12 @@ public class MonitorReceiver extends BroadcastReceiver {
 
         //used to get excluded time boundaries
         Calendar calendar = Calendar.getInstance();
+        //clear for precision
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
 
         //start with default and change if in excluded hours
-        calendar.add(Calendar.MILLISECOND, (int)mainInterval);
-        long nextCheckIn = calendar.getTimeInMillis();
+        long nextCheckIn = calendar.getTimeInMillis() + mainInterval;
 
         //get from time
         calendar.set(Calendar.HOUR_OF_DAY, fromHour);
@@ -192,7 +194,9 @@ public class MonitorReceiver extends BroadcastReceiver {
          */
         calendar.set(Calendar.HOUR_OF_DAY, 23);
         calendar.set(Calendar.MINUTE, 59);
-        calendar.add(Calendar.MINUTE, 1);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 0);
+        calendar.add(Calendar.SECOND, 1);
         long midnight = calendar.getTimeInMillis();
 
         //put excluded time boundaries on either side of next check-in

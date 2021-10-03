@@ -19,12 +19,16 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Calendar;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class SetupSettingsActivity extends AppCompatActivity {
     NumberPicker checkInHours, respondMinutes;
     TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck;
     Switch allDay, fallDetection;
     Button finishSetup;
+    Timer timer = new Timer();
     final int HOUR_IN_MILLIS = 60 * 60 * 1000;
     final int MINUTE_IN_MILLIS = 60 * 1000;
 
@@ -54,6 +58,7 @@ public class SetupSettingsActivity extends AppCompatActivity {
         checkInHours.setOnValueChangedListener((picker, oldVal, newVal) -> {
             settings.checkInHours = newVal;
             updateSettings();
+            setFirstCheckText();
         });
 
         respondMinutes = (NumberPicker) findViewById(R.id.numberPicker2);
@@ -93,6 +98,7 @@ public class SetupSettingsActivity extends AppCompatActivity {
                                 settings.toMinute = minute1;
                         }
                         updateSettings();
+                        setFirstCheckText();
                     }, hourOfDay, minute, true).show();
         };
 
@@ -115,6 +121,7 @@ public class SetupSettingsActivity extends AppCompatActivity {
             }
 
             updateSettings();
+            setFirstCheckText();
         };
 
         allDay = findViewById(R.id.switch2);
@@ -137,10 +144,28 @@ public class SetupSettingsActivity extends AppCompatActivity {
         toTime.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
 
         tvFirstCheck = findViewById(R.id.tvFirstCheck);
-        tvFirstCheck.setText("First wellness check will be at ");
+        setFirstCheckText();
 
         fallDetection = findViewById(R.id.switch1);
         fallDetection.setChecked(settings.fallDetection);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setFirstCheckText();
+    }
+
+    void setFirstCheckText(){
+        long firstCheckIn = getFirstCheckIn();
+        tvFirstCheck.setText("First wellness check will be at " + getFirstCheckInString(firstCheckIn));
+        timer.cancel();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                timer.schedule(this, new Date(getFirstCheckIn()));
+            }
+        }, new Date(firstCheckIn));
     }
 
     void startMonitoring(){
@@ -162,6 +187,28 @@ public class SetupSettingsActivity extends AppCompatActivity {
                 pendingNotifyIntent), pendingNotifyIntent);
     }
 
+    private long getMidnight(Calendar calendar){
+        /*
+        add one second from midnight because day of month or
+        year might be the last one, so adding a second is easier
+         */
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 0);
+        calendar.add(Calendar.SECOND, 1);
+        return calendar.getTimeInMillis();
+    }
+
+    private String getFirstCheckInString(long firstCheckIn){
+        Calendar calendar = Calendar.getInstance();
+        boolean isTomorrow = firstCheckIn > getMidnight(calendar);
+        calendar.setTimeInMillis(firstCheckIn);
+        String time = calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE);
+        if(isTomorrow) time += " tomorrow";
+        return time;
+    }
+
     private long getFirstCheckIn(){
         final long DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
         final int INTERVAL = settings.checkInHours * HOUR_IN_MILLIS;
@@ -169,6 +216,9 @@ public class SetupSettingsActivity extends AppCompatActivity {
         //used to get excluded time boundaries
         Calendar calendar = Calendar.getInstance();
         final long now = calendar.getTimeInMillis();
+        //clear for precision
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
 
         //get to time
         calendar.set(Calendar.HOUR_OF_DAY, settings.toHour);
@@ -179,9 +229,6 @@ public class SetupSettingsActivity extends AppCompatActivity {
         calendar.set(Calendar.HOUR_OF_DAY, settings.fromHour);
         calendar.set(Calendar.MINUTE, settings.fromMinute);
         long firstCheckIn = calendar.getTimeInMillis();
-
-        //use next start if after end and previous start if between
-
 
         /*
         set first to one interval after midnight if all day
@@ -204,14 +251,7 @@ public class SetupSettingsActivity extends AppCompatActivity {
 
         //if all day and first check in is after midnight, set it to midnight
         if(settings.allDay){
-            /*
-            add one minute from midnight because day of month or
-            year might be the last one, so adding a minute is easier
-             */
-            calendar.set(Calendar.HOUR_OF_DAY, 23);
-            calendar.set(Calendar.MINUTE, 59);
-            calendar.add(Calendar.MINUTE, 1);
-            long midnight = calendar.getTimeInMillis();
+            long midnight = getMidnight(calendar);
             if(firstCheckIn > midnight) firstCheckIn = midnight;
         }
 
