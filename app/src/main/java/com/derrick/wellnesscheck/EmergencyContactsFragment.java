@@ -90,17 +90,9 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                         String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
                         final Contact contact = new Contact(id, name, number);
                         if (!emergencyContactsRecyclerAdapter.contains(contact.id)) {
-                            emergencyContactsRecyclerAdapter.add(contact);
                             if(fragmentListener != null){
-                                fragmentListener.onTryAddContact(number);
-                                fragmentListener.onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
+                                fragmentListener.onTryAddContact(contact);
                             }
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    db.contactDao().insertAll(contact);
-                                }
-                            }).start();
                         }
                     }
                 }
@@ -233,6 +225,17 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
         }
     }
 
+    public void addContact(Contact contact){
+        emergencyContactsRecyclerAdapter.add(contact);
+        fragmentListener.onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                db.contactDao().insertAll(contact);
+            }
+        }).start();
+    }
+
     @Override
     public void onDeleteContact(Contact contact) {
         if(fragmentListener != null) fragmentListener.onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
@@ -258,6 +261,6 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
     public interface FragmentListener{
         void onViewCreated(View v);
         void onContactListSizeChange(int size);
-        void onTryAddContact(String destinationAddress);
+        void onTryAddContact(Contact contact);
     }
 }

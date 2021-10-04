@@ -5,4 +5,7 @@
     <string name="progress_label_response">Tap to Check In</string>
     <string name="channel_name">MonitoringService</string>
     <string name="channel_description">Alerts the user to perform wellness check</string>
+    <string name="contact_request">
+        Will you be my Emergency Contact? Reply with Yes or No
+    </string>
 </resources>
