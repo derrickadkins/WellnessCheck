@@ -1,7 +1,6 @@
 package com.derrick.wellnesscheck;
 
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -26,6 +25,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     BottomNavigationView bottomNavigationView;
     public static DB db;
     public static AppSettings settings;
+    public static ArrayList<Contact> contacts;
     static boolean dbReady = false;
 
     static void InitDB(Context context){

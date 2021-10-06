@@ -1,18 +1,23 @@
 package com.derrick.wellnesscheck;
 
 import android.Manifest;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.Telephony;
+import android.telephony.SmsManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ProgressBar;
 
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -20,6 +25,7 @@ import androidx.activity.result.contract.ActivityResultContract;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -33,18 +39,26 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static android.app.Activity.RESULT_OK;
 import static com.derrick.wellnesscheck.MainActivity.db;
+import static com.derrick.wellnesscheck.MainActivity.contacts;
+import static com.derrick.wellnesscheck.MainActivity.settings;
 
-public class EmergencyContactsFragment extends Fragment implements OnContactDeleteListener{
+public class EmergencyContactsFragment extends Fragment implements OnContactDeleteListener, SmsBroadcastManager.SmsListener {
     FloatingActionButton fab;
     EmergencyContactsRecyclerAdapter emergencyContactsRecyclerAdapter;
     RecyclerView contactsList;
-    ArrayList<Contact> contacts;
-    FragmentListener fragmentListener;
+    Button setupNext;
+    SmsBroadcastManager smsBroadcastManager;
+    AlertDialog alertDialog;
+    Contact contact;
+    int smsPartsUnsent;
 
-    ActivityResultLauncher<String> permissionResult = registerForActivityResult(new ActivityResultContracts.RequestPermission(),
+    ActivityResultLauncher<String> contactPermissionsResult = registerForActivityResult(new ActivityResultContracts.RequestPermission(),
             new ActivityResultCallback<Boolean>() {
                 @Override
                 public void onActivityResult(Boolean result) {
@@ -54,6 +68,16 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                     } else {
                         //Log.e(TAG, "onActivityResult: PERMISSION DENIED");
                     }
+                }
+            });
+
+    ActivityResultLauncher<String[]> smsPermissionsResult = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
+            new ActivityResultCallback<Map<String, Boolean>>() {
+                @Override
+                public void onActivityResult(Map<String, Boolean> result) {
+                    for(String permission : result.keySet())
+                        if(!result.get(permission))return;
+                    onTryAddContact(contact);
                 }
             });
 
@@ -88,12 +112,9 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                         phones.moveToFirst();
                         String number = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
                         String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
-                        final Contact contact = new Contact(id, name, number);
-                        if (!emergencyContactsRecyclerAdapter.contains(contact.id)) {
-                            if(fragmentListener != null){
-                                fragmentListener.onTryAddContact(contact);
-                            }
-                        }
+                        Contact contact = new Contact(id, name, number, 0);
+                        if (!emergencyContactsRecyclerAdapter.contains(contact.id))
+                            onTryAddContact(contact);
                     }
                 }
             }
@@ -107,7 +128,6 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
     });
 
     EmergencyContactsFragment(){super();}
-    EmergencyContactsFragment(FragmentListener fragmentListener){super(); this.fragmentListener = fragmentListener;}
 
     @Nullable
     @Override
@@ -157,44 +177,56 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
             } else {
-                permissionResult.launch(Manifest.permission.READ_CONTACTS);
+                contactPermissionsResult.launch(Manifest.permission.READ_CONTACTS);
             }
         }
 
-        if(fragmentListener != null) fragmentListener.onViewCreated(emergencyContactsFragmentView);
+        setupNext = emergencyContactsFragmentView.findViewById(R.id.btnSetupNext);
+        setupNext.setVisibility(getActivity().getLocalClassName().equalsIgnoreCase("SetupContactsActivity") ? View.VISIBLE : View.GONE);
+        setupNext.setEnabled(false);
+        setupNext.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getActivity(), SetupSettingsActivity.class));
+            }
+        });
         return emergencyContactsFragmentView;
     }
 
     public void setupAdapter() {
-        if(fragmentListener != null) fragmentListener.onContactListSizeChange(contacts.size());
+        onContactListSizeChange(contacts.size());
         emergencyContactsRecyclerAdapter = new EmergencyContactsRecyclerAdapter(getContext(), contacts, this);
         contactsList.setAdapter(emergencyContactsRecyclerAdapter);
-        ItemTouchHelper itemTouchHelper = new
-                ItemTouchHelper(new SwipeToDeleteCallback(emergencyContactsRecyclerAdapter));
-        itemTouchHelper.attachToRecyclerView(contactsList);
+        if(!settings.monitoringOn || getActivity().getLocalClassName().equalsIgnoreCase("SetupContactsActivity")) {
+            ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new SwipeToDeleteCallback(emergencyContactsRecyclerAdapter));
+            itemTouchHelper.attachToRecyclerView(contactsList);
+        }
     }
 
     public void loadContacts(){
+        //create a copy to compare to for updates later
         ArrayList<Contact> dbData = new ArrayList<>(contacts);
+        //used for filtering out deleted contacts
         Hashtable<String, Contact> tempContacts = new Hashtable<>();
         for (Contact contact:dbData) {
             tempContacts.put(contact.id, contact);
         }
+        //get all contacts
         ContentResolver contentResolver = getActivity().getContentResolver();
         Cursor cursor = contentResolver.query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
         if (cursor.getCount() > 0) {
             contacts = new ArrayList<>();
             while (cursor.moveToNext()) {
-                Contact android_contact = new Contact("", "", "");
+                Contact android_contact = new Contact("", "", "", 0);
                 String contact_id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
                 android_contact.id = contact_id;
+                //if it's not already added, move on to the next one
                 if (!tempContacts.containsKey(contact_id))
                     continue;
                 String contact_display_name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
                 android_contact.name = contact_display_name;
                 int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)));
                 if (hasPhoneNumber > 0) {
-
                     Cursor phoneCursor = contentResolver.query(
                             ContactsContract.CommonDataKinds.Phone.CONTENT_URI
                             , null
@@ -207,15 +239,20 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                     }
                     phoneCursor.close();
                 }
+                //id recognized, add for comparison
                 contacts.add(android_contact);
             }
+            //check for updates in contact info
             for (int i = 0; i < dbData.size(); i++) {
                 Contact contact = dbData.get(i);
                 Contact mContact = contacts.get(i);
                 if (contact.number != mContact.number || contact.name != mContact.name)
+                    //todo: maybe re-verify contact here?
                     db.contactDao().update(mContact);
                 tempContacts.remove(contact.id);
             }
+            //delete contact if removed from phone
+            //todo: maybe delete this loop?
             if (tempContacts.size() > 0) {
                 List<Contact> tempContactsList = new ArrayList<>(tempContacts.values());
                 for (Contact contact : tempContactsList) {
@@ -227,7 +264,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
 
     public void addContact(Contact contact){
         emergencyContactsRecyclerAdapter.add(contact);
-        fragmentListener.onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
+        onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -238,7 +275,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
 
     @Override
     public void onDeleteContact(Contact contact) {
-        if(fragmentListener != null) fragmentListener.onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
+        onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -249,7 +286,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
 
     @Override
     public void onUndoDeleteContact(Contact contact) {
-        if(fragmentListener != null) fragmentListener.onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
+        onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -258,9 +295,91 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
         }).start();
     }
 
-    public interface FragmentListener{
-        void onViewCreated(View v);
-        void onContactListSizeChange(int size);
-        void onTryAddContact(Contact contact);
+    public void onContactListSizeChange(int size) {
+        setupNext.setEnabled(size > 0);
+    }
+
+    public void onTryAddContact(Contact contact) {
+        List<String> permissions = new ArrayList<>();
+        this.contact = contact;
+        if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.SEND_SMS);
+        }
+        if(ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.RECEIVE_SMS);
+        }
+        if(permissions.size() > 0){
+            if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.SEND_SMS)
+                    || ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.RECEIVE_SMS)) {
+            } else {
+                smsPermissionsResult.launch(permissions.toArray(new String[permissions.size()]));
+            }
+        }else {
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity(), 0,
+                    new Intent(getActivity(), SmsBroadcastManager.class)
+                            .setAction(SmsBroadcastManager.ACTION_SEND_SMS_RESULT),
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+            SmsManager smsManager = getActivity().getSystemService(SmsManager.class);
+            if(smsManager == null) smsManager = SmsManager.getDefault();
+            ArrayList<String> parts = smsManager.divideMessage(getString(R.string.contact_request));
+            ArrayList<PendingIntent> pendingIntents = new ArrayList<>();
+            for(int i = 0; i < parts.size(); i++) pendingIntents.add(pendingIntent);
+            smsPartsUnsent = parts.size();
+
+            smsBroadcastManager = new SmsBroadcastManager(this);
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.addAction(Telephony.Sms.Intents.SMS_RECEIVED_ACTION);
+            intentFilter.addAction(Telephony.Sms.Intents.SMS_DELIVER_ACTION);
+            intentFilter.addAction(Telephony.Sms.Intents.DATA_SMS_RECEIVED_ACTION);
+            getActivity().registerReceiver(smsBroadcastManager, intentFilter);
+
+            smsManager.sendMultipartTextMessage(contact.number, null, parts, pendingIntents, null);
+            alertDialog = new AlertDialog.Builder(getActivity())
+                    .setMessage("Sending request via SMS ...")
+                    .setView(new ProgressBar(getActivity()))
+                    .setCancelable(false)
+                    .create();
+            alertDialog.show();
+        }
+    }
+
+    @Override
+    public void onSmsReceived(String number, String message) {
+        if(normalizeNumber(number).equalsIgnoreCase(normalizeNumber(contact.number))) {
+            if(message.equalsIgnoreCase("Y1")
+                    || message.equalsIgnoreCase("Y2")
+                    || message.equalsIgnoreCase("Y3")){
+                if(message.equalsIgnoreCase("Y1"))
+                    contact.riskLvl = 1;
+                else if(message.equalsIgnoreCase("Y2"))
+                    contact.riskLvl = 2;
+                else contact.riskLvl = 3;
+                addContact(contact);
+            }
+            alertDialog.cancel();
+            getActivity().unregisterReceiver(smsBroadcastManager);
+        }
+    }
+
+    @Override
+    public void onSmsFailedToSend() {
+
+    }
+
+    @Override
+    public void onSmsSent() {
+        if(--smsPartsUnsent == 0) {
+            alertDialog.setMessage("Message Sent");
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    alertDialog.setMessage("Waiting for response ...");
+                }
+            }, 1000);
+        }
+    }
+
+    String normalizeNumber(String number){
+        return number.replaceAll("\\D+", "");
     }
 }

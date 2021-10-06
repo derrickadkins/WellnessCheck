@@ -10,10 +10,12 @@ public class Contact {
     @PrimaryKey
     public String id;
     public String name, number;
+    public int riskLvl;
 
-    public Contact(String id, String name, String number){
+    public Contact(String id, String name, String number, int riskLvl){
         this.id = id;
         this.name = name;
         this.number = number;
+        this.riskLvl = riskLvl;
     }
 }

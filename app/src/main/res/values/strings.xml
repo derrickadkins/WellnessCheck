@@ -6,6 +6,19 @@
     <string name="channel_name">MonitoringService</string>
     <string name="channel_description">Alerts the user to perform wellness check</string>
     <string name="contact_request">
-        Will you be my Emergency Contact? Reply with Yes or No
+        Will you be my Emergency Contact for the Wellness Check app?\n
+        \n
+        Reply:\n
+        Y1 to accept and rate me as low risk\n
+        Y2 to accept and rate me as medium risk\n
+        Y3 to accept and rate me as high risk\n
+        No to decline\n
+        \n
+        Low Risk allows me to turn off my own wellness checks\n
+        Medium Risk requires permission from one of my Emergency Contacts to turn off wellness checks\n
+        High risk requires permission from all of my Emergency Contacts to turn off wellness checks
+    </string>
+    <string name="turn_off_request">
+        May I turn off my wellness checks? Reply: Yes or No
     </string>
 </resources>

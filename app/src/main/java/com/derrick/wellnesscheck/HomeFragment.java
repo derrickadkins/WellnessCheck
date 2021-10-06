@@ -2,12 +2,10 @@ package com.derrick.wellnesscheck;
 
 import static com.derrick.wellnesscheck.MainActivity.settings;
 import static com.derrick.wellnesscheck.MainActivity.updateSettings;
+import static com.derrick.wellnesscheck.MainActivity.contacts;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.app.Service;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
@@ -19,6 +17,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.progressindicator.CircularProgressIndicator;
@@ -61,14 +60,29 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
         btnTurnOff = homeFragmentView.findViewById(R.id.btnTurnOff);
         btnTurnOff.setOnClickListener(v -> {
-            settings.monitoringOn = false;
-            if (timer != null) {
-                timer.cancel();
-                timer = null;
+            int riskLvl = 1;
+            for(int i = 0; i < contacts.size(); i++){
+                if(contacts.get(i).riskLvl > riskLvl)
+                    riskLvl = contacts.get(i).riskLvl;
             }
-            updateSettings();
-            setTimerVisibility();
-            stopMonitoring();
+            String message = "Are you sure you want to turn off monitoring?";
+            if(riskLvl > 1) message = "Request permission from Emergency Contacts to turn off monitoring?";
+
+            int finalRiskLvl = riskLvl;
+            new AlertDialog.Builder(getActivity())
+            .setMessage(message)
+            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    if(finalRiskLvl == 1) stopMonitoring();
+                    else if(finalRiskLvl == 2){
+
+                    }else if(finalRiskLvl == 3){
+
+                    }
+                }
+            })
+            .show();
         });
 
         tvProgressBar = homeFragmentView.findViewById(R.id.progressBarText);
@@ -187,6 +201,13 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     }
 
     void stopMonitoring(){
+        settings.monitoringOn = false;
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+        updateSettings();
+        setTimerVisibility();
         getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(Intent.ACTION_DELETE));
     }
 

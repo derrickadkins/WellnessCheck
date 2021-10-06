@@ -4,22 +4,24 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
+import android.provider.Telephony;
+import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
 
-public class SmsReceiver extends BroadcastReceiver {
-    SmsListener smsListener;
+public class SmsBroadcastManager extends BroadcastReceiver {
+    public static final String ACTION_SEND_SMS_RESULT = "send_sms_result";
+    static SmsListener smsListener;
     final String TAG = "SmsReceiver";
-    SmsReceiver(){super();}
-    SmsReceiver(SmsListener smsListener){super(); this.smsListener = smsListener;}
+    public SmsBroadcastManager(){super();}
+    SmsBroadcastManager(SmsListener smsListener){super(); this.smsListener = smsListener;}
 
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.i(TAG, "onReceive");
         switch (intent.getAction()) {
-            case "android.provider.Telephony.SMS_RECEIVED":
+            case Telephony.Sms.Intents.SMS_RECEIVED_ACTION:
                 Bundle bundle = intent.getExtras();
                 if (bundle != null) {
                     Object[] pdus = (Object[]) bundle.get("pdus");
@@ -32,13 +34,31 @@ public class SmsReceiver extends BroadcastReceiver {
                     }
                 }
                 break;
+            case ACTION_SEND_SMS_RESULT:
+                switch (getResultCode()){
+                    case Activity.RESULT_OK:
+                        Log.i(TAG, "Message sent");
+                        smsListener.onSmsSent();
+                        break;
+                    case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
+                        Log.i(TAG, "Message failed to send");
+                        smsListener.onSmsFailedToSend();
+                        break;
+                    default:
+                        Log.i(TAG, "Result Code = " + getResultCode());
+                        break;
+                }
+                break;
             default:
-
+                Log.i(TAG, "Action = " + intent.getAction());
+                Log.i(TAG, "Result Code = " + getResultCode());
                 break;
         }
     }
 
     public interface SmsListener{
         void onSmsReceived(String number, String message);
+        void onSmsFailedToSend();
+        void onSmsSent();
     }
 }
