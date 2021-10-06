@@ -21,6 +21,22 @@ public class SmsBroadcastManager extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Log.i(TAG, "onReceive");
         switch (intent.getAction()) {
+            case Telephony.Sms.Intents.SMS_DELIVER_ACTION:
+                Log.d(TAG, "SMS_DELIVER_ACTION");
+                try{
+                    Log.d(TAG, "has pdus = " + (intent.getExtras().get("pdus") != null));
+                }catch (Exception ex){
+                    Log.d(TAG, "has pdus = false");
+                }
+                break;
+            case Telephony.Sms.Intents.DATA_SMS_RECEIVED_ACTION:
+                Log.d(TAG, "DATA_SMS_RECEIVED_ACTION");
+                try{
+                    Log.d(TAG, "has pdus = " + (intent.getExtras().get("pdus") != null));
+                }catch (Exception ex){
+                    Log.d(TAG, "has pdus = false");
+                }
+                break;
             case Telephony.Sms.Intents.SMS_RECEIVED_ACTION:
                 Bundle bundle = intent.getExtras();
                 if (bundle != null) {

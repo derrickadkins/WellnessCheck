@@ -4,15 +4,20 @@ import static com.derrick.wellnesscheck.MainActivity.settings;
 import static com.derrick.wellnesscheck.MainActivity.updateSettings;
 import static com.derrick.wellnesscheck.MainActivity.contacts;
 
+import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.provider.Telephony;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -23,6 +28,8 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 
 import java.util.Calendar;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class HomeFragment extends Fragment implements MonitorReceiver.CheckInListener {
     CircularProgressIndicator progressBar;
@@ -31,7 +38,8 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     CountDownTimer timer;
     long checkInInterval, responseInterval;
     boolean inResponseTimer = false;
-    MonitorReceiver monitorReceiver;
+    SmsBroadcastManager smsBroadcastManager;
+    int unsentSMS, unreceivedSMS;
     final String TAG = "HomeFragment";
 
     @Override
@@ -69,17 +77,16 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             if(riskLvl > 1) message = "Request permission from Emergency Contacts to turn off monitoring?";
 
             int finalRiskLvl = riskLvl;
-            new AlertDialog.Builder(getActivity())
+            new AlertDialog.Builder(getActivity(), android.R.style.Theme_DeviceDefault_Dialog)
             .setMessage(message)
             .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    if(finalRiskLvl == 1) stopMonitoring();
-                    else if(finalRiskLvl == 2){
-
-                    }else if(finalRiskLvl == 3){
-
+                    if(finalRiskLvl == 1) {
+                        stopMonitoring();
+                        return;
                     }
+                    requestTurnOff(finalRiskLvl);
                 }
             })
             .show();
@@ -217,5 +224,114 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         if(timer != null) timer.cancel();
         inResponseTimer = false;
         startTimer(settings.nextCheckIn - System.currentTimeMillis());
+    }
+
+    void requestTurnOff(int riskLvl){
+        AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), android.R.style.Theme_DeviceDefault_Dialog)
+                .setMessage("Sending request(s) via SMS ...")
+                .setView(new ProgressBar(getActivity()))
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        getActivity().unregisterReceiver(smsBroadcastManager);
+                    }
+                })
+                .setCancelable(false)
+                .create();
+        alertDialog.show();
+
+        smsBroadcastManager = new SmsBroadcastManager(new SmsBroadcastManager.SmsListener() {
+            @Override
+            public void onSmsReceived(String number, String message) {
+                //todo: different action for high risk
+                //if(riskLvl == 3)
+
+                boolean allowed = false;
+                for(Contact contact : contacts){
+                    if(normalizeNumber(number).equalsIgnoreCase(normalizeNumber(contact.number)) && message.equalsIgnoreCase("yes")) {
+                        allowed = true;
+                    }
+                }
+                if(allowed) {
+                    alertDialog.cancel();
+                    stopMonitoring();
+                    getActivity().unregisterReceiver(smsBroadcastManager);
+                }else if(--unreceivedSMS == 0){
+                    alertDialog.cancel();
+                    new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog)
+                    .setMessage("Sorry, you are not allowed to turn off monitoring at this time")
+                    .setNeutralButton("Okay", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                        }
+                    }).create().show();
+                    getActivity().unregisterReceiver(smsBroadcastManager);
+                }
+            }
+
+            @Override
+            public void onSmsFailedToSend() {
+                alertDialog.cancel();
+                new AlertDialog.Builder(getActivity(), android.R.style.Theme_DeviceDefault)
+                        .setMessage("SMS Failed to Send")
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        })
+                        .setPositiveButton("Retry", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                                requestTurnOff(riskLvl);
+                            }
+                        }).create().show();
+            }
+
+            @Override
+            public void onSmsSent() {
+                unreceivedSMS++;
+                if(--unsentSMS == 0) {
+                    alertDialog.setMessage("Messages Sent");
+                    new Timer().schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            alertDialog.setMessage("Waiting for response ...");
+                        }
+                    }, 1000);
+                }
+            }
+        });
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Telephony.Sms.Intents.SMS_RECEIVED_ACTION);
+        intentFilter.addAction(Telephony.Sms.Intents.SMS_DELIVER_ACTION);
+        intentFilter.addAction(Telephony.Sms.Intents.DATA_SMS_RECEIVED_ACTION);
+        getActivity().registerReceiver(smsBroadcastManager, intentFilter);
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity(), 0,
+                new Intent(getActivity(), SmsBroadcastManager.class)
+                        .setAction(SmsBroadcastManager.ACTION_SEND_SMS_RESULT),
+                PendingIntent.FLAG_UPDATE_CURRENT);
+        SmsManager smsManager = getActivity().getSystemService(SmsManager.class);
+        if(smsManager == null) smsManager = SmsManager.getDefault();
+
+        /*ArrayList<String> parts = smsManager.divideMessage(getString(R.string.contact_request));
+        ArrayList<PendingIntent> pendingIntents = new ArrayList<>();
+        for(int i = 0; i < parts.size(); i++) pendingIntents.add(pendingIntent);
+        int smsPartsUnsent = parts.size();*/
+
+        unsentSMS = 0;
+        for(Contact contact : contacts) {
+            unsentSMS++;
+            smsManager.sendTextMessage(contact.number, null, getString(R.string.turn_off_request), pendingIntent, null);
+        }
+    }
+
+    String normalizeNumber(String number){
+        return number.replaceAll("\\D+", "");
     }
 }

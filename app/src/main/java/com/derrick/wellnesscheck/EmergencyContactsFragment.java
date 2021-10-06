@@ -153,9 +153,6 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
         new Thread(new Runnable() {
             @Override
             public void run() {
-                //use to clear db
-                //db.contactDao().nukeTable();
-                contacts = new ArrayList<>(db.contactDao().getAll());
                 if(ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_CONTACTS)
                         == PackageManager.PERMISSION_GRANTED) {
                     loadContacts();
@@ -217,12 +214,12 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
         if (cursor.getCount() > 0) {
             contacts = new ArrayList<>();
             while (cursor.moveToNext()) {
-                Contact android_contact = new Contact("", "", "", 0);
                 String contact_id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
-                android_contact.id = contact_id;
                 //if it's not already added, move on to the next one
-                if (!tempContacts.containsKey(contact_id))
+                if (!tempContacts.containsKey(contact_id)) {
                     continue;
+                }
+                Contact android_contact = new Contact(contact_id, "", "", tempContacts.get(contact_id).riskLvl);
                 String contact_display_name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
                 android_contact.name = contact_display_name;
                 int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)));
@@ -262,35 +259,35 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
         }
     }
 
-    public void addContact(Contact contact){
-        emergencyContactsRecyclerAdapter.add(contact);
+    public void addContact(Contact mContact){
+        emergencyContactsRecyclerAdapter.add(mContact);
         onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
         new Thread(new Runnable() {
             @Override
             public void run() {
-                db.contactDao().insertAll(contact);
+                db.contactDao().insertAll(mContact);
             }
         }).start();
     }
 
     @Override
-    public void onDeleteContact(Contact contact) {
+    public void onDeleteContact(Contact mContact) {
         onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
         new Thread(new Runnable() {
             @Override
             public void run() {
-                db.contactDao().delete(contact);
+                db.contactDao().delete(mContact);
             }
         }).start();
     }
 
     @Override
-    public void onUndoDeleteContact(Contact contact) {
+    public void onUndoDeleteContact(Contact mContact) {
         onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
         new Thread(new Runnable() {
             @Override
             public void run() {
-                db.contactDao().insertAll(contact);
+                db.contactDao().insertAll(mContact);
             }
         }).start();
     }
@@ -354,6 +351,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                 else if(message.equalsIgnoreCase("Y2"))
                     contact.riskLvl = 2;
                 else contact.riskLvl = 3;
+
                 addContact(contact);
             }
             alertDialog.cancel();

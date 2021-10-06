@@ -42,6 +42,11 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
                 db.settingsDao().insert(settings);
             }
 
+            //use to clear db
+            //db.contactDao().nukeTable();
+            ArrayList<Contact> tmpContacts = new ArrayList<>(db.contactDao().getAll());
+            if(tmpContacts != null) contacts = tmpContacts;
+            else contacts = new ArrayList<>();
 
             dbReady = true;
         }).start();
