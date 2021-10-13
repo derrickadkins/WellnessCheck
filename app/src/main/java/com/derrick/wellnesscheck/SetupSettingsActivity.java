@@ -15,7 +15,6 @@ import android.widget.CompoundButton;
 import android.widget.NumberPicker;
 import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.TimePicker;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -46,7 +45,7 @@ public class SetupSettingsActivity extends AppCompatActivity {
             settings.monitoringOn = true;
             settings.nextCheckIn = 0;
             settings.checkedIn = true;
-            settings.firstCheckIn = getFirstCheckIn();
+            settings.firstCheckIn = getNextCheckIn();
             updateSettings();
             startMonitoring();
             startActivity(new Intent(SetupSettingsActivity.this, MainActivity.class)
@@ -185,14 +184,14 @@ public class SetupSettingsActivity extends AppCompatActivity {
     }
 
     void setFirstCheckText(){
-        long firstCheckIn = getFirstCheckIn();
+        long firstCheckIn = getNextCheckIn();
         tvFirstCheck.setText("First wellness check will be at " + getFirstCheckInString(firstCheckIn));
         timer.cancel();
         timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                timer.schedule(this, new Date(getFirstCheckIn()));
+                timer.schedule(this, new Date(getNextCheckIn()));
             }
         }, new Date(firstCheckIn));
     }
@@ -217,7 +216,7 @@ public class SetupSettingsActivity extends AppCompatActivity {
                 pendingNotifyIntent), pendingNotifyIntent);
     }
 
-    private long getMidnight(Calendar calendar){
+    public static long getMidnight(Calendar calendar){
         /*
         add one second from midnight because day of month or
         year might be the last one, so adding a second is easier
@@ -239,9 +238,10 @@ public class SetupSettingsActivity extends AppCompatActivity {
         return time;
     }
 
-    private long getFirstCheckIn(){
-        final long DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
-        final int INTERVAL = settings.checkInHours * HOUR_IN_MILLIS;
+    public static long getNextCheckIn(){
+        final long HOUR_IN_MILLIS = 60 * 60 * 1000;
+        final long DAY_IN_MILLIS = 24 * HOUR_IN_MILLIS;
+        final int INTERVAL = (int) (settings.checkInHours * HOUR_IN_MILLIS);
 
         //used to get excluded time boundaries
         Calendar calendar = Calendar.getInstance();

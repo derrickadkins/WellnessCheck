@@ -1,18 +1,15 @@
 package com.derrick.wellnesscheck;
 
 import android.Manifest;
-import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.provider.Telephony;
-import android.telephony.SmsManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,7 +36,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -48,15 +44,11 @@ import static com.derrick.wellnesscheck.MainActivity.db;
 import static com.derrick.wellnesscheck.MainActivity.contacts;
 import static com.derrick.wellnesscheck.MainActivity.settings;
 
-public class EmergencyContactsFragment extends Fragment implements OnContactDeleteListener, SmsBroadcastManager.SmsListener {
+public class EmergencyContactsFragment extends Fragment implements OnContactDeleteListener {
     FloatingActionButton fab;
     EmergencyContactsRecyclerAdapter emergencyContactsRecyclerAdapter;
     RecyclerView contactsList;
     Button setupNext;
-    SmsBroadcastManager smsBroadcastManager;
-    AlertDialog alertDialog;
-    Contact contact;
-    int smsPartsUnsent;
 
     ActivityResultLauncher<String> contactPermissionsResult = registerForActivityResult(new ActivityResultContracts.RequestPermission(),
             new ActivityResultCallback<Boolean>() {
@@ -68,16 +60,6 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                     } else {
                         //Log.e(TAG, "onActivityResult: PERMISSION DENIED");
                     }
-                }
-            });
-
-    ActivityResultLauncher<String[]> smsPermissionsResult = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
-            new ActivityResultCallback<Map<String, Boolean>>() {
-                @Override
-                public void onActivityResult(Map<String, Boolean> result) {
-                    for(String permission : result.keySet())
-                        if(!result.get(permission))return;
-                    onTryAddContact(contact);
                 }
             });
 
@@ -297,87 +279,62 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
     }
 
     public void onTryAddContact(Contact contact) {
-        List<String> permissions = new ArrayList<>();
-        this.contact = contact;
-        if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.SEND_SMS);
-        }
-        if(ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.RECEIVE_SMS);
-        }
-        if(permissions.size() > 0){
-            if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.SEND_SMS)
-                    || ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.RECEIVE_SMS)) {
-            } else {
-                smsPermissionsResult.launch(permissions.toArray(new String[permissions.size()]));
-            }
-        }else {
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity(), 0,
-                    new Intent(getActivity(), SmsBroadcastManager.class)
-                            .setAction(SmsBroadcastManager.ACTION_SEND_SMS_RESULT),
-                    PendingIntent.FLAG_UPDATE_CURRENT);
-            SmsManager smsManager = getActivity().getSystemService(SmsManager.class);
-            if(smsManager == null) smsManager = SmsManager.getDefault();
-            ArrayList<String> parts = smsManager.divideMessage(getString(R.string.contact_request));
-            ArrayList<PendingIntent> pendingIntents = new ArrayList<>();
-            for(int i = 0; i < parts.size(); i++) pendingIntents.add(pendingIntent);
-            smsPartsUnsent = parts.size();
+        final SmsBroadcastManager smsBroadcastManager = new SmsBroadcastManager();
 
-            smsBroadcastManager = new SmsBroadcastManager(this);
-            IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(Telephony.Sms.Intents.SMS_RECEIVED_ACTION);
-            intentFilter.addAction(Telephony.Sms.Intents.SMS_DELIVER_ACTION);
-            intentFilter.addAction(Telephony.Sms.Intents.DATA_SMS_RECEIVED_ACTION);
-            getActivity().registerReceiver(smsBroadcastManager, intentFilter);
+        AlertDialog alertDialog = new AlertDialog.Builder(getActivity())
+                .setMessage("Sending request via SMS ...")
+                .setView(new ProgressBar(getActivity()))
+                .setCancelable(false)
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        getActivity().unregisterReceiver(smsBroadcastManager);
+                    }
+                })
+                .create();
 
-            smsManager.sendMultipartTextMessage(contact.number, null, parts, pendingIntents, null);
-            alertDialog = new AlertDialog.Builder(getActivity())
-                    .setMessage("Sending request via SMS ...")
-                    .setView(new ProgressBar(getActivity()))
-                    .setCancelable(false)
-                    .create();
-            alertDialog.show();
-        }
-    }
+        SmsController smsController = new SmsController() {
+            @Override
+            void onSmsReceived(String number, String message) {
+                if (number.equalsIgnoreCase(contact.number)) {
+                    if (message.trim().equalsIgnoreCase("Y1")
+                            || message.trim().equalsIgnoreCase("Y2")
+                            || message.trim().equalsIgnoreCase("Y3")) {
+                        if (message.trim().equalsIgnoreCase("Y1"))
+                            contact.riskLvl = 1;
+                        else if (message.trim().equalsIgnoreCase("Y2"))
+                            contact.riskLvl = 2;
+                        else contact.riskLvl = 3;
 
-    @Override
-    public void onSmsReceived(String number, String message) {
-        if(normalizeNumber(number).equalsIgnoreCase(normalizeNumber(contact.number))) {
-            if(message.equalsIgnoreCase("Y1")
-                    || message.equalsIgnoreCase("Y2")
-                    || message.equalsIgnoreCase("Y3")){
-                if(message.equalsIgnoreCase("Y1"))
-                    contact.riskLvl = 1;
-                else if(message.equalsIgnoreCase("Y2"))
-                    contact.riskLvl = 2;
-                else contact.riskLvl = 3;
-
-                addContact(contact);
-            }
-            alertDialog.cancel();
-            getActivity().unregisterReceiver(smsBroadcastManager);
-        }
-    }
-
-    @Override
-    public void onSmsFailedToSend() {
-
-    }
-
-    @Override
-    public void onSmsSent() {
-        if(--smsPartsUnsent == 0) {
-            alertDialog.setMessage("Message Sent");
-            new Timer().schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    alertDialog.setMessage("Waiting for response ...");
+                        addContact(contact);
+                    }
+                    alertDialog.cancel();
+                    getActivity().unregisterReceiver(smsBroadcastManager);
                 }
-            }, 1000);
-        }
-    }
+            }
 
-    String normalizeNumber(String number){
-        return number.replaceAll("\\D+", "");
+            @Override
+            void onSmsFailedToSend() {
+
+            }
+
+            @Override
+            void onSmsSent() {
+                if (--unsentParts == 0) {
+                    alertDialog.setMessage("Message Sent");
+                    new Timer().schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            alertDialog.setMessage("Waiting for response ...");
+                        }
+                    }, 1000);
+                }
+            }
+        };
+
+        alertDialog.show();
+
+        smsController.sendSMS(getContext(), smsBroadcastManager, smsController, contact.number, getString(R.string.contact_request));
     }
 }

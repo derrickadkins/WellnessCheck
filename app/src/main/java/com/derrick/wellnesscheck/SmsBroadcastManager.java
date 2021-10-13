@@ -1,5 +1,7 @@
 package com.derrick.wellnesscheck;
 
+import static android.telephony.PhoneNumberUtils.normalizeNumber;
+
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -12,10 +14,10 @@ import android.util.Log;
 
 public class SmsBroadcastManager extends BroadcastReceiver {
     public static final String ACTION_SEND_SMS_RESULT = "send_sms_result";
-    static SmsListener smsListener;
+    static SmsController smsController;
     final String TAG = "SmsReceiver";
     public SmsBroadcastManager(){super();}
-    SmsBroadcastManager(SmsListener smsListener){super(); this.smsListener = smsListener;}
+    SmsBroadcastManager(SmsController smsController){super(); this.smsController = smsController;}
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -46,7 +48,7 @@ public class SmsBroadcastManager extends BroadcastReceiver {
                         SmsMessage currentSMS = SmsMessage.createFromPdu((byte[]) pdus[i], format);
                         String senderNo = currentSMS.getDisplayOriginatingAddress();
                         String message = currentSMS.getDisplayMessageBody();
-                        smsListener.onSmsReceived(senderNo, message);
+                        smsController.onSmsReceived(normalizeNumber(senderNo), message);
                     }
                 }
                 break;
@@ -54,11 +56,11 @@ public class SmsBroadcastManager extends BroadcastReceiver {
                 switch (getResultCode()){
                     case Activity.RESULT_OK:
                         Log.i(TAG, "Message sent");
-                        smsListener.onSmsSent();
+                        smsController.onSmsSent();
                         break;
                     case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
                         Log.i(TAG, "Message failed to send");
-                        smsListener.onSmsFailedToSend();
+                        smsController.onSmsFailedToSend();
                         break;
                     default:
                         Log.i(TAG, "Result Code = " + getResultCode());
@@ -70,11 +72,5 @@ public class SmsBroadcastManager extends BroadcastReceiver {
                 Log.i(TAG, "Result Code = " + getResultCode());
                 break;
         }
-    }
-
-    public interface SmsListener{
-        void onSmsReceived(String number, String message);
-        void onSmsFailedToSend();
-        void onSmsSent();
     }
 }

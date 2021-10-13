@@ -3,15 +3,12 @@ package com.derrick.wellnesscheck;
 import static com.derrick.wellnesscheck.MainActivity.settings;
 import static com.derrick.wellnesscheck.MainActivity.updateSettings;
 import static com.derrick.wellnesscheck.MainActivity.contacts;
+import static com.derrick.wellnesscheck.SetupSettingsActivity.getNextCheckIn;
 
-import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.provider.Telephony;
-import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -38,8 +35,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     CountDownTimer timer;
     long checkInInterval, responseInterval;
     boolean inResponseTimer = false;
-    SmsBroadcastManager smsBroadcastManager;
-    int unsentSMS, unreceivedSMS;
     final String TAG = "HomeFragment";
 
     @Override
@@ -117,8 +112,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 settings.nextCheckIn = settings.firstCheckIn;
             long millis = settings.nextCheckIn - now;
             if (millis <= 0) {
-                while (settings.nextCheckIn <= now)
-                    settings.nextCheckIn += checkInInterval;
+                settings.nextCheckIn = getNextCheckIn();
                 updateSettings();
                 millis = settings.nextCheckIn - now;
             }
@@ -184,7 +178,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             public void onFinish() {
                 inResponseTimer = !inResponseTimer;
                 if(inResponseTimer) {
-                    settings.nextCheckIn += checkInInterval;
+                    settings.nextCheckIn = getNextCheckIn();
                     updateSettings();
 //                    Log.d("Start Timer", "called from timer onFinish : response");
                     startTimer(responseInterval);
@@ -227,6 +221,8 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     }
 
     void requestTurnOff(int riskLvl){
+        final SmsBroadcastManager smsBroadcastManager = new SmsBroadcastManager();
+
         AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), android.R.style.Theme_DeviceDefault_Dialog)
                 .setMessage("Sending request(s) via SMS ...")
                 .setView(new ProgressBar(getActivity()))
@@ -241,7 +237,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 .create();
         alertDialog.show();
 
-        smsBroadcastManager = new SmsBroadcastManager(new SmsBroadcastManager.SmsListener() {
+        SmsController smsController = new SmsController() {
             @Override
             public void onSmsReceived(String number, String message) {
                 //todo: different action for high risk
@@ -249,7 +245,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
                 boolean allowed = false;
                 for(Contact contact : contacts){
-                    if(normalizeNumber(number).equalsIgnoreCase(normalizeNumber(contact.number)) && message.equalsIgnoreCase("yes")) {
+                    if(number.equalsIgnoreCase(contact.number) && message.trim().equalsIgnoreCase("yes")) {
                         allowed = true;
                     }
                 }
@@ -260,13 +256,13 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 }else if(--unreceivedSMS == 0){
                     alertDialog.cancel();
                     new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog)
-                    .setMessage("Sorry, you are not allowed to turn off monitoring at this time")
-                    .setNeutralButton("Okay", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-                        }
-                    }).create().show();
+                            .setMessage("Sorry, you are not allowed to turn off monitoring at this time")
+                            .setNeutralButton("Okay", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.cancel();
+                                }
+                            }).create().show();
                     getActivity().unregisterReceiver(smsBroadcastManager);
                 }
             }
@@ -294,7 +290,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             @Override
             public void onSmsSent() {
                 unreceivedSMS++;
-                if(--unsentSMS == 0) {
+                if(--unsentParts == 0) {
                     alertDialog.setMessage("Messages Sent");
                     new Timer().schedule(new TimerTask() {
                         @Override
@@ -304,34 +300,12 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                     }, 1000);
                 }
             }
-        });
+        };
 
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(Telephony.Sms.Intents.SMS_RECEIVED_ACTION);
-        intentFilter.addAction(Telephony.Sms.Intents.SMS_DELIVER_ACTION);
-        intentFilter.addAction(Telephony.Sms.Intents.DATA_SMS_RECEIVED_ACTION);
-        getActivity().registerReceiver(smsBroadcastManager, intentFilter);
+        SmsBroadcastManager.smsController = smsController;
 
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity(), 0,
-                new Intent(getActivity(), SmsBroadcastManager.class)
-                        .setAction(SmsBroadcastManager.ACTION_SEND_SMS_RESULT),
-                PendingIntent.FLAG_UPDATE_CURRENT);
-        SmsManager smsManager = getActivity().getSystemService(SmsManager.class);
-        if(smsManager == null) smsManager = SmsManager.getDefault();
-
-        /*ArrayList<String> parts = smsManager.divideMessage(getString(R.string.contact_request));
-        ArrayList<PendingIntent> pendingIntents = new ArrayList<>();
-        for(int i = 0; i < parts.size(); i++) pendingIntents.add(pendingIntent);
-        int smsPartsUnsent = parts.size();*/
-
-        unsentSMS = 0;
         for(Contact contact : contacts) {
-            unsentSMS++;
-            smsManager.sendTextMessage(contact.number, null, getString(R.string.turn_off_request), pendingIntent, null);
+            smsController.sendSMS(getContext(), smsBroadcastManager, smsController, contact.number, getString(R.string.turn_off_request));
         }
-    }
-
-    String normalizeNumber(String number){
-        return number.replaceAll("\\D+", "");
     }
 }
