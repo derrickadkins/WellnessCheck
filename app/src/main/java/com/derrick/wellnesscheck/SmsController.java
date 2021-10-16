@@ -1,7 +1,5 @@
 package com.derrick.wellnesscheck;
 
-import static android.telephony.PhoneNumberUtils.normalizeNumber;
-
 import android.Manifest;
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -29,15 +27,14 @@ public abstract class SmsController {
     abstract void onSmsFailedToSend();
     abstract void onSmsSent();
 
-    public void sendSMS(Context context, SmsBroadcastManager smsBroadcastManager, SmsController smsController, String number, String message){
-        SmsBroadcastManager finalSmsBroadcastManager = smsBroadcastManager;
+    public void sendSMS(Context context, final SmsBroadcastManager smsBroadcastManager, SmsController smsController, String number, String message){
         ActivityResultLauncher<String[]> smsPermissionsResult = ((AppCompatActivity)context).registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
                 new ActivityResultCallback<Map<String, Boolean>>() {
                     @Override
                     public void onActivityResult(Map<String, Boolean> result) {
                         for(String permission : result.keySet())
                             if(!result.get(permission))return;
-                        sendSMS(context, finalSmsBroadcastManager, smsController, number, message);
+                        sendSMS(context, smsBroadcastManager, smsController, number, message);
                     }
                 });
 
@@ -57,7 +54,7 @@ public abstract class SmsController {
             }
         }else {
             //Register SmsBroadcastManager for sms feedback
-            smsBroadcastManager = new SmsBroadcastManager(smsController);
+            SmsBroadcastManager.smsController = smsController;
             IntentFilter intentFilter = new IntentFilter();
             intentFilter.addAction(Telephony.Sms.Intents.SMS_RECEIVED_ACTION);
             intentFilter.addAction(Telephony.Sms.Intents.SMS_DELIVER_ACTION);
@@ -85,8 +82,19 @@ public abstract class SmsController {
                 ArrayList<PendingIntent> pendingIntents = new ArrayList<>();
                 for(int i = 0; i < parts.size(); i++) pendingIntents.add(pendingIntent);
 
-                smsManager.sendMultipartTextMessage(normalizeNumber(number), null, parts, pendingIntents, null);
+                String normalizedNumber = normalizeNumber(number);
+                smsManager.sendMultipartTextMessage(normalizedNumber, null, parts, pendingIntents, null);
             }
         }
+    }
+
+    public static String normalizeNumber(String number){
+        //get rid of all non digits
+        String normalizedNumber = number.replaceAll("\\D+", "");
+        //get only the last 10 digits
+        if(normalizedNumber.length() > 10){
+            normalizedNumber = normalizedNumber.substring(normalizedNumber.length()-10);
+        }
+        return normalizedNumber;
     }
 }

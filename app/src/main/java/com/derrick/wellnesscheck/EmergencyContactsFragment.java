@@ -23,6 +23,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -225,7 +226,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
             for (int i = 0; i < dbData.size(); i++) {
                 Contact contact = dbData.get(i);
                 Contact mContact = contacts.get(i);
-                if (contact.number != mContact.number || contact.name != mContact.name)
+                if (!contact.number.equalsIgnoreCase(mContact.number) || !contact.name.equalsIgnoreCase(mContact.name))
                     //todo: maybe re-verify contact here?
                     db.contactDao().update(mContact);
                 tempContacts.remove(contact.id);
@@ -281,7 +282,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
     public void onTryAddContact(Contact contact) {
         final SmsBroadcastManager smsBroadcastManager = new SmsBroadcastManager();
 
-        AlertDialog alertDialog = new AlertDialog.Builder(getActivity())
+        AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setMessage("Sending request via SMS ...")
                 .setView(new ProgressBar(getActivity()))
                 .setCancelable(false)
@@ -297,7 +298,8 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
         SmsController smsController = new SmsController() {
             @Override
             void onSmsReceived(String number, String message) {
-                if (number.equalsIgnoreCase(contact.number)) {
+                String normalizedContactNumber = SmsController.normalizeNumber(contact.number);
+                if (number.equalsIgnoreCase(normalizedContactNumber)) {
                     if (message.trim().equalsIgnoreCase("Y1")
                             || message.trim().equalsIgnoreCase("Y2")
                             || message.trim().equalsIgnoreCase("Y3")) {
@@ -326,7 +328,12 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
                     new Timer().schedule(new TimerTask() {
                         @Override
                         public void run() {
-                            alertDialog.setMessage("Waiting for response ...");
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    alertDialog.setMessage("Waiting for response ...");
+                                }
+                            });
                         }
                     }, 1000);
                 }

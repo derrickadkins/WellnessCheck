@@ -72,7 +72,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             if(riskLvl > 1) message = "Request permission from Emergency Contacts to turn off monitoring?";
 
             int finalRiskLvl = riskLvl;
-            new AlertDialog.Builder(getActivity(), android.R.style.Theme_DeviceDefault_Dialog)
+            new AlertDialog.Builder(getActivity(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setMessage(message)
             .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                 @Override
@@ -223,7 +223,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     void requestTurnOff(int riskLvl){
         final SmsBroadcastManager smsBroadcastManager = new SmsBroadcastManager();
 
-        AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), android.R.style.Theme_DeviceDefault_Dialog)
+        AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setMessage("Sending request(s) via SMS ...")
                 .setView(new ProgressBar(getActivity()))
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -255,7 +255,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                     getActivity().unregisterReceiver(smsBroadcastManager);
                 }else if(--unreceivedSMS == 0){
                     alertDialog.cancel();
-                    new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog)
+                    new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
                             .setMessage("Sorry, you are not allowed to turn off monitoring at this time")
                             .setNeutralButton("Okay", new DialogInterface.OnClickListener() {
                                 @Override
@@ -270,7 +270,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             @Override
             public void onSmsFailedToSend() {
                 alertDialog.cancel();
-                new AlertDialog.Builder(getActivity(), android.R.style.Theme_DeviceDefault)
+                new AlertDialog.Builder(getActivity(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
                         .setMessage("SMS Failed to Send")
                         .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                             @Override

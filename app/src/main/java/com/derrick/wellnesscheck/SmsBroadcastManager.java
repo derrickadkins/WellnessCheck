@@ -1,7 +1,5 @@
 package com.derrick.wellnesscheck;
 
-import static android.telephony.PhoneNumberUtils.normalizeNumber;
-
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -48,7 +46,8 @@ public class SmsBroadcastManager extends BroadcastReceiver {
                         SmsMessage currentSMS = SmsMessage.createFromPdu((byte[]) pdus[i], format);
                         String senderNo = currentSMS.getDisplayOriginatingAddress();
                         String message = currentSMS.getDisplayMessageBody();
-                        smsController.onSmsReceived(normalizeNumber(senderNo), message);
+                        String normalizedNumber = SmsController.normalizeNumber(senderNo);
+                        smsController.onSmsReceived(normalizedNumber, message);
                     }
                 }
                 break;
