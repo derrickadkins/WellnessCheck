@@ -95,7 +95,9 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         });
 
         tvProgressBar = homeFragmentView.findViewById(R.id.progressBarText);
-        tvProgressBar.setOnClickListener(v -> {
+
+        progressBar = homeFragmentView.findViewById(R.id.progressBar);
+        progressBar.setOnClickListener(v -> {
             if (settings.monitoringOn) {
                 if (inResponseTimer) {
                     onCheckIn();
@@ -106,8 +108,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
             startActivity(new Intent(getActivity(), SetupContactsActivity.class));
         });
-
-        progressBar = homeFragmentView.findViewById(R.id.progressBar);
         tvTimerLabel = homeFragmentView.findViewById(R.id.tvTimerType);
         tvNextCheckIn = homeFragmentView.findViewById(R.id.tvNextCheckIn);
 
@@ -199,13 +199,17 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
     void setTimerVisibility(){
         int visibility = settings.monitoringOn ? View.VISIBLE : View.GONE;
-        progressBar.setVisibility(visibility);
         btnTurnOff.setVisibility(visibility);
         tvTimerLabel.setVisibility(visibility);
         tvNextCheckIn.setVisibility(visibility);
 
-        if(!settings.monitoringOn)
-            tvProgressBar.setText("Tap Here to Start Monitoring");
+        if(!settings.monitoringOn) {
+            tvProgressBar.setText("Tap to Setup\nWellness Checks");
+            progressBar.setProgress(progressBar.getMax());
+            tvProgressBar.setTextSize(32);
+        }else{
+            tvProgressBar.setTextSize(64);
+        }
     }
 
     void stopMonitoring(){
