@@ -9,6 +9,13 @@
         <item name="android:buttonStyle">@style/Buttons</item>
     </style>
 
+    <style name="AppTheme.Dialog.Alert" parent="android:Theme.DeviceDefault.Dialog.Alert">
+        <item name="android:colorAccent">@color/colorAccent</item>
+        <item name="android:textColor">@color/colorPrimaryDark</item>
+        <item name="android:textColorPrimary">@color/colorPrimary</item>
+        <item name="android:colorBackground">@android:color/white</item>
+    </style>
+
     <style name="AppTheme.NoActionBar" parent="AppTheme">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>

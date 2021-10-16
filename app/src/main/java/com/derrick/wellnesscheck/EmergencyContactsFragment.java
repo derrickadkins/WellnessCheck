@@ -37,6 +37,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -282,7 +283,7 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
     public void onTryAddContact(Contact contact) {
         final SmsBroadcastManager smsBroadcastManager = new SmsBroadcastManager();
 
-        AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+        AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), R.style.AppTheme_Dialog_Alert)
                 .setMessage("Sending request via SMS ...")
                 .setView(new ProgressBar(getActivity()))
                 .setCancelable(false)
@@ -299,13 +300,12 @@ public class EmergencyContactsFragment extends Fragment implements OnContactDele
             @Override
             void onSmsReceived(String number, String message) {
                 String normalizedContactNumber = SmsController.normalizeNumber(contact.number);
+                message = message.toUpperCase(Locale.ROOT).trim();
                 if (number.equalsIgnoreCase(normalizedContactNumber)) {
-                    if (message.trim().equalsIgnoreCase("Y1")
-                            || message.trim().equalsIgnoreCase("Y2")
-                            || message.trim().equalsIgnoreCase("Y3")) {
-                        if (message.trim().equalsIgnoreCase("Y1"))
+                    if (message.replaceAll("\\d+", "").equals("Y")) {
+                        if (message.equals("Y1"))
                             contact.riskLvl = 1;
-                        else if (message.trim().equalsIgnoreCase("Y2"))
+                        else if (message.equals("Y2"))
                             contact.riskLvl = 2;
                         else contact.riskLvl = 3;
 
