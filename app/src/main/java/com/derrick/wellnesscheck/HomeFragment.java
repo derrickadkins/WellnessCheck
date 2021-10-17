@@ -141,7 +141,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                     + ", settings.nextCheckIn = " + settings.nextCheckIn
                     + ", now = " + now);*/
                 startTimer(millis);
-            }
+            }else setNextCheckInText(millis);
         }
 
         return homeFragmentView;
@@ -163,9 +163,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 + ", responseInterval = " + responseInterval
                 + ", checkInInterval = " + checkInInterval
                 + ", ms = " + ms);*/
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(System.currentTimeMillis() + ms);
-        tvNextCheckIn.setText("at " + String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)));
+        setNextCheckInText(ms);
         tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
         progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
         timer = new CountDownTimer(ms, 10) {
@@ -195,6 +193,12 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 }
             }
         }.start();
+    }
+
+    void setNextCheckInText(long ms){
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis() + ms);
+        tvNextCheckIn.setText("at " + String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)));
     }
 
     void setTimerVisibility(){
