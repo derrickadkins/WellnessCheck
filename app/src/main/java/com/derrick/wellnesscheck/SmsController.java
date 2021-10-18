@@ -9,6 +9,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.provider.Telephony;
 import android.telephony.SmsManager;
+import android.util.Log;
 
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -26,65 +27,77 @@ public abstract class SmsController {
     abstract void onSmsReceived(String number, String message);
     abstract void onSmsFailedToSend();
     abstract void onSmsSent();
+    final String TAG = "SmsController";
 
-    public void sendSMS(Context context, final SmsBroadcastManager smsBroadcastManager, SmsController smsController, String number, String message){
-        ActivityResultLauncher<String[]> smsPermissionsResult = ((AppCompatActivity)context).registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
-                new ActivityResultCallback<Map<String, Boolean>>() {
-                    @Override
-                    public void onActivityResult(Map<String, Boolean> result) {
-                        for(String permission : result.keySet())
-                            if(!result.get(permission))return;
-                        sendSMS(context, smsBroadcastManager, smsController, number, message);
-                    }
-                });
-
+    public boolean checkPermissions(Context context){
         List<String> permissions = new ArrayList<>();
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.SEND_SMS);
         }
-        if(ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.RECEIVE_SMS);
         }
 
-        if(permissions.size() > 0){
+        if (permissions.size() > 0) {
             if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.SEND_SMS)
                     || ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.RECEIVE_SMS)) {
             } else {
-                smsPermissionsResult.launch(permissions.toArray(new String[permissions.size()]));
+                if(context instanceof MainActivity)
+                    ((MainActivity)context).smsPermissionsResult.launch(permissions.toArray(new String[permissions.size()]));
+                else ((SetupContactsActivity)context).smsPermissionsResult.launch(permissions.toArray(new String[permissions.size()]));
             }
-        }else {
-            //Register SmsBroadcastManager for sms feedback
-            SmsBroadcastManager.smsController = smsController;
-            IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(Telephony.Sms.Intents.SMS_RECEIVED_ACTION);
-            intentFilter.addAction(Telephony.Sms.Intents.SMS_DELIVER_ACTION);
-            intentFilter.addAction(Telephony.Sms.Intents.DATA_SMS_RECEIVED_ACTION);
-            context.registerReceiver(smsBroadcastManager, intentFilter);
+            return false;
+        } else return true;
+    }
 
-            //Set SmsBroadcastManager as the pending intent used by smsManager
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0,
-                    new Intent(context, SmsBroadcastManager.class)
-                            .setAction(SmsBroadcastManager.ACTION_SEND_SMS_RESULT),
-                    PendingIntent.FLAG_UPDATE_CURRENT);
+    public void sendSMS(Context context, final SmsBroadcastManager smsBroadcastManager, SmsController smsController, String number, String message) {
+        if(!checkPermissions(context)){
+            PermissionsListener permissionsListener = new PermissionsListener() {
+                @Override
+                public void permissionGranted(boolean granted) {
+                    if(granted){
+                        sendSMS(context, smsBroadcastManager, smsController, number, message);
+                    }
+                }
+            };
 
-            //Get smsManager
-            SmsManager smsManager = context.getSystemService(SmsManager.class);
-            if(smsManager == null) smsManager = SmsManager.getDefault();
+            if(context instanceof MainActivity)
+                ((MainActivity)context).permissionsListener = permissionsListener;
+            else ((SetupContactsActivity)context).permissionsListener = permissionsListener;
+            return;
+        }
 
-            //Determine weather to send single or multi-part sms
-            ArrayList<String> parts = smsManager.divideMessage(message);
-            int smsPartsUnsent = parts.size();
-            smsController.unsentParts += smsPartsUnsent;
+        //Register SmsBroadcastManager for sms feedback
+        SmsBroadcastManager.smsController = smsController;
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Telephony.Sms.Intents.SMS_RECEIVED_ACTION);
+        intentFilter.addAction(Telephony.Sms.Intents.SMS_DELIVER_ACTION);
+        intentFilter.addAction(Telephony.Sms.Intents.DATA_SMS_RECEIVED_ACTION);
+        context.registerReceiver(smsBroadcastManager, intentFilter);
 
-            if(smsPartsUnsent == 1){
-                smsManager.sendTextMessage(normalizeNumber(number), null, message, pendingIntent, null);
-            }else{
-                ArrayList<PendingIntent> pendingIntents = new ArrayList<>();
-                for(int i = 0; i < parts.size(); i++) pendingIntents.add(pendingIntent);
+        //Set SmsBroadcastManager as the pending intent used by smsManager
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0,
+                new Intent(context, SmsBroadcastManager.class)
+                        .setAction(SmsBroadcastManager.ACTION_SEND_SMS_RESULT),
+                PendingIntent.FLAG_UPDATE_CURRENT);
 
-                String normalizedNumber = normalizeNumber(number);
-                smsManager.sendMultipartTextMessage(normalizedNumber, null, parts, pendingIntents, null);
-            }
+        //Get smsManager
+        SmsManager smsManager = context.getSystemService(SmsManager.class);
+        if (smsManager == null) smsManager = SmsManager.getDefault();
+
+        //Determine weather to send single or multi-part sms
+        ArrayList<String> parts = smsManager.divideMessage(message);
+        int smsPartsUnsent = parts.size();
+        smsController.unsentParts += smsPartsUnsent;
+
+        if (smsPartsUnsent == 1) {
+            smsManager.sendTextMessage(normalizeNumber(number), null, message, pendingIntent, null);
+        } else {
+            ArrayList<PendingIntent> pendingIntents = new ArrayList<>();
+            for (int i = 0; i < parts.size(); i++) pendingIntents.add(pendingIntent);
+
+            String normalizedNumber = normalizeNumber(number);
+            smsManager.sendMultipartTextMessage(normalizedNumber, null, parts, pendingIntents, null);
         }
     }
 

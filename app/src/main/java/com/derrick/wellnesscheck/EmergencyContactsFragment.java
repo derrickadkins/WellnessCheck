@@ -46,7 +46,7 @@ import static com.derrick.wellnesscheck.MainActivity.db;
 import static com.derrick.wellnesscheck.MainActivity.contacts;
 import static com.derrick.wellnesscheck.MainActivity.settings;
 
-public class EmergencyContactsFragment extends Fragment implements OnContactDeleteListener {
+public class EmergencyContactsFragment extends Fragment implements EmergencyContactsRecyclerAdapter.OnContactDeleteListener {
     FloatingActionButton fab;
     EmergencyContactsRecyclerAdapter emergencyContactsRecyclerAdapter;
     RecyclerView contactsList;

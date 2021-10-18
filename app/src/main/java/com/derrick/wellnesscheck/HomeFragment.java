@@ -25,6 +25,7 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -235,7 +236,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         startTimer(settings.nextCheckIn - System.currentTimeMillis());
     }
 
-    void requestTurnOff(int riskLvl){
+    void requestTurnOff(int riskLvl) {
         final SmsBroadcastManager smsBroadcastManager = new SmsBroadcastManager();
 
         AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), R.style.AppTheme_Dialog_Alert)
@@ -259,16 +260,23 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 //if(riskLvl == 3)
 
                 boolean allowed = false;
-                for(Contact contact : contacts){
-                    if(number.equalsIgnoreCase(contact.number) && message.trim().equalsIgnoreCase("yes")) {
-                        allowed = true;
+                boolean messageReceivedFromContact = false;
+                message = message.trim().toLowerCase(Locale.ROOT);
+                for (Contact contact : contacts) {
+                    String normalizedContactNumber = normalizeNumber(contact.number);
+                    if (number.equals(normalizedContactNumber)){
+                        messageReceivedFromContact = true;
+                        if(message.equals("yes")) {
+                            allowed = true;
+                        }
                     }
                 }
-                if(allowed) {
+                if(!messageReceivedFromContact) return;
+                if (allowed) {
                     alertDialog.cancel();
                     stopMonitoring();
                     getActivity().unregisterReceiver(smsBroadcastManager);
-                }else if(--unreceivedSMS == 0){
+                } else if (--unreceivedSMS == 0) {
                     alertDialog.cancel();
                     new AlertDialog.Builder(getContext(), R.style.AppTheme_Dialog_Alert)
                             .setMessage("Sorry, you are not allowed to turn off monitoring at this time")
@@ -305,7 +313,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             @Override
             public void onSmsSent() {
                 unreceivedSMS++;
-                if(--unsentParts == 0) {
+                if (--unsentParts == 0) {
                     alertDialog.setMessage("Messages Sent");
                     new Timer().schedule(new TimerTask() {
                         @Override
@@ -317,9 +325,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             }
         };
 
-        SmsBroadcastManager.smsController = smsController;
-
-        for(Contact contact : contacts) {
+        for (Contact contact : contacts) {
             smsController.sendSMS(getContext(), smsBroadcastManager, smsController, contact.number, getString(R.string.turn_off_request));
         }
     }

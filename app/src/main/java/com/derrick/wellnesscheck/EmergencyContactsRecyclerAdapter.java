@@ -19,7 +19,7 @@ public class EmergencyContactsRecyclerAdapter extends RecyclerView.Adapter<Emerg
     private Contact mRecentlyDeletedItem;
     private int mRecentlyDeletedItemPosition;
     private Context context;
-    private OnContactDeleteListener contactDeleteListener = null;
+    private OnContactDeleteListener contactDeleteListener;
 
     public EmergencyContactsRecyclerAdapter(Context context, ArrayList<Contact> dataSet, OnContactDeleteListener contactDeleteListener){
         this.context = context;
@@ -95,5 +95,10 @@ public class EmergencyContactsRecyclerAdapter extends RecyclerView.Adapter<Emerg
             name = itemView.findViewById(R.id.contact_name);
             number = itemView.findViewById(R.id.contact_number);
         }
+    }
+
+    public interface OnContactDeleteListener {
+        void onDeleteContact(Contact contact);
+        void onUndoDeleteContact(Contact contact);
     }
 }

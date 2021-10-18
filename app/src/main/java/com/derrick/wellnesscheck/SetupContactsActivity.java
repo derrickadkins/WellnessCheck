@@ -3,12 +3,32 @@ package com.derrick.wellnesscheck;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.Map;
 
 public class SetupContactsActivity extends AppCompatActivity {
     EmergencyContactsFragment contactsFragment;
     final String TAG = "SetupContactActivity";
+    public PermissionsListener permissionsListener;
+
+    ActivityResultLauncher<String[]> smsPermissionsResult = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
+            new ActivityResultCallback<Map<String, Boolean>>() {
+                @Override
+                public void onActivityResult(Map<String, Boolean> result) {
+                    for (String permission : result.keySet())
+                        if (!result.get(permission)) {
+                            if(permissionsListener != null) permissionsListener.permissionGranted(false);
+                            return;
+                        }
+                    if(permissionsListener != null) permissionsListener.permissionGranted(true);
+                }
+            });
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

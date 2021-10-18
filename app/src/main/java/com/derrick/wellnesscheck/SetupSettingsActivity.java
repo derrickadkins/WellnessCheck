@@ -3,11 +3,14 @@ package com.derrick.wellnesscheck;
 import static com.derrick.wellnesscheck.MainActivity.settings;
 import static com.derrick.wellnesscheck.MainActivity.updateSettings;
 
+import android.Manifest;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -16,8 +19,12 @@ import android.widget.NumberPicker;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -33,6 +40,15 @@ public class SetupSettingsActivity extends AppCompatActivity {
     final int HOUR_IN_MILLIS = 60 * 60 * 1000;
     final int MINUTE_IN_MILLIS = 60 * 1000;
 
+    ActivityResultLauncher setExactAlarmPermissionsResult = registerForActivityResult(new ActivityResultContracts.RequestPermission(), new ActivityResultCallback<Boolean>() {
+        @Override
+        public void onActivityResult(Boolean result) {
+            if(result) {
+                startMonitoring();
+            }
+        }
+    });
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,15 +58,12 @@ public class SetupSettingsActivity extends AppCompatActivity {
         finishSetup = findViewById(R.id.btnFinishSetup);
         finishSetup.setVisibility(View.VISIBLE);
         finishSetup.setOnClickListener(v -> {
-            settings.monitoringOn = true;
-            settings.nextCheckIn = 0;
-            settings.checkedIn = true;
-            settings.firstCheckIn = getNextCheckIn();
-            updateSettings();
-            startMonitoring();
-            startActivity(new Intent(SetupSettingsActivity.this, MainActivity.class)
-                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK));
-            SetupSettingsActivity.this.finish();
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if(ActivityCompat.checkSelfPermission(this, Manifest.permission.SCHEDULE_EXACT_ALARM) == PackageManager.PERMISSION_GRANTED)
+                    startMonitoring();
+                else setExactAlarmPermissionsResult.launch(Manifest.permission.SCHEDULE_EXACT_ALARM);
+            }
+            else startMonitoring();
         });
 
         checkInHours = (NumberPicker) findViewById(R.id.numberPickerHours);
@@ -197,9 +210,15 @@ public class SetupSettingsActivity extends AppCompatActivity {
     }
 
     void startMonitoring(){
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Service.ALARM_SERVICE);
+        settings.monitoringOn = true;
+        settings.nextCheckIn = 0;
+        settings.checkedIn = true;
+        settings.firstCheckIn = getNextCheckIn();
+        updateSettings();
         //Log.d(TAG, "triggering first alarm in " + (settings.nextCheckIn - System.currentTimeMillis()) + " millis");
-        PendingIntent pendingNotifyIntent;
+
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Service.ALARM_SERVICE);
+
         Intent intent = new Intent(this, MonitorReceiver.class).setAction(MonitorReceiver.ACTION_ALARM)
                 .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
                 .putExtra(MonitorReceiver.EXTRA_INTERVAL1, settings.checkInHours * HOUR_IN_MILLIS)
@@ -209,11 +228,17 @@ public class SetupSettingsActivity extends AppCompatActivity {
                 .putExtra(MonitorReceiver.EXTRA_TO_HOUR, settings.toHour)
                 .putExtra(MonitorReceiver.EXTRA_TO_MINUTE, settings.toMinute)
                 .putExtra(MonitorReceiver.EXTRA_ALL_DAY, settings.allDay);
-        pendingNotifyIntent = PendingIntent.getBroadcast(this, 0,
+
+        PendingIntent pendingNotifyIntent = PendingIntent.getBroadcast(this, 0,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(settings.firstCheckIn,
-                pendingNotifyIntent), pendingNotifyIntent);
+        AlarmManager.AlarmClockInfo alarmClockInfo = new AlarmManager.AlarmClockInfo(settings.firstCheckIn, pendingNotifyIntent);
+
+        alarmManager.setAlarmClock(alarmClockInfo, pendingNotifyIntent);
+
+        startActivity(new Intent(SetupSettingsActivity.this, MainActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK));
+        SetupSettingsActivity.this.finish();
     }
 
     public static long getMidnight(Calendar calendar){
@@ -231,10 +256,9 @@ public class SetupSettingsActivity extends AppCompatActivity {
 
     private String getFirstCheckInString(long firstCheckIn){
         Calendar calendar = Calendar.getInstance();
-        boolean isTomorrow = firstCheckIn > getMidnight(calendar);
         calendar.setTimeInMillis(firstCheckIn);
         String time = String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
-        if(isTomorrow) time += " tomorrow";
+        if(firstCheckIn > getMidnight(calendar)) time += " tomorrow";
         return time;
     }
 
