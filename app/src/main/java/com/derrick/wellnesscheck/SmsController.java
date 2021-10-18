@@ -28,6 +28,7 @@ public abstract class SmsController {
     abstract void onSmsFailedToSend();
     abstract void onSmsSent();
     final String TAG = "SmsController";
+    PermissionsListener permissionsListener;
 
     public boolean checkPermissions(Context context){
         List<String> permissions = new ArrayList<>();
@@ -42,30 +43,20 @@ public abstract class SmsController {
             if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.SEND_SMS)
                     || ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.RECEIVE_SMS)) {
             } else {
-                if(context instanceof MainActivity)
-                    ((MainActivity)context).smsPermissionsResult.launch(permissions.toArray(new String[permissions.size()]));
-                else ((SetupContactsActivity)context).smsPermissionsResult.launch(permissions.toArray(new String[permissions.size()]));
+                if(context instanceof PermissionsRequestingActivity) {
+                    PermissionsRequestingActivity activity = (PermissionsRequestingActivity) context;
+                    activity.permissionsListener = permissionsListener;
+                    activity.smsPermissionsResult.launch(permissions.toArray(new String[permissions.size()]));
+                }
             }
             return false;
         } else return true;
     }
 
     public void sendSMS(Context context, final SmsBroadcastManager smsBroadcastManager, SmsController smsController, String number, String message) {
-        if(!checkPermissions(context)){
-            PermissionsListener permissionsListener = new PermissionsListener() {
-                @Override
-                public void permissionGranted(boolean granted) {
-                    if(granted){
-                        sendSMS(context, smsBroadcastManager, smsController, number, message);
-                    }
-                }
-            };
+        permissionsListener = granted -> { if(granted) sendSMS(context, smsBroadcastManager, smsController, number, message); };
 
-            if(context instanceof MainActivity)
-                ((MainActivity)context).permissionsListener = permissionsListener;
-            else ((SetupContactsActivity)context).permissionsListener = permissionsListener;
-            return;
-        }
+        if(!checkPermissions(context)) return;
 
         //Register SmsBroadcastManager for sms feedback
         SmsBroadcastManager.smsController = smsController;

@@ -19,7 +19,7 @@ import com.google.android.material.navigation.NavigationBarView;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements NavigationBarView.OnItemSelectedListener {
+public class MainActivity extends PermissionsRequestingActivity implements NavigationBarView.OnItemSelectedListener {
     HomeFragment homeFragment = new HomeFragment();
     EmergencyContactsFragment emergencyContactsFragment = new EmergencyContactsFragment();
     MentalHealthResourcesFragment mentalHealthResourcesFragment = new MentalHealthResourcesFragment();
@@ -31,20 +31,6 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     public static AppSettings settings;
     public static ArrayList<Contact> contacts;
     static boolean dbReady = false;
-    public PermissionsListener permissionsListener;
-
-    ActivityResultLauncher<String[]> smsPermissionsResult = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
-            new ActivityResultCallback<Map<String, Boolean>>() {
-                @Override
-                public void onActivityResult(Map<String, Boolean> result) {
-                    for (String permission : result.keySet())
-                        if (!result.get(permission)) {
-                            if(permissionsListener != null) permissionsListener.permissionGranted(false);
-                            return;
-                        }
-                    if(permissionsListener != null) permissionsListener.permissionGranted(true);
-                }
-            });
 
     static void InitDB(Context context){
         new Thread(() -> {

@@ -12,23 +12,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Map;
 
-public class SetupContactsActivity extends AppCompatActivity {
+public class SetupContactsActivity extends PermissionsRequestingActivity {
     EmergencyContactsFragment contactsFragment;
     final String TAG = "SetupContactActivity";
-    public PermissionsListener permissionsListener;
-
-    ActivityResultLauncher<String[]> smsPermissionsResult = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
-            new ActivityResultCallback<Map<String, Boolean>>() {
-                @Override
-                public void onActivityResult(Map<String, Boolean> result) {
-                    for (String permission : result.keySet())
-                        if (!result.get(permission)) {
-                            if(permissionsListener != null) permissionsListener.permissionGranted(false);
-                            return;
-                        }
-                    if(permissionsListener != null) permissionsListener.permissionGranted(true);
-                }
-            });
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
