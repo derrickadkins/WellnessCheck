@@ -42,9 +42,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import static android.app.Activity.RESULT_OK;
-import static com.derrick.wellnesscheck.MainActivity.db;
-import static com.derrick.wellnesscheck.MainActivity.contacts;
-import static com.derrick.wellnesscheck.MainActivity.settings;
+import static com.derrick.wellnesscheck.DbController.db;
+import static com.derrick.wellnesscheck.DbController.contacts;
+import static com.derrick.wellnesscheck.DbController.settings;
 
 public class EmergencyContactsFragment extends Fragment implements EmergencyContactsRecyclerAdapter.OnContactDeleteListener {
     FloatingActionButton fab;

@@ -3,10 +3,11 @@ package com.derrick.wellnesscheck;
 import static android.content.Intent.ACTION_DEFAULT;
 import static android.content.Intent.ACTION_DELETE;
 
-import static com.derrick.wellnesscheck.MainActivity.InitDB;
-import static com.derrick.wellnesscheck.MainActivity.db;
-import static com.derrick.wellnesscheck.MainActivity.settings;
-import static com.derrick.wellnesscheck.MainActivity.updateSettings;
+import static com.derrick.wellnesscheck.DbController.InitDB;
+import static com.derrick.wellnesscheck.DbController.contacts;
+import static com.derrick.wellnesscheck.DbController.db;
+import static com.derrick.wellnesscheck.DbController.settings;
+import static com.derrick.wellnesscheck.DbController.updateSettings;
 
 import android.app.AlarmManager;
 import android.app.NotificationChannel;
@@ -26,7 +27,7 @@ import androidx.core.app.NotificationManagerCompat;
 
 import java.util.Calendar;
 
-public class MonitorReceiver extends BroadcastReceiver {
+public class MonitorReceiver extends BroadcastReceiver implements DbController.DbListener {
     final String CHANNEL_ID = "WellnessCheck.MonitorReceiver";
     final int NOTIFICATION_ID = 0;
     public static final String ACTION_RESPONSE = "com.derrick.wellnesscheck.CANCEL_TIMER";
@@ -47,15 +48,40 @@ public class MonitorReceiver extends BroadcastReceiver {
     AlarmManager alarmManager;
     final String TAG = "MonitorReceiver";
     public static CheckInListener checkInListener;
+    Intent intent;
+    Context context;
+
     public MonitorReceiver(){}
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        this.intent = intent;
+        this.context = context;
+
         Log.d(TAG, "onReceive, intent = " + intent.toString());
         createNotificationChannel(context);
         notificationManagerCompat = NotificationManagerCompat.from(context);
         alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
+        switch (intent.getAction()){
+            case ACTION_ALARM:
+            case ACTION_RESPONSE:
+                if(db == null) InitDB(context, this);
+                else onDbReady();
+                break;
+            case ACTION_DELETE:
+                notificationManagerCompat.deleteNotificationChannel(CHANNEL_ID);
+                if(countDownTimer != null) countDownTimer.cancel();
+                alarmManager.cancel(PendingIntent.getBroadcast(context, 0,
+                        new Intent(context, MonitorReceiver.class).setAction(ACTION_ALARM)
+                                .putExtras(intent),
+                        PendingIntent.FLAG_UPDATE_CURRENT));
+                break;
+        }
+    }
+
+    @Override
+    public void onDbReady() {
         switch (intent.getAction()){
             case ACTION_ALARM:
                 mainInterval = intent.getLongExtra(EXTRA_INTERVAL1, 60 * 60 * 1000);
@@ -90,32 +116,20 @@ public class MonitorReceiver extends BroadcastReceiver {
                         .setOnlyAlertOnce(true)
                         .setAutoCancel(true);
 
-                if(db == null) InitDB(context);
+
                 settings.checkedIn = false;
                 updateSettings();
-
                 startCheckIn();
                 break;
             case ACTION_RESPONSE:
                 Log.d(TAG, "response timer requested");
                 if (countDownTimer != null) {
-                    if(db == null) InitDB(context);
                     settings.checkedIn = true;
                     updateSettings();
                     countDownTimer.cancel();
                     if(checkInListener != null) checkInListener.onCheckIn();
                     notificationManagerCompat.cancel(NOTIFICATION_ID);
                 }
-                break;
-            case ACTION_DELETE:
-                notificationManagerCompat.deleteNotificationChannel(CHANNEL_ID);
-                if(countDownTimer != null) countDownTimer.cancel();
-                alarmManager.cancel(PendingIntent.getBroadcast(context, 0,
-                        new Intent(context, MonitorReceiver.class).setAction(ACTION_ALARM)
-                                .putExtras(intent),
-                        PendingIntent.FLAG_UPDATE_CURRENT));
-                break;
-            case ACTION_DEFAULT:
                 break;
         }
     }
@@ -140,13 +154,37 @@ public class MonitorReceiver extends BroadcastReceiver {
 
                     @Override
                     public void onFinish() {
-                        //todo: Message Emergency Contact
+                        sendMissedCheckInSMS();
                         builder.setContentText("Message has been sent to your emergency contacts");
                         notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
                     }
                 }.start();
             }
         });
+    }
+
+    void sendMissedCheckInSMS(){
+        SmsBroadcastManager smsBroadcastManager = new SmsBroadcastManager();
+        SmsController smsController = new SmsController() {
+            @Override
+            void onSmsReceived(String number, String message) {}
+            @Override
+            void onSmsFailedToSend() {}
+            @Override
+            void onSmsSent() {}
+        };
+
+        SmsBroadcastManager.smsController = smsController;
+        DbController.DbListener dbListener = new DbController.DbListener() {
+            @Override
+            public void onDbReady() {
+                for(Contact contact : contacts)
+                    smsController.sendSMS(context, smsBroadcastManager, smsController, contact.number, context.getString(R.string.missed_check_in));
+            }
+        };
+
+        if(db == null) InitDB(context, dbListener);
+        else dbListener.onDbReady();
     }
 
     public interface CheckInListener {

@@ -21,4 +21,8 @@
     <string name="turn_off_request">
         May I turn off my wellness checks? Reply: Yes or No
     </string>
+    <string name="missed_check_in">
+        URGENT\n
+        I missed my check in. Please check in on me.
+    </string>
 </resources>

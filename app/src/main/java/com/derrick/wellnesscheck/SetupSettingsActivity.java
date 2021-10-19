@@ -1,7 +1,7 @@
 package com.derrick.wellnesscheck;
 
-import static com.derrick.wellnesscheck.MainActivity.settings;
-import static com.derrick.wellnesscheck.MainActivity.updateSettings;
+import static com.derrick.wellnesscheck.DbController.settings;
+import static com.derrick.wellnesscheck.DbController.updateSettings;
 
 import android.Manifest;
 import android.app.AlarmManager;
@@ -204,12 +204,15 @@ public class SetupSettingsActivity extends AppCompatActivity {
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
+                timer = new Timer();
                 timer.schedule(this, new Date(getNextCheckIn()));
             }
         }, new Date(firstCheckIn));
     }
 
     void startMonitoring(){
+        timer.cancel();
+
         settings.monitoringOn = true;
         settings.nextCheckIn = 0;
         settings.checkedIn = true;
@@ -221,8 +224,8 @@ public class SetupSettingsActivity extends AppCompatActivity {
 
         Intent intent = new Intent(this, MonitorReceiver.class).setAction(MonitorReceiver.ACTION_ALARM)
                 .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
-                .putExtra(MonitorReceiver.EXTRA_INTERVAL1, settings.checkInHours * HOUR_IN_MILLIS)
-                .putExtra(MonitorReceiver.EXTRA_INTERVAL2, settings.respondMinutes * MINUTE_IN_MILLIS)
+                .putExtra(MonitorReceiver.EXTRA_INTERVAL1, (long) (settings.checkInHours * HOUR_IN_MILLIS))
+                .putExtra(MonitorReceiver.EXTRA_INTERVAL2, (long) (settings.respondMinutes * MINUTE_IN_MILLIS))
                 .putExtra(MonitorReceiver.EXTRA_FROM_HOUR, settings.fromHour)
                 .putExtra(MonitorReceiver.EXTRA_FROM_MINUTE, settings.fromMinute)
                 .putExtra(MonitorReceiver.EXTRA_TO_HOUR, settings.toHour)
@@ -238,6 +241,7 @@ public class SetupSettingsActivity extends AppCompatActivity {
 
         startActivity(new Intent(SetupSettingsActivity.this, MainActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK));
+
         SetupSettingsActivity.this.finish();
     }
 

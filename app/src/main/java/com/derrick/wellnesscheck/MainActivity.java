@@ -1,25 +1,20 @@
 package com.derrick.wellnesscheck;
 
-import android.content.Context;
+import static com.derrick.wellnesscheck.DbController.InitDB;
+
 import android.os.Bundle;
 
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
-import androidx.room.Room;
 
 import android.view.MenuItem;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 
 import java.util.ArrayList;
-import java.util.Map;
 
-public class MainActivity extends PermissionsRequestingActivity implements NavigationBarView.OnItemSelectedListener {
+public class MainActivity extends PermissionsRequestingActivity implements NavigationBarView.OnItemSelectedListener, DbController.DbListener {
     HomeFragment homeFragment = new HomeFragment();
     EmergencyContactsFragment emergencyContactsFragment = new EmergencyContactsFragment();
     MentalHealthResourcesFragment mentalHealthResourcesFragment = new MentalHealthResourcesFragment();
@@ -27,46 +22,16 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
     ArrayList<Fragment> fragments = new ArrayList<>();
     int currentFragmentIndex = 0;
     BottomNavigationView bottomNavigationView;
-    public static DB db;
-    public static AppSettings settings;
-    public static ArrayList<Contact> contacts;
-    static boolean dbReady = false;
-
-    static void InitDB(Context context){
-        new Thread(() -> {
-            db = Room.databaseBuilder(context,
-                    DB.class, "database-name")
-                    .fallbackToDestructiveMigration()
-                    .build();
-
-            AppSettings tmpSettings = db.settingsDao().getSettings();
-            if(tmpSettings != null) settings = tmpSettings;
-            else{
-                settings = new AppSettings();
-                db.settingsDao().insert(settings);
-            }
-
-            //use to clear db
-            //db.contactDao().nukeTable();
-            ArrayList<Contact> tmpContacts = new ArrayList<>(db.contactDao().getAll());
-            if(tmpContacts != null) contacts = tmpContacts;
-            else contacts = new ArrayList<>();
-
-            dbReady = true;
-        }).start();
-    }
-
-    static void updateSettings(){
-        new Thread(() -> db.settingsDao().update(settings)).start();
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         InitDB(this);
-        while(!dbReady);
+    }
 
+    @Override
+    public void onDbReady() {
         setContentView(R.layout.activity_main);
 
         fragments.add(homeFragment);
