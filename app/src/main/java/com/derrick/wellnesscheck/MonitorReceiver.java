@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.util.Log;
 
 import java.util.Calendar;
@@ -64,7 +65,12 @@ public class MonitorReceiver extends BroadcastReceiver {
                         PendingIntent.FLAG_UPDATE_CURRENT));
                 break;
         }
-        context.startService(new Intent(context, CheckInService.class).setAction(intent.getAction()).putExtras(intent));
+        Intent notificationIntent = new Intent(context, CheckInService.class).setAction(intent.getAction()).putExtras(intent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(notificationIntent);
+        }else{
+            context.startService(notificationIntent);
+        }
     }
 
     private long getNextCheckIn(){
