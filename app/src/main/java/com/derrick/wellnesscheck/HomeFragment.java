@@ -29,7 +29,7 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class HomeFragment extends Fragment implements MonitorReceiver.CheckInListener {
+public class HomeFragment extends Fragment implements CheckInService.CheckInListener {
     CircularProgressIndicator progressBar;
     TextView tvProgressBar, tvTimerLabel, tvNextCheckIn;
     Button btnTurnOff;
@@ -98,7 +98,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             if (settings.monitoringOn) {
                 if (inResponseTimer) {
                     onCheckIn();
-                    getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(MonitorReceiver.ACTION_RESPONSE));
+                    getActivity().sendBroadcast(new Intent(getActivity(), CheckInService.class).setAction(CheckInService.ACTION_RESPONSE));
                 }
                 return;
             }
@@ -147,7 +147,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     @Override
     public void onResume() {
         super.onResume();
-        MonitorReceiver.checkInListener = this;
+        CheckInService.checkInListener = this;
     }
 
     @Override
