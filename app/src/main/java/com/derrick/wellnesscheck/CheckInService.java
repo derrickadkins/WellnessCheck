@@ -9,17 +9,15 @@ import static com.derrick.wellnesscheck.DbController.updateSettings;
 import static com.derrick.wellnesscheck.MonitorReceiver.ACTION_ALARM;
 import static com.derrick.wellnesscheck.MonitorReceiver.EXTRA_INTERVAL2;
 
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.CountDownTimer;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -50,12 +48,13 @@ public class CheckInService extends Service implements DbController.DbListener {
     @Override
     public void onCreate() {
         super.onCreate();
-        createNotificationChannel(this);
+        createNotificationChannel();
         notificationManagerCompat = NotificationManagerCompat.from(this);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "CheckInService started: " + intent.toString());
         this.intent = intent;
         switch (intent.getAction()){
             case ACTION_ALARM:
@@ -70,13 +69,18 @@ public class CheckInService extends Service implements DbController.DbListener {
                         .setSmallIcon(android.R.drawable.alert_light_frame)
                         .setContentTitle("Time To Check In")
                         .setContentText("Click to check in. Notifying Emergency Contact in " + timeLeft)
-                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                        .setPriority(NotificationCompat.PRIORITY_MAX)
                         .setContentIntent(PendingIntent.getService(this, 0,
                                 new Intent(this, CheckInService.class)
                                         .setAction(ACTION_RESPONSE),
                                 PendingIntent.FLAG_UPDATE_CURRENT))
                         .setOnlyAlertOnce(true)
-                        .setAutoCancel(true);
+                        .setAutoCancel(true)
+                        .setOngoing(true);
+
+                Notification notification = builder.build();
+                notificationManagerCompat.notify(NOTIFICATION_ID, notification);
+                startForeground(NOTIFICATION_ID, notification);
                 startCheckIn();
                 InitDB(this);
                 break;
@@ -92,6 +96,7 @@ public class CheckInService extends Service implements DbController.DbListener {
             case ACTION_DELETE:
                 notificationManagerCompat.deleteNotificationChannel(CHANNEL_ID);
                 if(countDownTimer != null) countDownTimer.cancel();
+                CheckInService.this.stopSelf();
                 break;
         }
         return START_STICKY_COMPATIBILITY;
@@ -107,40 +112,37 @@ public class CheckInService extends Service implements DbController.DbListener {
             case ACTION_RESPONSE:
                 settings.checkedIn = true;
                 updateSettings();
+                CheckInService.this.stopSelf();
                 break;
         }
     }
 
     void startCheckIn() {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
+        Log.d(TAG, "check in started, responseInterval = " + responseInterval);
+
+        countDownTimer = new CountDownTimer(responseInterval, 1000) {
             @Override
-            public void run() {
-                Log.d(TAG, "check in started, responseInterval = " + responseInterval);
-
-                countDownTimer = new CountDownTimer(responseInterval, 1000) {
-                    @Override
-                    public void onTick(long millisUntilFinished) {
-                        long minutes = millisUntilFinished / (60 * 1000) % 60;
-                        long seconds = millisUntilFinished / 1000 % 60;
-                        String timeLeft = minutes > 0 ? minutes + ":" : "";
-                        timeLeft += String.format("%02d", seconds);
-
-                        builder.setContentText("Click to check in. Notifying Emergency Contact in " + timeLeft);
-                        notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
-                    }
-
-                    @Override
-                    public void onFinish() {
-                        sendMissedCheckInSMS();
-                        builder.setContentText("Message has been sent to your emergency contacts");
-                        notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
-                    }
-                }.start();
+            public void onTick(long millisUntilFinished) {
+                long minutes = millisUntilFinished / (60 * 1000) % 60;
+                long seconds = millisUntilFinished / 1000 % 60;
+                String timeLeft = minutes > 0 ? minutes + ":" : "";
+                timeLeft += String.format("%02d", seconds);
+                builder.setContentText("Click to check in. Notifying Emergency Contact in " + timeLeft);
+                notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
             }
-        });
+
+            @Override
+            public void onFinish() {
+                sendMissedCheckInSMS();
+                builder.setContentText("Message has been sent to your emergency contacts");
+                notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
+                CheckInService.this.stopSelf();
+            }
+        }.start();
     }
 
     void sendMissedCheckInSMS(){
+        Log.d(TAG, "Sending Missed Check-In SMS");
         SmsBroadcastManager smsBroadcastManager = new SmsBroadcastManager();
         SmsController smsController = new SmsController() {
             @Override
@@ -156,7 +158,7 @@ public class CheckInService extends Service implements DbController.DbListener {
             @Override
             public void onDbReady() {
                 for(Contact contact : contacts)
-                    smsController.sendSMS(getApplicationContext(), smsBroadcastManager, smsController, contact.number, getString(R.string.missed_check_in));
+                    smsController.sendSMS(CheckInService.this, smsBroadcastManager, smsController, contact.number, getString(R.string.missed_check_in));
             }
         };
 
@@ -164,18 +166,19 @@ public class CheckInService extends Service implements DbController.DbListener {
         else dbListener.onDbReady();
     }
 
-    private void createNotificationChannel(Context context) {
+    private void createNotificationChannel() {
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = context.getString(R.string.channel_name);
-            String description = context.getString(R.string.channel_description);
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            CharSequence name = getString(R.string.channel_name);
+            String description = getString(R.string.channel_description);
+            int importance = NotificationManager.IMPORTANCE_HIGH;
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             // Register the channel with the system; you can't change the importance
             // or other notification behaviors after this
-            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
     }

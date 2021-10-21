@@ -1,26 +1,14 @@
 package com.derrick.wellnesscheck;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.provider.Telephony;
 import android.telephony.SmsManager;
-import android.util.Log;
-
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.Arrays;
 
 public abstract class SmsController {
     int unsentParts, unreceivedSMS;
@@ -28,36 +16,8 @@ public abstract class SmsController {
     abstract void onSmsFailedToSend();
     abstract void onSmsSent();
     final String TAG = "SmsController";
-    PermissionsListener permissionsListener;
 
-    public boolean checkPermissions(Context context){
-        List<String> permissions = new ArrayList<>();
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.SEND_SMS);
-        }
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.RECEIVE_SMS);
-        }
-
-        if (permissions.size() > 0) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.SEND_SMS)
-                    || ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.RECEIVE_SMS)) {
-            } else {
-                if(context instanceof PermissionsRequestingActivity) {
-                    PermissionsRequestingActivity activity = (PermissionsRequestingActivity) context;
-                    activity.permissionsListener = permissionsListener;
-                    activity.smsPermissionsResult.launch(permissions.toArray(new String[permissions.size()]));
-                }
-            }
-            return false;
-        } else return true;
-    }
-
-    public void sendSMS(Context context, final SmsBroadcastManager smsBroadcastManager, SmsController smsController, String number, String message) {
-        permissionsListener = granted -> { if(granted) sendSMS(context, smsBroadcastManager, smsController, number, message); };
-
-        if(!checkPermissions(context)) return;
-
+    public void sendSMS(Context context, SmsBroadcastManager smsBroadcastManager, SmsController smsController, String number, String message) {
         //Register SmsBroadcastManager for sms feedback
         SmsBroadcastManager.smsController = smsController;
         IntentFilter intentFilter = new IntentFilter();
@@ -90,6 +50,25 @@ public abstract class SmsController {
             String normalizedNumber = normalizeNumber(number);
             smsManager.sendMultipartTextMessage(normalizedNumber, null, parts, pendingIntents, null);
         }
+    }
+
+    public void sendSMS(PermissionsRequestingActivity context, SmsBroadcastManager smsBroadcastManager, SmsController smsController, String number, String message) {
+        context.checkPermissions(new String[]{Manifest.permission.SEND_SMS, Manifest.permission.RECEIVE_SMS}, new PermissionsListener() {
+            @Override
+            public void permissionsGranted() {
+                sendSMS((Context) context, smsBroadcastManager, smsController, number, message);
+            }
+
+            @Override
+            public void permissionsDenied() {
+
+            }
+
+            @Override
+            public void showRationale(String[] permissions) {
+
+            }
+        });
     }
 
     public static String normalizeNumber(String number){

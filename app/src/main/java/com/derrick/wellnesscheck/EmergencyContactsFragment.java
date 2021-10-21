@@ -5,7 +5,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -19,13 +18,9 @@ import android.widget.ProgressBar;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContract;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.view.ContextThemeWrapper;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -35,6 +30,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
@@ -51,19 +47,6 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
     EmergencyContactsRecyclerAdapter emergencyContactsRecyclerAdapter;
     RecyclerView contactsList;
     Button setupNext;
-
-    ActivityResultLauncher<String> contactPermissionsResult = registerForActivityResult(new ActivityResultContracts.RequestPermission(),
-            new ActivityResultCallback<Boolean>() {
-                @Override
-                public void onActivityResult(Boolean result) {
-                    if(result) {
-                        loadContacts();
-                        setupAdapter();
-                    } else {
-                        //Log.e(TAG, "onActivityResult: PERMISSION DENIED");
-                    }
-                }
-            });
 
     ActivityResultLauncher<Object> contactChooserResult = registerForActivityResult(new ActivityResultContract<Object, Object>() {
         @NonNull
@@ -122,45 +105,55 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_CONTACTS)
-                        == PackageManager.PERMISSION_GRANTED) {
-                    contactChooserResult.launch(null);
-                }else{
-                    // todo: Add contact manually
-                }
+                ((PermissionsRequestingActivity) getContext()).checkPermissions(new String[]{Manifest.permission.READ_CONTACTS}, new PermissionsListener() {
+                    @Override
+                    public void permissionsGranted() {
+                        contactChooserResult.launch(null);
+                    }
+
+                    @Override
+                    public void permissionsDenied() {
+                        // todo: Add contact manually
+                    }
+
+                    @Override
+                    public void showRationale(String[] permissions) {
+
+                    }
+                });
             }
         });
 
         contactsList = emergencyContactsFragmentView.findViewById(R.id.emergency_contacts_recyclerview);
         contactsList.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        new Thread(new Runnable() {
+        ((PermissionsRequestingActivity) getContext()).checkPermissions(new String[]{Manifest.permission.READ_CONTACTS}, new PermissionsListener() {
             @Override
-            public void run() {
-                if(ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_CONTACTS)
-                        == PackageManager.PERMISSION_GRANTED) {
-                    loadContacts();
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            setupAdapter();
-                        }
-                    });
-                }
+            public void permissionsGranted() {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        loadContacts();
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                setupAdapter();
+                            }
+                        });
+                    }
+                }).start();
             }
-        }).start();
 
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.READ_CONTACTS)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-                    Manifest.permission.READ_CONTACTS)) {
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-            } else {
-                contactPermissionsResult.launch(Manifest.permission.READ_CONTACTS);
+            @Override
+            public void permissionsDenied() {
+
             }
-        }
+
+            @Override
+            public void showRationale(String[] permissions) {
+
+            }
+        });
 
         setupNext = emergencyContactsFragmentView.findViewById(R.id.btnSetupNext);
         setupNext.setVisibility(getActivity().getLocalClassName().equalsIgnoreCase("SetupContactsActivity") ? View.VISIBLE : View.GONE);
@@ -342,6 +335,6 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
 
         alertDialog.show();
 
-        smsController.sendSMS(getContext(), smsBroadcastManager, smsController, contact.number, getString(R.string.contact_request));
+        smsController.sendSMS((PermissionsRequestingActivity) getContext(), smsBroadcastManager, smsController, contact.number, getString(R.string.contact_request));
     }
 }

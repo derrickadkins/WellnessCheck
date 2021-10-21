@@ -1,5 +1,7 @@
 package com.derrick.wellnesscheck;
 
 public interface PermissionsListener{
-    void permissionGranted(boolean granted);
+    void permissionsGranted();
+    void permissionsDenied();
+    void showRationale(String[] permissions);
 }

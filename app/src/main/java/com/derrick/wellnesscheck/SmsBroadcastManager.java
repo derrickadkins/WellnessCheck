@@ -47,7 +47,7 @@ public class SmsBroadcastManager extends BroadcastReceiver {
                         String senderNo = currentSMS.getDisplayOriginatingAddress();
                         String message = currentSMS.getDisplayMessageBody();
                         String normalizedNumber = SmsController.normalizeNumber(senderNo);
-                        smsController.onSmsReceived(normalizedNumber, message);
+                        if(smsController != null) smsController.onSmsReceived(normalizedNumber, message);
                     }
                 }
                 break;
@@ -55,11 +55,11 @@ public class SmsBroadcastManager extends BroadcastReceiver {
                 switch (getResultCode()){
                     case Activity.RESULT_OK:
                         Log.i(TAG, "Message sent");
-                        smsController.onSmsSent();
+                        if(smsController != null) smsController.onSmsSent();
                         break;
                     case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
                         Log.i(TAG, "Message failed to send");
-                        smsController.onSmsFailedToSend();
+                        if(smsController != null) smsController.onSmsFailedToSend();
                         break;
                     default:
                         Log.i(TAG, "Result Code = " + getResultCode());

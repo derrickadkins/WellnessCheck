@@ -98,7 +98,7 @@ public class HomeFragment extends Fragment implements CheckInService.CheckInList
             if (settings.monitoringOn) {
                 if (inResponseTimer) {
                     onCheckIn();
-                    getActivity().sendBroadcast(new Intent(getActivity(), CheckInService.class).setAction(CheckInService.ACTION_RESPONSE));
+                    getActivity().startService(new Intent(getActivity(), CheckInService.class).setAction(CheckInService.ACTION_RESPONSE));
                 }
                 return;
             }
@@ -322,7 +322,7 @@ public class HomeFragment extends Fragment implements CheckInService.CheckInList
         };
 
         for (Contact contact : contacts) {
-            smsController.sendSMS(getContext(), smsBroadcastManager, smsController, contact.number, getString(R.string.turn_off_request));
+            smsController.sendSMS((PermissionsRequestingActivity) getContext(), smsBroadcastManager, smsController, contact.number, getString(R.string.turn_off_request));
         }
     }
 }

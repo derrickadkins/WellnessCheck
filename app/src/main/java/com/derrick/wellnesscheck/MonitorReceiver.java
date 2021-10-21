@@ -42,6 +42,8 @@ public class MonitorReceiver extends BroadcastReceiver {
 
         alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
+        Intent notificationIntent = new Intent(context, CheckInService.class).setAction(intent.getAction()).putExtras(intent);
+
         switch (intent.getAction()){
             case ACTION_ALARM:
                 //setup next one
@@ -57,19 +59,21 @@ public class MonitorReceiver extends BroadcastReceiver {
                                 .putExtras(intent),
                         PendingIntent.FLAG_UPDATE_CURRENT);
                 alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(getNextCheckIn(), alarmPendingIntent), alarmPendingIntent);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    Log.d(TAG, "startForegroundService called");
+                    context.startForegroundService(notificationIntent);
+                }else{
+                    Log.d(TAG, "startService called");
+                    context.startService(notificationIntent);
+                }
                 break;
             case ACTION_DELETE:
                 alarmManager.cancel(PendingIntent.getBroadcast(context, 0,
                         new Intent(context, MonitorReceiver.class).setAction(ACTION_ALARM)
                                 .putExtras(intent),
                         PendingIntent.FLAG_UPDATE_CURRENT));
+                context.startService(notificationIntent);
                 break;
-        }
-        Intent notificationIntent = new Intent(context, CheckInService.class).setAction(intent.getAction()).putExtras(intent);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(notificationIntent);
-        }else{
-            context.startService(notificationIntent);
         }
     }
 

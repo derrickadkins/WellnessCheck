@@ -9,8 +9,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.app.TimePickerDialog;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -18,20 +16,14 @@ import android.widget.CompoundButton;
 import android.widget.NumberPicker;
 import android.widget.Switch;
 import android.widget.TextView;
-
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class SetupSettingsActivity extends AppCompatActivity {
+public class SetupSettingsActivity extends PermissionsRequestingActivity {
     NumberPicker checkInHours, respondMinutes;
     TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck;
     Switch allDay, fallDetection;
@@ -39,15 +31,6 @@ public class SetupSettingsActivity extends AppCompatActivity {
     Timer timer = new Timer();
     final int HOUR_IN_MILLIS = 60 * 60 * 1000;
     final int MINUTE_IN_MILLIS = 60 * 1000;
-
-    ActivityResultLauncher setExactAlarmPermissionsResult = registerForActivityResult(new ActivityResultContracts.RequestPermission(), new ActivityResultCallback<Boolean>() {
-        @Override
-        public void onActivityResult(Boolean result) {
-            if(result) {
-                startMonitoring();
-            }
-        }
-    });
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -58,12 +41,23 @@ public class SetupSettingsActivity extends AppCompatActivity {
         finishSetup = findViewById(R.id.btnFinishSetup);
         finishSetup.setVisibility(View.VISIBLE);
         finishSetup.setOnClickListener(v -> {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if(ActivityCompat.checkSelfPermission(this, Manifest.permission.SCHEDULE_EXACT_ALARM) == PackageManager.PERMISSION_GRANTED)
+            checkPermissions(new String[]{Manifest.permission.SCHEDULE_EXACT_ALARM,
+                    Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS}, new PermissionsListener() {
+                @Override
+                public void permissionsGranted() {
                     startMonitoring();
-                else setExactAlarmPermissionsResult.launch(Manifest.permission.SCHEDULE_EXACT_ALARM);
-            }
-            else startMonitoring();
+                }
+
+                @Override
+                public void permissionsDenied() {
+
+                }
+
+                @Override
+                public void showRationale(String[] permissions) {
+
+                }
+            });
         });
 
         checkInHours = (NumberPicker) findViewById(R.id.numberPickerHours);

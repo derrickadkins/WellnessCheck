@@ -52,6 +52,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         }
     }
 
+    //todo: Can not perform this action after onSaveInstanceState
     public void setFragment(int fragmentIndex){
         currentFragmentIndex = fragmentIndex;
         fragmentManager.beginTransaction().replace(R.id.main_content_fragment, fragments.get(fragmentIndex)).commit();
