@@ -10,6 +10,7 @@ import android.app.Service;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -17,13 +18,13 @@ import android.widget.NumberPicker;
 import android.widget.Switch;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class SetupSettingsActivity extends PermissionsRequestingActivity {
+    final String TAG = "SetupSettingsActivity";
     NumberPicker checkInHours, respondMinutes;
     TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck;
     Switch allDay, fallDetection;
@@ -212,22 +213,32 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         settings.checkedIn = true;
         settings.firstCheckIn = getNextCheckIn();
         updateSettings();
-        //Log.d(TAG, "triggering first alarm in " + (settings.nextCheckIn - System.currentTimeMillis()) + " millis");
+        Log.d(TAG, "triggering first alarm in " + (settings.firstCheckIn - System.currentTimeMillis()) + " millis");
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(Service.ALARM_SERVICE);
 
         Intent intent = new Intent(this, MonitorReceiver.class).setAction(MonitorReceiver.ACTION_ALARM)
                 .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
-                .putExtra(MonitorReceiver.EXTRA_INTERVAL1, (long) (settings.checkInHours * HOUR_IN_MILLIS))
-                .putExtra(MonitorReceiver.EXTRA_INTERVAL2, (long) (settings.respondMinutes * MINUTE_IN_MILLIS))
-                .putExtra(MonitorReceiver.EXTRA_FROM_HOUR, settings.fromHour)
-                .putExtra(MonitorReceiver.EXTRA_FROM_MINUTE, settings.fromMinute)
-                .putExtra(MonitorReceiver.EXTRA_TO_HOUR, settings.toHour)
-                .putExtra(MonitorReceiver.EXTRA_TO_MINUTE, settings.toMinute)
-                .putExtra(MonitorReceiver.EXTRA_ALL_DAY, settings.allDay);
+                .putExtra(CheckInService.EXTRA_INTERVAL1, (long) (settings.checkInHours * HOUR_IN_MILLIS))
+                .putExtra(CheckInService.EXTRA_INTERVAL2, (long) (settings.respondMinutes * MINUTE_IN_MILLIS))
+                .putExtra(CheckInService.EXTRA_FROM_HOUR, settings.fromHour)
+                .putExtra(CheckInService.EXTRA_FROM_MINUTE, settings.fromMinute)
+                .putExtra(CheckInService.EXTRA_TO_HOUR, settings.toHour)
+                .putExtra(CheckInService.EXTRA_TO_MINUTE, settings.toMinute)
+                .putExtra(CheckInService.EXTRA_ALL_DAY, settings.allDay);
 
         PendingIntent pendingNotifyIntent = PendingIntent.getBroadcast(this, 0,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        /*
+        PendingIntent pendingNotifyIntent;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            pendingNotifyIntent = PendingIntent.getForegroundService(this, 0,
+                    intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        }else{
+            pendingNotifyIntent = PendingIntent.getService(this, 0,
+                    intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        }
+         */
 
         AlarmManager.AlarmClockInfo alarmClockInfo = new AlarmManager.AlarmClockInfo(settings.firstCheckIn, pendingNotifyIntent);
 

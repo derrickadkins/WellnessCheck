@@ -9,11 +9,13 @@ import static com.derrick.wellnesscheck.DbController.updateSettings;
 import static com.derrick.wellnesscheck.MonitorReceiver.ACTION_ALARM;
 import static com.derrick.wellnesscheck.MonitorReceiver.EXTRA_INTERVAL2;
 
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.CountDownTimer;
@@ -24,15 +26,31 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import java.util.Calendar;
+
 public class CheckInService extends Service implements DbController.DbListener {
     final String TAG = "CheckInService";
-    final int NOTIFICATION_ID = 0;
+    final int NOTIFICATION_ID = 1;
     public static final String ACTION_RESPONSE = "com.derrick.wellnesscheck.CANCEL_TIMER";
+    public static final String ACTION_ALARM = "com.derrick.wellnesscheck.ALARM_TRIGGERED";
+    public static final String EXTRA_INTERVAL1 = "mainInterval";
+    public static final String EXTRA_INTERVAL2 = "responseInterval";
+    public static final String EXTRA_ALL_DAY = "allDay";
+    public static final String EXTRA_FROM_HOUR = "fromHour";
+    public static final String EXTRA_FROM_MINUTE = "fromMinute";
+    public static final String EXTRA_TO_HOUR = "toHour";
+    public static final String EXTRA_TO_MINUTE = "toMinute";
+
     final String CHANNEL_ID = "WellnessCheck.CheckInService";
     NotificationCompat.Builder builder;
     NotificationManagerCompat notificationManagerCompat;
     static CountDownTimer countDownTimer;
     long responseInterval;
+    long mainInterval;
+    int fromHour, fromMinute, toHour, toMinute;
+    boolean allDay;
+    AlarmManager alarmManager;
+
     Intent intent;
     public static CheckInListener checkInListener;
     public interface CheckInListener {
@@ -47,9 +65,29 @@ public class CheckInService extends Service implements DbController.DbListener {
 
     @Override
     public void onCreate() {
+        Log.d(TAG, "CheckInService created");
         super.onCreate();
         createNotificationChannel();
         notificationManagerCompat = NotificationManagerCompat.from(this);
+        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        PendingIntent responseIntent = PendingIntent.getService(this, 0,
+                new Intent(this, CheckInService.class)
+                        .setAction(ACTION_RESPONSE),
+                PendingIntent.FLAG_UPDATE_CURRENT);
+        builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.alert_light_frame)
+                .setContentTitle("Time To Check In")
+                .setContentText("Click to check in. Notifying Emergency Contact in 00")
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setContentIntent(responseIntent)
+                .addAction(android.R.drawable.alert_light_frame, ACTION_RESPONSE, responseIntent)
+                .setOnlyAlertOnce(true)
+                .setAutoCancel(true)
+                .setOngoing(true);
+
+        Notification notification = builder.build();
+        notificationManagerCompat.notify(NOTIFICATION_ID, notification);
+        startForeground(NOTIFICATION_ID, notification);
     }
 
     @Override
@@ -58,29 +96,45 @@ public class CheckInService extends Service implements DbController.DbListener {
         this.intent = intent;
         switch (intent.getAction()){
             case ACTION_ALARM:
+                //setup next one
+                mainInterval = intent.getLongExtra(EXTRA_INTERVAL1, 60 * 60 * 1000);
+                allDay = intent.getBooleanExtra(EXTRA_ALL_DAY, false);
+                fromHour = intent.getIntExtra(EXTRA_FROM_HOUR, 8);
+                fromMinute = intent.getIntExtra(EXTRA_FROM_MINUTE, 0);
+                toHour = intent.getIntExtra(EXTRA_TO_HOUR, 20);
+                toMinute = intent.getIntExtra(EXTRA_TO_MINUTE, 0);
                 responseInterval = intent.getLongExtra(EXTRA_INTERVAL2, 60 * 1000);
+
+                PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(this, 0,
+                        new Intent(this, MonitorReceiver.class).setAction(ACTION_ALARM)
+                                .putExtras(intent),
+                        PendingIntent.FLAG_UPDATE_CURRENT);
+                /*
+                PendingIntent alarmPendingIntent;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    alarmPendingIntent = PendingIntent.getForegroundService(this, 0,
+                            new Intent(this, CheckInService.class).setAction(ACTION_ALARM)
+                                    .putExtras(intent),
+                            PendingIntent.FLAG_UPDATE_CURRENT);
+                }else{
+                    alarmPendingIntent = PendingIntent.getService(this, 0,
+                            new Intent(this, CheckInService.class).setAction(ACTION_ALARM)
+                                    .putExtras(intent),
+                            PendingIntent.FLAG_UPDATE_CURRENT);
+                }
+                 */
+                alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(getNextCheckIn(), alarmPendingIntent), alarmPendingIntent);
 
                 long minutes = responseInterval / (60 * 1000) % 60;
                 long seconds = responseInterval / 1000 % 60;
                 String timeLeft = minutes > 0 ? minutes + ":" : "";
                 timeLeft += String.format("%02d", seconds);
 
-                builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                        .setSmallIcon(android.R.drawable.alert_light_frame)
-                        .setContentTitle("Time To Check In")
-                        .setContentText("Click to check in. Notifying Emergency Contact in " + timeLeft)
-                        .setPriority(NotificationCompat.PRIORITY_MAX)
-                        .setContentIntent(PendingIntent.getService(this, 0,
-                                new Intent(this, CheckInService.class)
-                                        .setAction(ACTION_RESPONSE),
-                                PendingIntent.FLAG_UPDATE_CURRENT))
-                        .setOnlyAlertOnce(true)
-                        .setAutoCancel(true)
-                        .setOngoing(true);
-
+                builder.setContentText("Click to check in. Notifying Emergency Contact in " + timeLeft);
                 Notification notification = builder.build();
                 notificationManagerCompat.notify(NOTIFICATION_ID, notification);
                 startForeground(NOTIFICATION_ID, notification);
+
                 startCheckIn();
                 InitDB(this);
                 break;
@@ -181,5 +235,59 @@ public class CheckInService extends Service implements DbController.DbListener {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
+    }
+
+    private long getNextCheckIn(){
+        final long DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
+
+        //used to get excluded time boundaries
+        Calendar calendar = Calendar.getInstance();
+        //clear for precision
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        //start with default and change if in excluded hours
+        long nextCheckIn = calendar.getTimeInMillis() + mainInterval;
+
+        //get from time
+        calendar.set(Calendar.HOUR_OF_DAY, fromHour);
+        calendar.set(Calendar.MINUTE, fromMinute);
+        long startOfDay = calendar.getTimeInMillis();
+
+        //get to time
+        calendar.set(Calendar.HOUR_OF_DAY, toHour);
+        calendar.set(Calendar.MINUTE, toMinute);
+        long endOfDay = calendar.getTimeInMillis();
+
+        /*
+        add one minute from midnight because day of month or
+        year might be the last one, so adding a minute is easier
+         */
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 0);
+        calendar.add(Calendar.SECOND, 1);
+        long midnight = calendar.getTimeInMillis();
+
+        //put excluded time boundaries on either side of next check-in
+        if(allDay && nextCheckIn > midnight){
+            nextCheckIn = midnight;
+        }else if(startOfDay < endOfDay) {
+            if(nextCheckIn > endOfDay)
+                startOfDay += DAY_IN_MILLIS;
+            else if(nextCheckIn < startOfDay)
+                endOfDay -= DAY_IN_MILLIS;
+        }else if(startOfDay > endOfDay) {
+            if(nextCheckIn > startOfDay)
+                endOfDay += DAY_IN_MILLIS;
+            else if(nextCheckIn < endOfDay)
+                startOfDay -= DAY_IN_MILLIS;
+        }
+
+        //return default if all day or not in excluded time, otherwise return next start time
+        if(startOfDay == endOfDay || (nextCheckIn < endOfDay && nextCheckIn > startOfDay))
+            return nextCheckIn;
+        else return startOfDay;
     }
 }

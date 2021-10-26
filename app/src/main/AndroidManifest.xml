@@ -14,6 +14,7 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
     <uses-permission-sdk-23 android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission-sdk-23 android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+    <uses-permission-sdk-23 android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
         android:allowBackup="true"

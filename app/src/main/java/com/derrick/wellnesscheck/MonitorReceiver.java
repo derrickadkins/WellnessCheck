@@ -7,6 +7,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import java.util.Calendar;
@@ -60,12 +62,24 @@ public class MonitorReceiver extends BroadcastReceiver {
                         PendingIntent.FLAG_UPDATE_CURRENT);
                 alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(getNextCheckIn(), alarmPendingIntent), alarmPendingIntent);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    Log.d(TAG, "startForegroundService called");
+                    Log.d(TAG, "startForegroundService called with " + notificationIntent.toString());
                     context.startForegroundService(notificationIntent);
                 }else{
                     Log.d(TAG, "startService called");
                     context.startService(notificationIntent);
                 }
+                /*new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            Log.d(TAG, "startForegroundService called with " + notificationIntent.toString());
+                            context.startForegroundService(notificationIntent);
+                        }else{
+                            Log.d(TAG, "startService called");
+                            context.startService(notificationIntent);
+                        }
+                    }
+                });*/
                 break;
             case ACTION_DELETE:
                 alarmManager.cancel(PendingIntent.getBroadcast(context, 0,
