@@ -14,6 +14,7 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
     <uses-permission-sdk-23 android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission-sdk-23 android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+    <uses-permission-sdk-23 android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
         android:allowBackup="true"
@@ -28,6 +29,7 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <action android:name="com.derrick.wellnesscheck.ALARM_TRIGGERED"/>
                 <action android:name="com.derrick.wellnesscheck.CANCEL_TIMER" />
+                <action android:name="com.derrick.wellnesscheck.SEND_SMS" />
                 <action android:name="android.intent.action.DELETE" />
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -36,7 +38,7 @@
 
         <receiver android:enabled="true" android:exported="true" android:name=".SmsBroadcastManager"/>
 
-        <service android:enabled="true" android:exported="true" android:name=".CheckInService" />
+<!--        <service android:enabled="true" android:exported="true" android:name=".CheckInService" />-->
 
         <activity android:exported="true"
             android:name=".MainActivity"

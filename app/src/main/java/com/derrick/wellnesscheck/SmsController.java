@@ -8,7 +8,6 @@ import android.content.IntentFilter;
 import android.provider.Telephony;
 import android.telephony.SmsManager;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public abstract class SmsController {
     int unsentParts, unreceivedSMS;
