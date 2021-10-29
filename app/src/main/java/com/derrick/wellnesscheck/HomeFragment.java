@@ -9,7 +9,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -126,19 +125,18 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 if (inResponseTimer) {
                     millis = settings.nextCheckIn - checkInInterval + responseInterval - now;
                 }
-            }
+            }else inResponseTimer = false;
 
             progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
             tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
 
-            if (timer == null) {
             /*Log.d("Start Timer", "called from onCreateView"
                     + ", inResponseTimer = " + inResponseTimer
                     + ", millis = " + millis
                     + ", settings.nextCheckIn = " + settings.nextCheckIn
                     + ", now = " + now);*/
-                startTimer(millis);
-            }else setNextCheckInText(millis);
+            if(timer != null) timer.cancel();
+            startTimer(millis);
         }
 
         return homeFragmentView;

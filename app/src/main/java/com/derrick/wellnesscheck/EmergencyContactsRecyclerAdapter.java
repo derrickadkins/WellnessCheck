@@ -12,16 +12,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class EmergencyContactsRecyclerAdapter extends RecyclerView.Adapter<EmergencyContactsRecyclerAdapter.ViewHolder> {
-    private ArrayList<Contact> mData;
+    private List<Contact> mData;
     private LayoutInflater mInflater;
     private Contact mRecentlyDeletedItem;
     private int mRecentlyDeletedItemPosition;
     private Context context;
     private OnContactDeleteListener contactDeleteListener;
 
-    public EmergencyContactsRecyclerAdapter(Context context, ArrayList<Contact> dataSet, OnContactDeleteListener contactDeleteListener){
+    public EmergencyContactsRecyclerAdapter(Context context, List<Contact> dataSet, OnContactDeleteListener contactDeleteListener){
         this.context = context;
         mInflater = LayoutInflater.from(context);
         mData = dataSet;

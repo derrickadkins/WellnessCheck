@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.provider.Telephony;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
-import android.util.Log;
 
 public class SmsBroadcastManager extends BroadcastReceiver {
     public static final String ACTION_SEND_SMS_RESULT = "send_sms_result";
@@ -19,7 +18,7 @@ public class SmsBroadcastManager extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.i(TAG, "onReceive");
+        Log.d(TAG, "onReceive");
         switch (intent.getAction()) {
             case Telephony.Sms.Intents.SMS_DELIVER_ACTION:
                 Log.d(TAG, "SMS_DELIVER_ACTION");
@@ -54,21 +53,21 @@ public class SmsBroadcastManager extends BroadcastReceiver {
             case ACTION_SEND_SMS_RESULT:
                 switch (getResultCode()){
                     case Activity.RESULT_OK:
-                        Log.i(TAG, "Message sent");
+                        Log.d(TAG, "Message sent");
                         if(smsController != null) smsController.onSmsSent();
                         break;
                     case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                        Log.i(TAG, "Message failed to send");
+                        Log.d(TAG, "Message failed to send");
                         if(smsController != null) smsController.onSmsFailedToSend();
                         break;
                     default:
-                        Log.i(TAG, "Result Code = " + getResultCode());
+                        Log.d(TAG, "Result Code = " + getResultCode());
                         break;
                 }
                 break;
             default:
-                Log.i(TAG, "Action = " + intent.getAction());
-                Log.i(TAG, "Result Code = " + getResultCode());
+                Log.d(TAG, "Action = " + intent.getAction());
+                Log.d(TAG, "Result Code = " + getResultCode());
                 break;
         }
     }

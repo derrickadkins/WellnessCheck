@@ -12,10 +12,23 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import java.util.List;
 
-@Database(entities = {Contact.class, AppSettings.class}, version = 2, exportSchema = false)
+@Database(entities = {Contact.class, AppSettings.class, LogEntry.class}, version = 1, exportSchema = false)
 public abstract class DB extends RoomDatabase {
     public abstract ContactDao contactDao();
     public abstract SettingsDao settingsDao();
+    public abstract LogDao logDao();
+
+    @Dao
+    public interface LogDao {
+        @Query("SELECT * FROM logEntry ORDER BY time DESC")
+        List<LogEntry> getAll();
+
+        @Insert
+        void insert(LogEntry... logEntries);
+
+        @Query("DELETE FROM LogEntry")
+        void nukeTable();
+    }
 
     @Dao
     public interface ContactDao {

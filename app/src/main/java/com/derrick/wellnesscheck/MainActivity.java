@@ -18,6 +18,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
     HomeFragment homeFragment = new HomeFragment();
     EmergencyContactsFragment emergencyContactsFragment = new EmergencyContactsFragment();
     MentalHealthResourcesFragment mentalHealthResourcesFragment = new MentalHealthResourcesFragment();
+    LogFragment logFragment = new LogFragment();
     FragmentManager fragmentManager = getSupportFragmentManager();
     ArrayList<Fragment> fragments = new ArrayList<>();
     int currentFragmentIndex = 0;
@@ -36,9 +37,9 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
 
         fragments.add(homeFragment);
         fragments.add(emergencyContactsFragment);
-        fragments.add(mentalHealthResourcesFragment);
+        fragments.add(logFragment);
 
-        bottomNavigationView = (BottomNavigationView) findViewById(R.id.nav);
+        bottomNavigationView = findViewById(R.id.nav);
         bottomNavigationView.setOnItemSelectedListener(this);
         bottomNavigationView.setSelectedItemId(R.id.action_home);
     }
@@ -65,7 +66,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         if (id == R.id.action_home) {
             setFragment(fragments.indexOf(homeFragment));
         }else if (id == R.id.action_mental_health_resources) {
-            setFragment(fragments.indexOf(mentalHealthResourcesFragment));
+            setFragment(fragments.indexOf(logFragment));
         }else if (id == R.id.action_emergency_contacts) {
             setFragment(fragments.indexOf(emergencyContactsFragment));
         }
