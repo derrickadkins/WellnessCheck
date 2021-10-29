@@ -64,7 +64,11 @@ public abstract class PermissionsRequestingActivity extends AppCompatActivity {
         permissionsToAPI.put(Manifest.permission.SEND_SMS, Build.VERSION_CODES.BASE);
         permissionsToAPI.put(Manifest.permission.READ_SMS, Build.VERSION_CODES.BASE);
         permissionsToAPI.put(Manifest.permission.RECEIVE_SMS, Build.VERSION_CODES.BASE);
-        permissionsToAPI.put(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Build.VERSION_CODES.M);
+        permissionsToAPI.put(Manifest.permission.RECEIVE_BOOT_COMPLETED, Build.VERSION_CODES.BASE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            permissionsToAPI.put(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Build.VERSION_CODES.M);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            permissionsToAPI.put(Manifest.permission.FOREGROUND_SERVICE, Build.VERSION_CODES.P);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
             permissionsToAPI.put(Manifest.permission.SCHEDULE_EXACT_ALARM, Build.VERSION_CODES.S);
     }

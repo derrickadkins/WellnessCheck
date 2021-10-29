@@ -12,6 +12,7 @@
     <uses-permission android:name="android.permission.SEND_SMS"/>
     <uses-permission android:name="android.permission.READ_SMS"/>
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission-sdk-23 android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission-sdk-23 android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <uses-permission-sdk-23 android:name="android.permission.FOREGROUND_SERVICE"/>
@@ -27,6 +28,7 @@
         <receiver android:enabled="true" android:exported="true" android:name=".MonitorReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.REBOOT" />
                 <action android:name="com.derrick.wellnesscheck.ALARM_TRIGGERED"/>
                 <action android:name="com.derrick.wellnesscheck.CANCEL_TIMER" />
                 <action android:name="com.derrick.wellnesscheck.SEND_SMS" />

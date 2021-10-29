@@ -1,6 +1,9 @@
 package com.derrick.wellnesscheck;
 
+import static android.content.Intent.ACTION_BOOT_COMPLETED;
 import static android.content.Intent.ACTION_DELETE;
+import static android.content.Intent.ACTION_LOCKED_BOOT_COMPLETED;
+import static android.content.Intent.ACTION_REBOOT;
 import static com.derrick.wellnesscheck.DbController.InitDB;
 import static com.derrick.wellnesscheck.DbController.contacts;
 import static com.derrick.wellnesscheck.DbController.db;
@@ -25,7 +28,10 @@ import java.util.Calendar;
 
 public class MonitorReceiver extends BroadcastReceiver implements DbController.DbListener {
 
+    final String TAG = "MonitorReceiver";
+
     public static final String ACTION_ALARM = "com.derrick.wellnesscheck.ALARM_TRIGGERED";
+    public static final String ACTION_RESPONSE = "com.derrick.wellnesscheck.CANCEL_TIMER";
     public static final String ACTION_SMS = "com.derrick.wellnesscheck.SEND_SMS";
     public static final String EXTRA_INTERVAL1 = "mainInterval";
     public static final String EXTRA_INTERVAL2 = "responseInterval";
@@ -35,17 +41,14 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
     public static final String EXTRA_TO_HOUR = "toHour";
     public static final String EXTRA_TO_MINUTE = "toMinute";
 
-    final String TAG = "MonitorReceiver";
-    long mainInterval;
-    int fromHour, fromMinute, toHour, toMinute;
-    boolean allDay;
-    AlarmManager alarmManager;
-    long responseInterval;
     final int NOTIFICATION_ID = 0;
-    public static final String ACTION_RESPONSE = "com.derrick.wellnesscheck.CANCEL_TIMER";
     final String CHANNEL_ID = "WellnessCheck.CheckInService";
+    AlarmManager alarmManager;
     NotificationCompat.Builder builder;
     NotificationManagerCompat notificationManagerCompat;
+    Intent smsIntent, alarmIntent, responseIntent;
+    PendingIntent smsPendingIntent, alarmPendingIntent, responsePendingIntent;
+
     public static CheckInListener checkInListener;
     public interface CheckInListener {
         void onCheckIn();
@@ -68,14 +71,14 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
 
         alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
-        Intent smsIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_SMS);
-        PendingIntent smsPendingIntent = PendingIntent.getBroadcast(context, 0, smsIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        smsIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_SMS);
+        smsPendingIntent = PendingIntent.getBroadcast(context, 0, smsIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Intent alarmIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_ALARM).putExtras(intent);
-        PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(context, 1, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        alarmIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_ALARM).putExtras(intent);
+        alarmPendingIntent = PendingIntent.getBroadcast(context, 1, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Intent responseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_RESPONSE);
-        PendingIntent responsePendingIntent = PendingIntent.getBroadcast(context, 2, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        responseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_RESPONSE);
+        responsePendingIntent = PendingIntent.getBroadcast(context, 2, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.alert_light_frame)
@@ -86,25 +89,34 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
 
         switch (intent.getAction()){
             case ACTION_ALARM:
-                mainInterval = intent.getLongExtra(EXTRA_INTERVAL1, 60 * 60 * 1000);
-                allDay = intent.getBooleanExtra(EXTRA_ALL_DAY, false);
-                fromHour = intent.getIntExtra(EXTRA_FROM_HOUR, 8);
-                fromMinute = intent.getIntExtra(EXTRA_FROM_MINUTE, 0);
-                toHour = intent.getIntExtra(EXTRA_TO_HOUR, 20);
-                toMinute = intent.getIntExtra(EXTRA_TO_MINUTE, 0);
-                responseInterval = intent.getLongExtra(EXTRA_INTERVAL2, 60 * 1000);
+                long mainInterval = intent.getLongExtra(EXTRA_INTERVAL1, 60 * 60 * 1000);
+                boolean allDay = intent.getBooleanExtra(EXTRA_ALL_DAY, false);
+                int fromHour = intent.getIntExtra(EXTRA_FROM_HOUR, 8);
+                int fromMinute = intent.getIntExtra(EXTRA_FROM_MINUTE, 0);
+                int toHour = intent.getIntExtra(EXTRA_TO_HOUR, 20);
+                int toMinute = intent.getIntExtra(EXTRA_TO_MINUTE, 0);
+                long responseInterval = intent.getLongExtra(EXTRA_INTERVAL2, 60 * 1000);
+
+                long nextCheckIn = getNextCheckIn(mainInterval, fromHour, fromMinute, toHour, toMinute, allDay);
+                Log.d(TAG, "Next check-in scheduled for " + getNextCheckInReadable(nextCheckIn));
+
                 //next check-in
-                alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(getNextCheckIn(), alarmPendingIntent), alarmPendingIntent);
+                alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(nextCheckIn,
+                        alarmPendingIntent), alarmPendingIntent);
                 //send sms
-                alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(System.currentTimeMillis() + responseInterval, smsPendingIntent), smsPendingIntent);
+                alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(
+                        System.currentTimeMillis() + responseInterval,
+                        smsPendingIntent), smsPendingIntent);
                 builder.setContentTitle("Time To Check In")
                     .setContentText("Click to check in.") //todo: add time
                     .setContentIntent(responsePendingIntent);
                 notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
                 InitDB(context, this);
                 break;
+            case ACTION_BOOT_COMPLETED:
+                InitDB(context, this);
+                break;
             case ACTION_RESPONSE:
-                Log.d(TAG, "response timer requested");
                 if(checkInListener != null) checkInListener.onCheckIn();
                 notificationManagerCompat.cancel(NOTIFICATION_ID);
                 alarmManager.cancel(smsPendingIntent);
@@ -135,11 +147,31 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
                 settings.checkedIn = true;
                 updateSettings();
                 break;
+            case ACTION_BOOT_COMPLETED:
+                //todo: notify immediately if check-in was missed?
+                long mainInterval = settings.checkInHours * 60 * 60 * 1000;
+
+                long nextCheckIn = getNextCheckIn(mainInterval, settings.fromHour, settings.fromMinute,
+                        settings.toHour, settings.toMinute, settings.allDay);
+
+                Log.d(TAG, "Next check-in scheduled for " + getNextCheckInReadable(nextCheckIn));
+
+                //next check-in
+                alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(nextCheckIn,
+                        alarmPendingIntent), alarmPendingIntent);
+                break;
         }
     }
 
+    String getNextCheckInReadable(long nextCheckIn){
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(nextCheckIn);
+        return calendar.get(Calendar.MONTH) + "/" + calendar.get(Calendar.DAY_OF_MONTH)
+                + calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE) + ":"
+                + calendar.get(Calendar.SECOND) + "." + calendar.get(Calendar.MILLISECOND);
+    }
+
     void sendMissedCheckInSMS(){
-        Log.d(TAG, "Sending Missed Check-In SMS");
         SmsBroadcastManager smsBroadcastManager = new SmsBroadcastManager();
         SmsController smsController = new SmsController() {
             @Override
@@ -180,7 +212,7 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
         }
     }
 
-    private long getNextCheckIn(){
+    private long getNextCheckIn(long mainInterval, int fromHour, int fromMinute, int toHour, int toMinute, boolean allDay){
         final long DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
 
         //used to get excluded time boundaries
