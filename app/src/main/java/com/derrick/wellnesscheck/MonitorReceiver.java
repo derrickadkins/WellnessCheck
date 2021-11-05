@@ -4,9 +4,9 @@ import static android.content.Intent.ACTION_BOOT_COMPLETED;
 import static android.content.Intent.ACTION_DELETE;
 import static com.derrick.wellnesscheck.DbController.InitDB;
 import static com.derrick.wellnesscheck.DbController.contacts;
-import static com.derrick.wellnesscheck.DbController.db;
 import static com.derrick.wellnesscheck.DbController.settings;
 import static com.derrick.wellnesscheck.DbController.updateSettings;
+import static com.derrick.wellnesscheck.SetupSettingsActivity.getNextCheckIn;
 
 import android.app.AlarmManager;
 import android.app.Notification;
@@ -68,13 +68,13 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
 
         alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
-        smsIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_SMS);
+        smsIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_SMS).putExtras(intent);
         smsPendingIntent = PendingIntent.getBroadcast(context, 0, smsIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         alarmIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_ALARM).putExtras(intent);
         alarmPendingIntent = PendingIntent.getBroadcast(context, 1, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        responseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_RESPONSE);
+        responseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_RESPONSE).putExtras(intent);
         responsePendingIntent = PendingIntent.getBroadcast(context, 2, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         builder = new NotificationCompat.Builder(context, CHANNEL_ID)
@@ -108,29 +108,34 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
                     .setContentText("Click to check in.") //todo: add time
                     .setContentIntent(responsePendingIntent);
                 notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
-                InitDB(context, this);
+                doDBStuff();
                 break;
             case ACTION_BOOT_COMPLETED:
-                InitDB(context, this);
+                doDBStuff();
                 break;
             case ACTION_RESPONSE:
                 if(checkInListener != null) checkInListener.onCheckIn();
                 notificationManagerCompat.cancel(NOTIFICATION_ID);
                 alarmManager.cancel(smsPendingIntent);
-                InitDB(context, this);
+                doDBStuff();
                 break;
             case ACTION_SMS:
                 builder.setContentTitle("You've missed your check-in")
-                        .setContentText("Message will been sent to your emergency contacts.")
-                        .setContentIntent(responsePendingIntent);
+                        .setContentText("Message will been sent to your emergency contacts.");
                 notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
                 sendMissedCheckInSMS();
                 break;
             case ACTION_DELETE:
                 notificationManagerCompat.deleteNotificationChannel(CHANNEL_ID);
                 alarmManager.cancel(alarmPendingIntent);
+                alarmManager.cancel(smsPendingIntent);
                 break;
         }
+    }
+
+    public void doDBStuff(){
+        if(settings == null) InitDB(context, this, true, false, false);
+        else onDbReady();
     }
 
     @Override
@@ -145,14 +150,10 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
                 updateSettings();
                 break;
             case ACTION_BOOT_COMPLETED:
+                if(!settings.monitoringOn) return;
                 //todo: notify immediately if check-in was missed?
-                long mainInterval = settings.checkInHours * 60 * 60 * 1000;
-
-                long nextCheckIn = getNextCheckIn(mainInterval, settings.fromHour, settings.fromMinute,
-                        settings.toHour, settings.toMinute, settings.allDay);
-
+                long nextCheckIn = getNextCheckIn();
                 Log.d(TAG, "Next check-in scheduled for " + getReadableTime(nextCheckIn));
-
                 //next check-in
                 alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(nextCheckIn,
                         alarmPendingIntent), alarmPendingIntent);
@@ -188,7 +189,7 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
             }
         };
 
-        if(db == null) InitDB(context, dbListener);
+        if(settings == null) InitDB(context, dbListener, false, true, false);
         else dbListener.onDbReady();
     }
 
@@ -209,7 +210,8 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
         }
     }
 
-    private long getNextCheckIn(long mainInterval, int fromHour, int fromMinute, int toHour, int toMinute, boolean allDay){
+    //Old getNextCheckIn
+    /*private long getNextCheckIn(long mainInterval, int fromHour, int fromMinute, int toHour, int toMinute, boolean allDay){
         final long DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
 
         //used to get excluded time boundaries
@@ -231,10 +233,8 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
         calendar.set(Calendar.MINUTE, toMinute);
         long endOfDay = calendar.getTimeInMillis();
 
-        /*
-        add one minute from midnight because day of month or
-        year might be the last one, so adding a minute is easier
-         */
+        //add one minute from midnight because day of month or
+        //year might be the last one, so adding a second is easier
         calendar.set(Calendar.HOUR_OF_DAY, 23);
         calendar.set(Calendar.MINUTE, 59);
         calendar.set(Calendar.SECOND, 59);
@@ -261,5 +261,5 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
         if(startOfDay == endOfDay || (nextCheckIn < endOfDay && nextCheckIn > startOfDay))
             return nextCheckIn;
         else return startOfDay;
-    }
+    }*/
 }

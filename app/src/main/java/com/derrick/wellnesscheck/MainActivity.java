@@ -27,7 +27,6 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         InitDB(this);
     }
 

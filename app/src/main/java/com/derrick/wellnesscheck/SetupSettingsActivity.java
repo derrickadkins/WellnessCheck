@@ -2,6 +2,7 @@ package com.derrick.wellnesscheck;
 
 import static com.derrick.wellnesscheck.DbController.settings;
 import static com.derrick.wellnesscheck.DbController.updateSettings;
+import static com.derrick.wellnesscheck.MonitorReceiver.getReadableTime;
 
 import android.Manifest;
 import android.app.AlarmManager;
@@ -9,6 +10,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -17,20 +19,21 @@ import android.widget.NumberPicker;
 import android.widget.Switch;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class SetupSettingsActivity extends PermissionsRequestingActivity {
+    static final String TAG = "SetupSettingsActivity";
     NumberPicker checkInHours, respondMinutes;
     TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck;
     Switch allDay, fallDetection;
     Button finishSetup;
     Timer timer = new Timer();
-    final int HOUR_IN_MILLIS = 60 * 60 * 1000;
-    final int MINUTE_IN_MILLIS = 60 * 1000;
+    static final long MINUTE_IN_MILLIS = 60 * 1000;
+    static final long HOUR_IN_MILLIS = 60 * MINUTE_IN_MILLIS;
+    static final long DAY_IN_MILLIS = 24 * HOUR_IN_MILLIS;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -191,7 +194,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     }
 
     void setFirstCheckText(){
-        long firstCheckIn = getNextCheckIn();
+        long firstCheckIn = getNextCheckIn(settings.checkInHours, settings.fromHour, settings.fromMinute, settings.toHour, settings.toMinute, settings.allDay);
         tvFirstCheck.setText("First wellness check will be at " + getFirstCheckInString(firstCheckIn));
         timer.cancel();
         timer = new Timer();
@@ -199,7 +202,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
             @Override
             public void run() {
                 timer = new Timer();
-                timer.schedule(this, new Date(getNextCheckIn()));
+                timer.schedule(this, new Date(getNextCheckIn(settings.checkInHours, settings.fromHour, settings.fromMinute, settings.toHour, settings.toMinute, settings.allDay)));
             }
         }, new Date(firstCheckIn));
     }
@@ -208,28 +211,29 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         timer.cancel();
 
         settings.monitoringOn = true;
-        settings.nextCheckIn = 0;
         settings.checkedIn = true;
-        settings.firstCheckIn = getNextCheckIn();
+        settings.nextCheckIn = getNextCheckIn();
         updateSettings();
-        //Log.d(TAG, "triggering first alarm in " + (settings.nextCheckIn - System.currentTimeMillis()) + " millis");
+        Log.d(TAG, "triggering first alarm at " + getReadableTime(settings.nextCheckIn));
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(Service.ALARM_SERVICE);
 
+        Bundle bundle = new Bundle();
+        bundle.putLong(MonitorReceiver.EXTRA_INTERVAL1, settings.checkInHours * HOUR_IN_MILLIS);
+        bundle.putLong(MonitorReceiver.EXTRA_INTERVAL2, settings.respondMinutes * MINUTE_IN_MILLIS);
+        bundle.putInt(MonitorReceiver.EXTRA_FROM_HOUR, settings.fromHour);
+        bundle.putInt(MonitorReceiver.EXTRA_FROM_MINUTE, settings.fromMinute);
+        bundle.putInt(MonitorReceiver.EXTRA_TO_HOUR, settings.toHour);
+        bundle.putInt(MonitorReceiver.EXTRA_TO_MINUTE, settings.toMinute);
+        bundle.putBoolean(MonitorReceiver.EXTRA_ALL_DAY, settings.allDay);
+
         Intent intent = new Intent(this, MonitorReceiver.class).setAction(MonitorReceiver.ACTION_ALARM)
-                .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
-                .putExtra(MonitorReceiver.EXTRA_INTERVAL1, (long) (settings.checkInHours * HOUR_IN_MILLIS))
-                .putExtra(MonitorReceiver.EXTRA_INTERVAL2, (long) (settings.respondMinutes * MINUTE_IN_MILLIS))
-                .putExtra(MonitorReceiver.EXTRA_FROM_HOUR, settings.fromHour)
-                .putExtra(MonitorReceiver.EXTRA_FROM_MINUTE, settings.fromMinute)
-                .putExtra(MonitorReceiver.EXTRA_TO_HOUR, settings.toHour)
-                .putExtra(MonitorReceiver.EXTRA_TO_MINUTE, settings.toMinute)
-                .putExtra(MonitorReceiver.EXTRA_ALL_DAY, settings.allDay);
+                .addFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(bundle);
 
         PendingIntent pendingNotifyIntent = PendingIntent.getBroadcast(this, 0,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        AlarmManager.AlarmClockInfo alarmClockInfo = new AlarmManager.AlarmClockInfo(settings.firstCheckIn, pendingNotifyIntent);
+        AlarmManager.AlarmClockInfo alarmClockInfo = new AlarmManager.AlarmClockInfo(settings.nextCheckIn, pendingNotifyIntent);
 
         alarmManager.setAlarmClock(alarmClockInfo, pendingNotifyIntent);
 
@@ -260,11 +264,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         return time;
     }
 
-    public static long getNextCheckIn(){
-        final long HOUR_IN_MILLIS = 60 * 60 * 1000;
-        final long DAY_IN_MILLIS = 24 * HOUR_IN_MILLIS;
-        final int INTERVAL = (int) (settings.checkInHours * HOUR_IN_MILLIS);
-
+    public static long getNextCheckIn(long interval, int fromHour, int fromMinute, int toHour, int toMinute, boolean allDay){
         //used to get excluded time boundaries
         Calendar calendar = Calendar.getInstance();
         final long now = calendar.getTimeInMillis();
@@ -273,13 +273,13 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         calendar.set(Calendar.MILLISECOND, 0);
 
         //get to time
-        calendar.set(Calendar.HOUR_OF_DAY, settings.toHour);
-        calendar.set(Calendar.MINUTE, settings.toMinute);
+        calendar.set(Calendar.HOUR_OF_DAY, toHour);
+        calendar.set(Calendar.MINUTE, toMinute);
         long endOfDay = calendar.getTimeInMillis();
 
         //get first check as from time
-        calendar.set(Calendar.HOUR_OF_DAY, settings.fromHour);
-        calendar.set(Calendar.MINUTE, settings.fromMinute);
+        calendar.set(Calendar.HOUR_OF_DAY, fromHour);
+        calendar.set(Calendar.MINUTE, fromMinute);
         long startOfDay = calendar.getTimeInMillis();
 
         /*
@@ -287,31 +287,44 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         because midnight will always be behind now. if not
         all day, set it to the start
          */
-        long firstCheckIn = startOfDay;
-        if(settings.allDay){
+        long nextCheckIn = startOfDay;
+        if(allDay){
             calendar.set(Calendar.HOUR_OF_DAY, 0);
             calendar.set(Calendar.MINUTE, 0);
-            firstCheckIn = calendar.getTimeInMillis() + INTERVAL;
-        }else if(firstCheckIn < endOfDay && now > endOfDay){
-            firstCheckIn += DAY_IN_MILLIS;
-        }else if(firstCheckIn > endOfDay && now < endOfDay){
-            firstCheckIn -= DAY_IN_MILLIS;
+            nextCheckIn = calendar.getTimeInMillis() + interval;
+        }else if(nextCheckIn < endOfDay && now > endOfDay){
+            nextCheckIn += DAY_IN_MILLIS;
+        }else if(nextCheckIn > endOfDay && now < endOfDay){
+            nextCheckIn -= DAY_IN_MILLIS;
         }
 
         //reminder: INTERVAL <= 24
-        while(firstCheckIn < now)
-            firstCheckIn += INTERVAL;
+        while(nextCheckIn < now)
+            nextCheckIn += interval;
 
         //if all day and first check in is after midnight, set it to midnight
-        if(settings.allDay){
+        if(allDay){
             long midnight = getMidnight(calendar);
-            if(firstCheckIn > midnight) firstCheckIn = midnight;
+            if(nextCheckIn > midnight) nextCheckIn = midnight;
         }
         //if after end of day push to next start
-        else if (firstCheckIn > endOfDay) {
-            firstCheckIn = startOfDay + DAY_IN_MILLIS;
+        else if (nextCheckIn > endOfDay) {
+            nextCheckIn = startOfDay + DAY_IN_MILLIS;
         }
 
-        return firstCheckIn;
+        return nextCheckIn;
+    }
+
+    public static long getNextCheckIn(int checkInHours, int fromHour, int fromMinute, int toHour, int toMinute, boolean allDay){
+        return getNextCheckIn(checkInHours * HOUR_IN_MILLIS, fromHour, fromMinute, toHour, toMinute, allDay);
+    }
+
+    public static long getNextCheckIn(AppSettings settings){
+        return getNextCheckIn(settings.checkInHours, settings.fromHour, settings.fromMinute, settings.toHour, settings.toMinute, settings.allDay);
+    }
+
+    public static long getNextCheckIn() throws NullPointerException{
+        if(settings == null) throw new NullPointerException("Settings are null, init db first");
+        return getNextCheckIn(settings);
     }
 }

@@ -3,7 +3,6 @@ package com.derrick.wellnesscheck;
 import static android.content.Intent.ACTION_DELETE;
 import static com.derrick.wellnesscheck.DbController.InitDB;
 import static com.derrick.wellnesscheck.DbController.contacts;
-import static com.derrick.wellnesscheck.DbController.db;
 import static com.derrick.wellnesscheck.DbController.settings;
 import static com.derrick.wellnesscheck.DbController.updateSettings;
 import static com.derrick.wellnesscheck.MonitorReceiver.ACTION_ALARM;
@@ -161,7 +160,7 @@ public class CheckInService extends Service implements DbController.DbListener {
             }
         };
 
-        if(db == null) InitDB(this, dbListener);
+        if(contacts == null) InitDB(this, dbListener, false, true, false);
         else dbListener.onDbReady();
     }
 

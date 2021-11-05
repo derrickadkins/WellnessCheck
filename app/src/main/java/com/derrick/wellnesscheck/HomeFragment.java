@@ -33,16 +33,29 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     TextView tvProgressBar, tvTimerLabel, tvNextCheckIn;
     Button btnTurnOff;
     CountDownTimer timer;
+    Bundle bundle;
     long checkInInterval, responseInterval;
     boolean inResponseTimer = false;
     final String TAG = "HomeFragment";
+    static final long MINUTE_IN_MILLIS = 60 * 1000;
+    static final long HOUR_IN_MILLIS = 60 * MINUTE_IN_MILLIS;
+    static final long DAY_IN_MILLIS = 24 * HOUR_IN_MILLIS;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        checkInInterval = (long) settings.checkInHours * 60 * 60 * 1000;
-        responseInterval = (long) settings.respondMinutes * 60 * 1000;
+        checkInInterval = settings.checkInHours * HOUR_IN_MILLIS;
+        responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
+
+        bundle = new Bundle();
+        bundle.putLong(MonitorReceiver.EXTRA_INTERVAL1, checkInInterval);
+        bundle.putLong(MonitorReceiver.EXTRA_INTERVAL2, responseInterval);
+        bundle.putInt(MonitorReceiver.EXTRA_FROM_HOUR, settings.fromHour);
+        bundle.putInt(MonitorReceiver.EXTRA_FROM_MINUTE, settings.fromMinute);
+        bundle.putInt(MonitorReceiver.EXTRA_TO_HOUR, settings.toHour);
+        bundle.putInt(MonitorReceiver.EXTRA_TO_MINUTE, settings.toMinute);
+        bundle.putBoolean(MonitorReceiver.EXTRA_ALL_DAY, settings.allDay);
     }
 
     @Nullable
@@ -97,7 +110,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             if (settings.monitoringOn) {
                 if (inResponseTimer) {
                     onCheckIn();
-                    getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(MonitorReceiver.ACTION_RESPONSE));
+                    getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(MonitorReceiver.ACTION_RESPONSE).putExtras(bundle));
                 }
                 return;
             }
@@ -112,10 +125,10 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         if(settings.monitoringOn) {
             long now = System.currentTimeMillis();
             if (settings.nextCheckIn == 0)
-                settings.nextCheckIn = settings.firstCheckIn;
+                settings.nextCheckIn = getNextCheckIn();
             long millis = settings.nextCheckIn - now;
             if (millis <= 0) {
-                settings.nextCheckIn = getNextCheckIn();
+                settings.nextCheckIn = getNextCheckIn(settings.checkInHours, settings.fromHour, settings.fromMinute, settings.toHour, settings.toMinute, settings.allDay);
                 updateSettings();
                 millis = settings.nextCheckIn - now;
             }
@@ -179,7 +192,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             public void onFinish() {
                 inResponseTimer = !inResponseTimer;
                 if(inResponseTimer) {
-                    settings.nextCheckIn = getNextCheckIn();
+                    settings.nextCheckIn = getNextCheckIn(settings.checkInHours, settings.fromHour, settings.fromMinute, settings.toHour, settings.toMinute, settings.allDay);
                     updateSettings();
 //                    Log.d("Start Timer", "called from timer onFinish : response");
                     startTimer(responseInterval);
@@ -203,12 +216,12 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         tvTimerLabel.setVisibility(visibility);
         tvNextCheckIn.setVisibility(visibility);
 
-        if(!settings.monitoringOn) {
+        if(settings.monitoringOn){
+            tvProgressBar.setTextSize(64);
+        }else{
             tvProgressBar.setText("Tap to Setup\nWellness Checks");
             progressBar.setProgress(progressBar.getMax());
             tvProgressBar.setTextSize(32);
-        }else{
-            tvProgressBar.setTextSize(64);
         }
     }
 
@@ -220,7 +233,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         }
         updateSettings();
         setTimerVisibility();
-        getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(Intent.ACTION_DELETE));
+        getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(Intent.ACTION_DELETE).putExtras(bundle));
     }
 
     @Override

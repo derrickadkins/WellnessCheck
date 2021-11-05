@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import java.util.List;
 
-@Database(entities = {Contact.class, AppSettings.class, LogEntry.class}, version = 1, exportSchema = false)
+@Database(entities = {Contact.class, AppSettings.class, LogEntry.class}, version = 2, exportSchema = false)
 public abstract class DB extends RoomDatabase {
     public abstract ContactDao contactDao();
     public abstract SettingsDao settingsDao();
