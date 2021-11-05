@@ -216,7 +216,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         updateSettings();
         Log.d(TAG, "triggering first alarm at " + getReadableTime(settings.nextCheckIn));
 
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Service.ALARM_SERVICE);
+        AlarmManager alarmManager = (AlarmManager) getApplicationContext().getSystemService(Service.ALARM_SERVICE);
 
         Bundle bundle = new Bundle();
         bundle.putLong(MonitorReceiver.EXTRA_INTERVAL1, settings.checkInHours * HOUR_IN_MILLIS);
@@ -227,10 +227,10 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         bundle.putInt(MonitorReceiver.EXTRA_TO_MINUTE, settings.toMinute);
         bundle.putBoolean(MonitorReceiver.EXTRA_ALL_DAY, settings.allDay);
 
-        Intent intent = new Intent(this, MonitorReceiver.class).setAction(MonitorReceiver.ACTION_ALARM)
+        Intent intent = new Intent(getApplicationContext(), MonitorReceiver.class).setAction(MonitorReceiver.ACTION_ALARM)
                 .addFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(bundle);
 
-        PendingIntent pendingNotifyIntent = PendingIntent.getBroadcast(this, 0,
+        PendingIntent pendingNotifyIntent = PendingIntent.getBroadcast(getApplicationContext(), 1,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         AlarmManager.AlarmClockInfo alarmClockInfo = new AlarmManager.AlarmClockInfo(settings.nextCheckIn, pendingNotifyIntent);

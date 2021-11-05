@@ -61,6 +61,7 @@ public class SwipeToDeleteCallback extends ItemTouchHelper.SimpleCallback {
                     itemView.getTop(), itemView.getRight(), itemView.getBottom());
         } else { // view is unSwiped
             background.setBounds(0, 0, 0, 0);
+            icon.setBounds(0, 0, 0, 0);
         }
 
         background.draw(c);

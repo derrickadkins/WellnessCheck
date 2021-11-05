@@ -94,7 +94,7 @@ public class DbController {
                 InitDbSync(WellnessCheck.context, null, false, false, true);
             if (db == null) return;
             db.logDao().insert(entry);
-            log.add(entry);
+            log.add(0, entry);
             if (logListener != null)
                 new Handler(Looper.getMainLooper()).post(() -> logListener.onLog(entry));
         }).start();

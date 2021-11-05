@@ -59,7 +59,7 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
     @Override
     public void onReceive(Context context, Intent intent) {
         this.intent = intent;
-        this.context = context;
+        this.context = context.getApplicationContext();
 
         Log.d(TAG, "onReceive, intent = " + intent.toString());
 
@@ -68,13 +68,13 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
 
         alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
-        smsIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_SMS).putExtras(intent);
+        smsIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_SMS).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
         smsPendingIntent = PendingIntent.getBroadcast(context, 0, smsIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        alarmIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_ALARM).putExtras(intent);
+        alarmIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_ALARM).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
         alarmPendingIntent = PendingIntent.getBroadcast(context, 1, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        responseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_RESPONSE).putExtras(intent);
+        responseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_RESPONSE).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
         responsePendingIntent = PendingIntent.getBroadcast(context, 2, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         builder = new NotificationCompat.Builder(context, CHANNEL_ID)

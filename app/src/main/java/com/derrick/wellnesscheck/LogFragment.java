@@ -42,7 +42,7 @@ public class LogFragment extends Fragment implements Log.Listener {
 
     @Override
     public void onLog(LogEntry entry) {
-        logAdapter.notifyItemInserted(log.size() - 1);
+        logAdapter.notifyItemInserted(0);
     }
 
     class LogAdapter extends RecyclerView.Adapter<LogAdapter.ViewHolder>{
