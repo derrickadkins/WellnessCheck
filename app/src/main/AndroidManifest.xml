@@ -29,10 +29,10 @@
         <receiver android:enabled="true" android:exported="true" android:name=".MonitorReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                <action android:name="android.intent.action.REBOOT" />
                 <action android:name="com.derrick.wellnesscheck.ALARM_TRIGGERED"/>
                 <action android:name="com.derrick.wellnesscheck.CANCEL_TIMER" />
                 <action android:name="com.derrick.wellnesscheck.SEND_SMS" />
+                <action android:name="com.derrick.wellnesscheck.LATE_CHECK_IN" />
                 <action android:name="android.intent.action.DELETE" />
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

@@ -30,6 +30,7 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
     public static final String ACTION_ALARM = "com.derrick.wellnesscheck.ALARM_TRIGGERED";
     public static final String ACTION_RESPONSE = "com.derrick.wellnesscheck.CANCEL_TIMER";
     public static final String ACTION_SMS = "com.derrick.wellnesscheck.SEND_SMS";
+    public static final String ACTION_LATE_RESPONSE = "com.derrick.wellnesscheck.LATE_CHECK_IN";
     public static final String EXTRA_INTERVAL1 = "mainInterval";
     public static final String EXTRA_INTERVAL2 = "responseInterval";
     public static final String EXTRA_ALL_DAY = "allDay";
@@ -43,8 +44,8 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
     AlarmManager alarmManager;
     NotificationCompat.Builder builder;
     NotificationManagerCompat notificationManagerCompat;
-    Intent smsIntent, alarmIntent, responseIntent;
-    PendingIntent smsPendingIntent, alarmPendingIntent, responsePendingIntent;
+    Intent smsIntent, alarmIntent, responseIntent, lateResponseIntent;
+    PendingIntent smsPendingIntent, alarmPendingIntent, responsePendingIntent, lateResponsePendingIntent;
 
     public static CheckInListener checkInListener;
     public interface CheckInListener {
@@ -77,12 +78,13 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
         responseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_RESPONSE).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
         responsePendingIntent = PendingIntent.getBroadcast(context, 2, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+        lateResponseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_LATE_RESPONSE).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
+        lateResponsePendingIntent = PendingIntent.getBroadcast(context, 3, lateResponseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
         builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.alert_light_frame)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setOnlyAlertOnce(true)
-                .setAutoCancel(true)
-                .setOngoing(true);
+                .setAutoCancel(true);
 
         switch (intent.getAction()){
             case ACTION_ALARM:
@@ -101,11 +103,12 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
                 alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(nextCheckIn,
                         alarmPendingIntent), alarmPendingIntent);
                 //send sms
-                alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(
-                        System.currentTimeMillis() + responseInterval,
+                long smsAlarmTime = System.currentTimeMillis() + responseInterval;
+                alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(smsAlarmTime,
                         smsPendingIntent), smsPendingIntent);
                 builder.setContentTitle("Time To Check In")
-                    .setContentText("Click to check in.") //todo: add time
+                    .setOngoing(true)
+                    .setContentText("Click to check in by " + getReadableTime(smsAlarmTime, false, false, false))
                     .setContentIntent(responsePendingIntent);
                 notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
                 doDBStuff();
@@ -120,7 +123,9 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
                 doDBStuff();
                 break;
             case ACTION_SMS:
-                builder.setContentTitle("You've missed your check-in")
+                builder.setOngoing(false)
+                        .setContentIntent(lateResponsePendingIntent)
+                        .setContentTitle("You've missed your check-in")
                         .setContentText("Message will been sent to your emergency contacts.");
                 notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
                 sendMissedCheckInSMS();
@@ -129,6 +134,9 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
                 notificationManagerCompat.deleteNotificationChannel(CHANNEL_ID);
                 alarmManager.cancel(alarmPendingIntent);
                 alarmManager.cancel(smsPendingIntent);
+                break;
+            case ACTION_LATE_RESPONSE:
+                //do nothing
                 break;
         }
     }
@@ -161,12 +169,19 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
         }
     }
 
-    public static String getReadableTime(long time){
+    public static String getReadableTime(long time, boolean showDate, boolean showSeconds, boolean showMillis){
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(time);
-        return calendar.get(Calendar.MONTH) + "/" + calendar.get(Calendar.DAY_OF_MONTH) + " "
-                + calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE) + ":"
-                + calendar.get(Calendar.SECOND) + "." + calendar.get(Calendar.MILLISECOND);
+        String readableTime = "";
+        if(showDate) readableTime += calendar.get(Calendar.MONTH) + "/" + calendar.get(Calendar.DAY_OF_MONTH) + " ";
+        readableTime += calendar.get(Calendar.HOUR_OF_DAY) + ":" + String.format("%02d", calendar.get(Calendar.MINUTE));
+        if(showSeconds) readableTime += ":" + String.format("%02d", calendar.get(Calendar.SECOND));
+        if(showMillis) readableTime += "." + String.format("%03d", calendar.get(Calendar.MILLISECOND));
+        return readableTime;
+    }
+
+    public static String getReadableTime(long time){
+        return getReadableTime(time, true, true, true);
     }
 
     void sendMissedCheckInSMS(){
