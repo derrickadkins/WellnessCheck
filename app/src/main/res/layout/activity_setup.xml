@@ -5,6 +5,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".SetupContactsActivity">
+    tools:context=".view.activities.SetupContactsActivity">
 
 </androidx.constraintlayout.widget.ConstraintLayout>

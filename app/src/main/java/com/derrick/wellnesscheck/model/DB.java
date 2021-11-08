@@ -1,4 +1,4 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.model;
 
 import androidx.room.Dao;
 import androidx.room.Database;
@@ -9,6 +9,8 @@ import androidx.room.RoomDatabase;
 import androidx.room.Update;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
+
+import com.derrick.wellnesscheck.model.data.*;
 
 import java.util.List;
 

@@ -44,7 +44,7 @@
 <!--        <service android:enabled="true" android:exported="true" android:name=".CheckInService" />-->
 
         <activity android:exported="true"
-            android:name=".MainActivity"
+            android:name=".view.activities.MainActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -54,13 +54,13 @@
         </activity>
 
         <activity android:exported="false"
-            android:name=".SetupContactsActivity"
+            android:name=".view.activities.SetupContactsActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait">
         </activity>
 
         <activity android:exported="false"
-            android:name=".SetupSettingsActivity"
+            android:name=".view.activities.SetupSettingsActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait">
         </activity>

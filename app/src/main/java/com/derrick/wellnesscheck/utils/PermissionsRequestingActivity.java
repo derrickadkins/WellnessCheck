@@ -1,4 +1,4 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.utils;
 
 import android.Manifest;
 import android.content.pm.PackageManager;

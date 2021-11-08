@@ -1,4 +1,4 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.view.fragments;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -8,6 +8,8 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
+import com.derrick.wellnesscheck.R;
 
 public class MentalHealthResourcesFragment extends Fragment {
     @Nullable

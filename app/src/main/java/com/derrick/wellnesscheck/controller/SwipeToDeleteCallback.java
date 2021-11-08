@@ -1,4 +1,4 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.controller;
 
 import android.graphics.Canvas;
 import android.graphics.Color;

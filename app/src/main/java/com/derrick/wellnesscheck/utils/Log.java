@@ -1,6 +1,8 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.utils;
 
-import static com.derrick.wellnesscheck.DbController.insertLogEntry;
+import static com.derrick.wellnesscheck.controller.DbController.insertLogEntry;
+
+import com.derrick.wellnesscheck.model.data.LogEntry;
 
 public class Log{
     public interface Listener{

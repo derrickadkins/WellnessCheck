@@ -1,6 +1,4 @@
-package com.derrick.wellnesscheck;
-
-import static com.derrick.wellnesscheck.DbController.InitDB;
+package com.derrick.wellnesscheck.view.activities;
 
 import android.os.Bundle;
 
@@ -9,6 +7,11 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
 import android.view.MenuItem;
+
+import com.derrick.wellnesscheck.controller.DbController;
+import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
+import com.derrick.wellnesscheck.view.fragments.*;
+import com.derrick.wellnesscheck.R;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 
@@ -27,7 +30,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        InitDB(this);
+        DbController.InitDB(this);
     }
 
     @Override

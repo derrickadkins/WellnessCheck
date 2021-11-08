@@ -1,4 +1,4 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.model.data;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;

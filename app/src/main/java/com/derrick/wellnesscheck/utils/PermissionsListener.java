@@ -1,4 +1,4 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.utils;
 
 public interface PermissionsListener{
     void permissionsGranted();

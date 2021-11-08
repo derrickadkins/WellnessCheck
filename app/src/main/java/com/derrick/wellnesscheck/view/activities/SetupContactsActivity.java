@@ -1,16 +1,14 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.view.activities;
 
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.Map;
+import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
+import com.derrick.wellnesscheck.view.fragments.EmergencyContactsFragment;
+import com.derrick.wellnesscheck.R;
 
 public class SetupContactsActivity extends PermissionsRequestingActivity {
     EmergencyContactsFragment contactsFragment;

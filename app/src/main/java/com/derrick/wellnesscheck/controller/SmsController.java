@@ -1,4 +1,4 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.controller;
 
 import android.Manifest;
 import android.app.PendingIntent;
@@ -7,13 +7,18 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.provider.Telephony;
 import android.telephony.SmsManager;
+
+import com.derrick.wellnesscheck.SmsBroadcastManager;
+import com.derrick.wellnesscheck.utils.PermissionsListener;
+import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
+
 import java.util.ArrayList;
 
 public abstract class SmsController {
-    int unsentParts, unreceivedSMS;
-    abstract void onSmsReceived(String number, String message);
-    abstract void onSmsFailedToSend();
-    abstract void onSmsSent();
+    public int unsentParts, unreceivedSMS;
+    public abstract void onSmsReceived(String number, String message);
+    public abstract void onSmsFailedToSend();
+    public abstract void onSmsSent();
     final String TAG = "SmsController";
 
     public void sendSMS(Context context, SmsBroadcastManager smsBroadcastManager, SmsController smsController, String number, String message) {

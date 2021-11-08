@@ -1,7 +1,8 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.view.activities;
 
-import static com.derrick.wellnesscheck.DbController.settings;
-import static com.derrick.wellnesscheck.DbController.updateSettings;
+import static com.derrick.wellnesscheck.WellnessCheck.getNextCheckIn;
+import static com.derrick.wellnesscheck.controller.DbController.settings;
+import static com.derrick.wellnesscheck.controller.DbController.updateSettings;
 import static com.derrick.wellnesscheck.MonitorReceiver.getReadableTime;
 
 import android.Manifest;
@@ -10,7 +11,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.app.TimePickerDialog;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -19,6 +19,12 @@ import android.widget.NumberPicker;
 import android.widget.Switch;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
+
+import com.derrick.wellnesscheck.WellnessCheck;
+import com.derrick.wellnesscheck.utils.*;
+import com.derrick.wellnesscheck.MonitorReceiver;
+import com.derrick.wellnesscheck.R;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Timer;
@@ -33,7 +39,6 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     Timer timer = new Timer();
     static final long MINUTE_IN_MILLIS = 60 * 1000;
     static final long HOUR_IN_MILLIS = 60 * MINUTE_IN_MILLIS;
-    static final long DAY_IN_MILLIS = 24 * HOUR_IN_MILLIS;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -63,7 +68,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
             });
         });
 
-        checkInHours = (NumberPicker) findViewById(R.id.numberPickerHours);
+        checkInHours = findViewById(R.id.numberPickerHours);
         checkInHours.setMinValue(1);
         checkInHours.setMaxValue(24);
         checkInHours.setValue(settings.checkInHours);
@@ -73,7 +78,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
             setFirstCheckText();
         });
 
-        respondMinutes = (NumberPicker) findViewById(R.id.numberPickerMinutes);
+        respondMinutes = findViewById(R.id.numberPickerMinutes);
         respondMinutes.setMinValue(1);
         respondMinutes.setMaxValue(60);
         respondMinutes.setValue(settings.respondMinutes);
@@ -194,7 +199,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     }
 
     void setFirstCheckText(){
-        long firstCheckIn = getNextCheckIn(settings.checkInHours, settings.fromHour, settings.fromMinute, settings.toHour, settings.toMinute, settings.allDay);
+        long firstCheckIn = getNextCheckIn();
         tvFirstCheck.setText("First wellness check will be at " + getFirstCheckInString(firstCheckIn));
         timer.cancel();
         timer = new Timer();
@@ -202,7 +207,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
             @Override
             public void run() {
                 timer = new Timer();
-                timer.schedule(this, new Date(getNextCheckIn(settings.checkInHours, settings.fromHour, settings.fromMinute, settings.toHour, settings.toMinute, settings.allDay)));
+                timer.schedule(this, new Date(getNextCheckIn()));
             }
         }, new Date(firstCheckIn));
     }
@@ -244,90 +249,11 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         SetupSettingsActivity.this.finish();
     }
 
-    public static long getMidnight(Calendar calendar){
-        /*
-        add one second from midnight because day of month or
-        year might be the last one, so adding a second is easier
-         */
-        calendar.add(Calendar.DATE, 1);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTimeInMillis();
-    }
-
     private String getFirstCheckInString(long firstCheckIn){
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(firstCheckIn);
         String time = String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
-        if(firstCheckIn > getMidnight(calendar)) time += " tomorrow";
+        if(firstCheckIn > WellnessCheck.getMidnight(calendar)) time += " tomorrow";
         return time;
-    }
-
-    public static long getNextCheckIn(int checkInHours, int fromHour, int fromMinute, int toHour, int toMinute, boolean allDay){
-        //used to get excluded time boundaries
-        Calendar calendar = Calendar.getInstance();
-        final long now = calendar.getTimeInMillis();
-        //clear for precision
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-
-        //get to time
-        calendar.set(Calendar.HOUR_OF_DAY, toHour);
-        calendar.set(Calendar.MINUTE, toMinute);
-        long endOfDay = calendar.getTimeInMillis();
-
-        //get first check as from time
-        calendar.set(Calendar.HOUR_OF_DAY, fromHour);
-        calendar.set(Calendar.MINUTE, fromMinute);
-        long startOfDay = calendar.getTimeInMillis();
-
-        /*
-        set first to one interval after midnight if all day
-        because midnight will always be behind now. if not
-        all day, set it to the start
-         */
-        long nextCheckIn = startOfDay;
-        if(allDay){
-            calendar.set(Calendar.HOUR_OF_DAY, checkInHours);
-            calendar.set(Calendar.MINUTE, 0);
-            nextCheckIn = calendar.getTimeInMillis();
-        }else if(startOfDay < endOfDay && now > endOfDay){
-            calendar.add(Calendar.DATE, 1);
-            nextCheckIn = calendar.getTimeInMillis();
-        }else if(startOfDay > endOfDay && now < endOfDay){
-            calendar.add(Calendar.DATE, -1);
-            nextCheckIn = calendar.getTimeInMillis();
-        }
-
-        //reminder: INTERVAL <= 24
-        while(nextCheckIn < now) {
-            calendar.add(Calendar.HOUR, checkInHours);
-            nextCheckIn = calendar.getTimeInMillis();
-        }
-
-        //if all day and first check in is after midnight, set it to midnight
-        if(allDay){
-            long midnight = getMidnight(calendar);
-            if(nextCheckIn > midnight) nextCheckIn = midnight;
-        }
-        //if after end of day push to next start
-        else if (nextCheckIn > endOfDay) {
-            calendar.setTimeInMillis(startOfDay);
-            calendar.add(Calendar.DATE, 1);
-            nextCheckIn = calendar.getTimeInMillis();
-        }
-
-        return nextCheckIn;
-    }
-
-    public static long getNextCheckIn(AppSettings settings){
-        return getNextCheckIn(settings.checkInHours, settings.fromHour, settings.fromMinute, settings.toHour, settings.toMinute, settings.allDay);
-    }
-
-    public static long getNextCheckIn() throws NullPointerException{
-        if(settings == null) throw new NullPointerException("Settings are null, init db first");
-        return getNextCheckIn(settings);
     }
 }

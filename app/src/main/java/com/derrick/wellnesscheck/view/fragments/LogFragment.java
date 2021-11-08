@@ -1,6 +1,6 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.view.fragments;
 
-import static com.derrick.wellnesscheck.DbController.log;
+import static com.derrick.wellnesscheck.controller.DbController.log;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -13,6 +13,12 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.derrick.wellnesscheck.R;
+import com.derrick.wellnesscheck.model.data.LogEntry;
+import com.derrick.wellnesscheck.controller.DbController;
+import com.derrick.wellnesscheck.utils.Log;
+import com.derrick.wellnesscheck.MonitorReceiver;
 
 public class LogFragment extends Fragment implements Log.Listener {
     LogAdapter logAdapter = new LogAdapter();

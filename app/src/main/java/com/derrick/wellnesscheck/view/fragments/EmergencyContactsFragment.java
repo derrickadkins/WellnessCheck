@@ -1,9 +1,8 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.view.fragments;
 
 import android.Manifest;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -15,7 +14,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ProgressBar;
 
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContract;
 import androidx.annotation.NonNull;
@@ -27,6 +25,15 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.derrick.wellnesscheck.R;
+import com.derrick.wellnesscheck.model.data.Contact;
+import com.derrick.wellnesscheck.controller.EmergencyContactsRecyclerAdapter;
+import com.derrick.wellnesscheck.utils.PermissionsListener;
+import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
+import com.derrick.wellnesscheck.SmsBroadcastManager;
+import com.derrick.wellnesscheck.controller.SmsController;
+import com.derrick.wellnesscheck.controller.SwipeToDeleteCallback;
+import com.derrick.wellnesscheck.view.activities.SetupSettingsActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
@@ -37,9 +44,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import static android.app.Activity.RESULT_OK;
-import static com.derrick.wellnesscheck.DbController.db;
-import static com.derrick.wellnesscheck.DbController.contacts;
-import static com.derrick.wellnesscheck.DbController.settings;
+import static com.derrick.wellnesscheck.controller.DbController.db;
+import static com.derrick.wellnesscheck.controller.DbController.contacts;
+import static com.derrick.wellnesscheck.controller.DbController.settings;
 
 public class EmergencyContactsFragment extends Fragment implements EmergencyContactsRecyclerAdapter.OnContactDeleteListener {
     FloatingActionButton fab;
@@ -86,14 +93,9 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
             }
             return null;
         }
-    }, new ActivityResultCallback<Object>() {
-        @Override
-        public void onActivityResult(Object result) {
+    }, result -> { });
 
-        }
-    });
-
-    EmergencyContactsFragment(){super();}
+    public EmergencyContactsFragment(){super();}
 
     @Nullable
     @Override
@@ -101,27 +103,22 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
         View emergencyContactsFragmentView = inflater.inflate(R.layout.emergency_contacts_fragment, container, false);
 
         fab = emergencyContactsFragmentView.findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        fab.setOnClickListener(view -> ((PermissionsRequestingActivity) getContext()).checkPermissions(new String[]{Manifest.permission.READ_CONTACTS}, new PermissionsListener() {
             @Override
-            public void onClick(View view) {
-                ((PermissionsRequestingActivity) getContext()).checkPermissions(new String[]{Manifest.permission.READ_CONTACTS}, new PermissionsListener() {
-                    @Override
-                    public void permissionsGranted() {
-                        contactChooserResult.launch(null);
-                    }
-
-                    @Override
-                    public void permissionsDenied() {
-                        // todo: Add contact manually
-                    }
-
-                    @Override
-                    public void showRationale(String[] permissions) {
-
-                    }
-                });
+            public void permissionsGranted() {
+                contactChooserResult.launch(null);
             }
-        });
+
+            @Override
+            public void permissionsDenied() {
+                // todo: Add contact manually
+            }
+
+            @Override
+            public void showRationale(String[] permissions) {
+
+            }
+        }));
 
         contactsList = emergencyContactsFragmentView.findViewById(R.id.emergency_contacts_recyclerview);
         contactsList.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -129,17 +126,9 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
         ((PermissionsRequestingActivity) getContext()).checkPermissions(new String[]{Manifest.permission.READ_CONTACTS}, new PermissionsListener() {
             @Override
             public void permissionsGranted() {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        loadContacts();
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                setupAdapter();
-                            }
-                        });
-                    }
+                new Thread(() -> {
+                    loadContacts();
+                    getActivity().runOnUiThread(() -> setupAdapter());
                 }).start();
             }
 
@@ -157,12 +146,7 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
         setupNext = emergencyContactsFragmentView.findViewById(R.id.btnSetupNext);
         setupNext.setVisibility(getActivity().getLocalClassName().equalsIgnoreCase("SetupContactsActivity") ? View.VISIBLE : View.GONE);
         setupNext.setEnabled(false);
-        setupNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(getActivity(), SetupSettingsActivity.class));
-            }
-        });
+        setupNext.setOnClickListener(v -> startActivity(new Intent(getActivity(), SetupSettingsActivity.class)));
         return emergencyContactsFragmentView;
     }
 
@@ -238,34 +222,19 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
     public void addContact(Contact mContact){
         emergencyContactsRecyclerAdapter.add(mContact);
         onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                db.contactDao().insertAll(mContact);
-            }
-        }).start();
+        new Thread(() -> db.contactDao().insertAll(mContact)).start();
     }
 
     @Override
     public void onDeleteContact(Contact mContact) {
         onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                db.contactDao().delete(mContact);
-            }
-        }).start();
+        new Thread(() -> db.contactDao().delete(mContact)).start();
     }
 
     @Override
     public void onUndoDeleteContact(Contact mContact) {
         onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                db.contactDao().insertAll(mContact);
-            }
-        }).start();
+        new Thread(() -> db.contactDao().insertAll(mContact)).start();
     }
 
     public void onContactListSizeChange(int size) {
@@ -279,18 +248,15 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
                 .setMessage("Sending request via SMS ...")
                 .setView(new ProgressBar(getActivity()))
                 .setCancelable(false)
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                        getActivity().unregisterReceiver(smsBroadcastManager);
-                    }
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    dialog.cancel();
+                    getActivity().unregisterReceiver(smsBroadcastManager);
                 })
                 .create();
 
         SmsController smsController = new SmsController() {
             @Override
-            void onSmsReceived(String number, String message) {
+            public void onSmsReceived(String number, String message) {
                 String normalizedContactNumber = SmsController.normalizeNumber(contact.number);
                 message = message.toUpperCase(Locale.ROOT).trim();
                 if (number.equalsIgnoreCase(normalizedContactNumber)) {
@@ -309,23 +275,18 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
             }
 
             @Override
-            void onSmsFailedToSend() {
+            public void onSmsFailedToSend() {
 
             }
 
             @Override
-            void onSmsSent() {
+            public void onSmsSent() {
                 if (--unsentParts == 0) {
                     alertDialog.setMessage("Message Sent");
                     new Timer().schedule(new TimerTask() {
                         @Override
                         public void run() {
-                            getActivity().runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    alertDialog.setMessage("Waiting for response ...");
-                                }
-                            });
+                            getActivity().runOnUiThread(() -> alertDialog.setMessage("Waiting for response ..."));
                         }
                     }, 1000);
                 }

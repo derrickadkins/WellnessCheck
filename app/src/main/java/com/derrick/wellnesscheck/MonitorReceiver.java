@@ -2,11 +2,11 @@ package com.derrick.wellnesscheck;
 
 import static android.content.Intent.ACTION_BOOT_COMPLETED;
 import static android.content.Intent.ACTION_DELETE;
-import static com.derrick.wellnesscheck.DbController.InitDB;
-import static com.derrick.wellnesscheck.DbController.contacts;
-import static com.derrick.wellnesscheck.DbController.settings;
-import static com.derrick.wellnesscheck.DbController.updateSettings;
-import static com.derrick.wellnesscheck.SetupSettingsActivity.getNextCheckIn;
+import static com.derrick.wellnesscheck.controller.DbController.InitDB;
+import static com.derrick.wellnesscheck.controller.DbController.contacts;
+import static com.derrick.wellnesscheck.controller.DbController.settings;
+import static com.derrick.wellnesscheck.controller.DbController.updateSettings;
+import static com.derrick.wellnesscheck.WellnessCheck.getNextCheckIn;
 
 import android.app.AlarmManager;
 import android.app.Notification;
@@ -20,6 +20,11 @@ import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+
+import com.derrick.wellnesscheck.model.data.Contact;
+import com.derrick.wellnesscheck.controller.DbController;
+import com.derrick.wellnesscheck.controller.SmsController;
+import com.derrick.wellnesscheck.utils.Log;
 
 import java.util.Calendar;
 
@@ -193,20 +198,17 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
         SmsBroadcastManager smsBroadcastManager = new SmsBroadcastManager();
         SmsController smsController = new SmsController() {
             @Override
-            void onSmsReceived(String number, String message) {}
+            public void onSmsReceived(String number, String message) {}
             @Override
-            void onSmsFailedToSend() {}
+            public void onSmsFailedToSend() {}
             @Override
-            void onSmsSent() {}
+            public void onSmsSent() {}
         };
 
         SmsBroadcastManager.smsController = smsController;
-        DbController.DbListener dbListener = new DbController.DbListener() {
-            @Override
-            public void onDbReady() {
-                for(Contact contact : contacts)
-                    smsController.sendSMS(context.getApplicationContext(), smsBroadcastManager, smsController, contact.number, context.getString(R.string.missed_check_in));
-            }
+        DbController.DbListener dbListener = () -> {
+            for(Contact contact : contacts)
+                smsController.sendSMS(context.getApplicationContext(), smsBroadcastManager, smsController, contact.number, context.getString(R.string.missed_check_in));
         };
 
         if(settings == null) InitDB(context, dbListener, false, true, false);
@@ -229,57 +231,4 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
             notificationManager.createNotificationChannel(channel);
         }
     }
-
-    //Old getNextCheckIn
-    /*private long getNextCheckIn(long mainInterval, int fromHour, int fromMinute, int toHour, int toMinute, boolean allDay){
-        final long DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
-
-        //used to get excluded time boundaries
-        Calendar calendar = Calendar.getInstance();
-        //clear for precision
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-
-        //start with default and change if in excluded hours
-        long nextCheckIn = calendar.getTimeInMillis() + mainInterval;
-
-        //get from time
-        calendar.set(Calendar.HOUR_OF_DAY, fromHour);
-        calendar.set(Calendar.MINUTE, fromMinute);
-        long startOfDay = calendar.getTimeInMillis();
-
-        //get to time
-        calendar.set(Calendar.HOUR_OF_DAY, toHour);
-        calendar.set(Calendar.MINUTE, toMinute);
-        long endOfDay = calendar.getTimeInMillis();
-
-        //add one minute from midnight because day of month or
-        //year might be the last one, so adding a second is easier
-        calendar.set(Calendar.HOUR_OF_DAY, 23);
-        calendar.set(Calendar.MINUTE, 59);
-        calendar.set(Calendar.SECOND, 59);
-        calendar.set(Calendar.MILLISECOND, 0);
-        calendar.add(Calendar.SECOND, 1);
-        long midnight = calendar.getTimeInMillis();
-
-        //put excluded time boundaries on either side of next check-in
-        if(allDay && nextCheckIn > midnight){
-            nextCheckIn = midnight;
-        }else if(startOfDay < endOfDay) {
-            if(nextCheckIn > endOfDay)
-                startOfDay += DAY_IN_MILLIS;
-            else if(nextCheckIn < startOfDay)
-                endOfDay -= DAY_IN_MILLIS;
-        }else if(startOfDay > endOfDay) {
-            if(nextCheckIn > startOfDay)
-                endOfDay += DAY_IN_MILLIS;
-            else if(nextCheckIn < endOfDay)
-                startOfDay -= DAY_IN_MILLIS;
-        }
-
-        //return default if all day or not in excluded time, otherwise return next start time
-        if(startOfDay == endOfDay || (nextCheckIn < endOfDay && nextCheckIn > startOfDay))
-            return nextCheckIn;
-        else return startOfDay;
-    }*/
 }

@@ -9,9 +9,12 @@ import android.provider.Telephony;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 
+import com.derrick.wellnesscheck.controller.SmsController;
+import com.derrick.wellnesscheck.utils.Log;
+
 public class SmsBroadcastManager extends BroadcastReceiver {
     public static final String ACTION_SEND_SMS_RESULT = "send_sms_result";
-    static SmsController smsController;
+    public static SmsController smsController;
     final String TAG = "SmsReceiver";
     public SmsBroadcastManager(){super();}
     SmsBroadcastManager(SmsController smsController){super(); this.smsController = smsController;}

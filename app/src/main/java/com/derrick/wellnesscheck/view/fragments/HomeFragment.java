@@ -1,11 +1,10 @@
-package com.derrick.wellnesscheck;
+package com.derrick.wellnesscheck.view.fragments;
 
-import static com.derrick.wellnesscheck.DbController.settings;
-import static com.derrick.wellnesscheck.DbController.updateSettings;
-import static com.derrick.wellnesscheck.DbController.contacts;
-import static com.derrick.wellnesscheck.SetupSettingsActivity.getNextCheckIn;
+import static com.derrick.wellnesscheck.controller.DbController.settings;
+import static com.derrick.wellnesscheck.controller.DbController.updateSettings;
+import static com.derrick.wellnesscheck.controller.DbController.contacts;
+import static com.derrick.wellnesscheck.WellnessCheck.getNextCheckIn;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -21,6 +20,13 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
+import com.derrick.wellnesscheck.R;
+import com.derrick.wellnesscheck.MonitorReceiver;
+import com.derrick.wellnesscheck.SmsBroadcastManager;
+import com.derrick.wellnesscheck.model.data.Contact;
+import com.derrick.wellnesscheck.view.activities.SetupContactsActivity;
+import com.derrick.wellnesscheck.controller.SmsController;
+import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 
 import java.util.Calendar;
