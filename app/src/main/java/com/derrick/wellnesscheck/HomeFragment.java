@@ -34,22 +34,19 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     Button btnTurnOff;
     CountDownTimer timer;
     Bundle bundle;
-    long checkInInterval, responseInterval;
+    long responseInterval;
     boolean inResponseTimer = false;
     final String TAG = "HomeFragment";
     static final long MINUTE_IN_MILLIS = 60 * 1000;
-    static final long HOUR_IN_MILLIS = 60 * MINUTE_IN_MILLIS;
-    static final long DAY_IN_MILLIS = 24 * HOUR_IN_MILLIS;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        checkInInterval = settings.checkInHours * HOUR_IN_MILLIS;
         responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
 
         bundle = new Bundle();
-        bundle.putLong(MonitorReceiver.EXTRA_INTERVAL1, checkInInterval);
+        bundle.putInt(MonitorReceiver.EXTRA_INTERVAL1, settings.checkInHours);
         bundle.putLong(MonitorReceiver.EXTRA_INTERVAL2, responseInterval);
         bundle.putInt(MonitorReceiver.EXTRA_FROM_HOUR, settings.fromHour);
         bundle.putInt(MonitorReceiver.EXTRA_FROM_MINUTE, settings.fromMinute);
@@ -62,13 +59,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View homeFragmentView = inflater.inflate(R.layout.home, container, false);
-
-/*
-        Log.d("HomeFragment", "is timer null ? " + (timer == null));
-
-        if(progressBar != null)
-            Log.d("HomeFragment", "progressMax = " + progressBar.getMax());
-*/
 
         btnTurnOff = homeFragmentView.findViewById(R.id.btnTurnOff);
         btnTurnOff.setOnClickListener(v -> {
@@ -83,23 +73,15 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             int finalRiskLvl = riskLvl;
             new AlertDialog.Builder(getActivity(), R.style.AppTheme_Dialog_Alert)
             .setMessage(message)
-            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    if(finalRiskLvl == 1) {
-                        stopMonitoring();
-                        dialog.dismiss();
-                        return;
-                    }
-                    requestTurnOff(finalRiskLvl);
-                }
-            })
-            .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
+            .setPositiveButton("Yes", (dialog, which) -> {
+                if(finalRiskLvl == 1) {
+                    stopMonitoring();
                     dialog.dismiss();
+                    return;
                 }
+                requestTurnOff(finalRiskLvl);
             })
+            .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
             .show();
         });
 
@@ -124,31 +106,15 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
         if(settings.monitoringOn) {
             long now = System.currentTimeMillis();
-            if (settings.nextCheckIn == 0)
-                settings.nextCheckIn = getNextCheckIn();
             long millis = settings.nextCheckIn - now;
-            if (millis <= 0) {
-                settings.nextCheckIn = getNextCheckIn(settings.checkInHours, settings.fromHour, settings.fromMinute, settings.toHour, settings.toMinute, settings.allDay);
-                updateSettings();
-                millis = settings.nextCheckIn - now;
-            }
 
             if(!settings.checkedIn) {
-                inResponseTimer = settings.nextCheckIn - checkInInterval + responseInterval > now;
+                inResponseTimer = settings.prevCheckIn + responseInterval > now;
                 if (inResponseTimer) {
-                    millis = settings.nextCheckIn - checkInInterval + responseInterval - now;
+                    millis = settings.prevCheckIn + responseInterval - now;
                 }
             }else inResponseTimer = false;
 
-            progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
-            tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
-
-            /*Log.d("Start Timer", "called from onCreateView"
-                    + ", inResponseTimer = " + inResponseTimer
-                    + ", millis = " + millis
-                    + ", settings.nextCheckIn = " + settings.nextCheckIn
-                    + ", now = " + now);*/
-            if(timer != null) timer.cancel();
             startTimer(millis);
         }
 
@@ -168,46 +134,36 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     }
 
     void startTimer(long ms){
-        /*Log.d("Start Timer", "inResponseTimer = " + inResponseTimer
-                + ", responseInterval = " + responseInterval
-                + ", checkInInterval = " + checkInInterval
-                + ", ms = " + ms);*/
-        setNextCheckInText(ms);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis() + ms);
+        tvNextCheckIn.setText("at " + String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)));
         tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
-        progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) checkInInterval);
+        progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) (settings.nextCheckIn - settings.prevCheckIn));
+        if(timer != null) timer.cancel();
         timer = new CountDownTimer(ms, 10) {
             @Override
-            public void onTick(long millisUntilFinished) {
-                long hours = millisUntilFinished / (60 * 60 * 1000) % 24;
-                long minutes = millisUntilFinished / (60 * 1000) % 60;
-                long seconds = millisUntilFinished / 1000 % 60;
+            public void onTick(long millisTilDone) {
+                long hours = millisTilDone / (60 * 60 * 1000) % 24;
+                long minutes = millisTilDone / (60 * 1000) % 60;
+                long seconds = millisTilDone / 1000 % 60;
                 String progressText = hours > 0 ? hours + ":" : "";
                 progressText += String.format("%02d:%02d", minutes, seconds);
                 tvProgressBar.setText(progressText);
-                progressBar.setProgress((int) millisUntilFinished);
-//                Log.d("Timer Tick", progressText + ", progressMax = " + progressBar.getMax());
+                progressBar.setProgress((int) millisTilDone);
             }
 
             @Override
             public void onFinish() {
                 inResponseTimer = !inResponseTimer;
                 if(inResponseTimer) {
-                    settings.nextCheckIn = getNextCheckIn(settings.checkInHours, settings.fromHour, settings.fromMinute, settings.toHour, settings.toMinute, settings.allDay);
+                    settings.nextCheckIn = getNextCheckIn();
                     updateSettings();
-//                    Log.d("Start Timer", "called from timer onFinish : response");
                     startTimer(responseInterval);
                 }else{
-//                    Log.d("Start Timer", "called from timer onFinish : checkIn");
                     startTimer(settings.nextCheckIn - System.currentTimeMillis());
                 }
             }
         }.start();
-    }
-
-    void setNextCheckInText(long ms){
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(System.currentTimeMillis() + ms);
-        tvNextCheckIn.setText("at " + String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)));
     }
 
     void setTimerVisibility(){
@@ -238,7 +194,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
     @Override
     public void onCheckIn() {
-        Log.d(TAG, "onCheckIn");
         if(timer != null) timer.cancel();
         inResponseTimer = false;
         startTimer(settings.nextCheckIn - System.currentTimeMillis());
@@ -250,12 +205,9 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), R.style.AppTheme_Dialog_Alert)
                 .setMessage("Sending request(s) via SMS ...")
                 .setView(new ProgressBar(getActivity()))
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                        getActivity().unregisterReceiver(smsBroadcastManager);
-                    }
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    dialog.cancel();
+                    getActivity().unregisterReceiver(smsBroadcastManager);
                 })
                 .setCancelable(false)
                 .create();
@@ -288,12 +240,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                     alertDialog.cancel();
                     new AlertDialog.Builder(getContext(), R.style.AppTheme_Dialog_Alert)
                             .setMessage("Sorry, you are not allowed to turn off monitoring at this time")
-                            .setNeutralButton("Okay", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    dialog.cancel();
-                                }
-                            }).create().show();
+                            .setNeutralButton("Okay", (dialog, which) -> dialog.cancel()).create().show();
                     getActivity().unregisterReceiver(smsBroadcastManager);
                 }
             }
@@ -303,18 +250,10 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 alertDialog.cancel();
                 new AlertDialog.Builder(getActivity(), R.style.AppTheme_Dialog_Alert)
                         .setMessage("SMS Failed to Send")
-                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.cancel();
-                            }
-                        })
-                        .setPositiveButton("Retry", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.cancel();
-                                requestTurnOff(riskLvl);
-                            }
+                        .setNegativeButton("Cancel", (dialog, which) -> dialog.cancel())
+                        .setPositiveButton("Retry", (dialog, which) -> {
+                            dialog.cancel();
+                            requestTurnOff(riskLvl);
                         }).create().show();
             }
 

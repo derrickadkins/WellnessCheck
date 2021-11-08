@@ -31,7 +31,7 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
     public static final String ACTION_RESPONSE = "com.derrick.wellnesscheck.CANCEL_TIMER";
     public static final String ACTION_SMS = "com.derrick.wellnesscheck.SEND_SMS";
     public static final String ACTION_LATE_RESPONSE = "com.derrick.wellnesscheck.LATE_CHECK_IN";
-    public static final String EXTRA_INTERVAL1 = "mainInterval";
+    public static final String EXTRA_INTERVAL1 = "checkInHours";
     public static final String EXTRA_INTERVAL2 = "responseInterval";
     public static final String EXTRA_ALL_DAY = "allDay";
     public static final String EXTRA_FROM_HOUR = "fromHour";
@@ -54,6 +54,7 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
 
     Intent intent;
     Context context;
+    long nextCheckIn;
 
     public MonitorReceiver(){}
 
@@ -88,7 +89,7 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
 
         switch (intent.getAction()){
             case ACTION_ALARM:
-                long mainInterval = intent.getLongExtra(EXTRA_INTERVAL1, 60 * 60 * 1000);
+                int checkInHours = intent.getIntExtra(EXTRA_INTERVAL1, 1);
                 boolean allDay = intent.getBooleanExtra(EXTRA_ALL_DAY, false);
                 int fromHour = intent.getIntExtra(EXTRA_FROM_HOUR, 8);
                 int fromMinute = intent.getIntExtra(EXTRA_FROM_MINUTE, 0);
@@ -96,7 +97,7 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
                 int toMinute = intent.getIntExtra(EXTRA_TO_MINUTE, 0);
                 long responseInterval = intent.getLongExtra(EXTRA_INTERVAL2, 60 * 1000);
 
-                long nextCheckIn = getNextCheckIn(mainInterval, fromHour, fromMinute, toHour, toMinute, allDay);
+                nextCheckIn = getNextCheckIn(checkInHours, fromHour, fromMinute, toHour, toMinute, allDay);
                 Log.d(TAG, "Next check-in scheduled for " + getReadableTime(nextCheckIn));
 
                 //next check-in
@@ -151,6 +152,8 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
         switch (intent.getAction()){
             case ACTION_ALARM:
                 settings.checkedIn = false;
+                settings.prevCheckIn = settings.nextCheckIn;
+                settings.nextCheckIn = nextCheckIn;
                 updateSettings();
                 break;
             case ACTION_RESPONSE:
@@ -160,7 +163,9 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
             case ACTION_BOOT_COMPLETED:
                 if(!settings.monitoringOn) return;
                 //todo: notify immediately if check-in was missed?
-                long nextCheckIn = getNextCheckIn();
+                nextCheckIn = getNextCheckIn();
+                settings.prevCheckIn = settings.nextCheckIn;
+                settings.nextCheckIn = nextCheckIn;
                 Log.d(TAG, "Next check-in scheduled for " + getReadableTime(nextCheckIn));
                 //next check-in
                 alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(nextCheckIn,
@@ -173,7 +178,7 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(time);
         String readableTime = "";
-        if(showDate) readableTime += calendar.get(Calendar.MONTH) + "/" + calendar.get(Calendar.DAY_OF_MONTH) + " ";
+        if(showDate) readableTime += (calendar.get(Calendar.MONTH)+1) + "/" + calendar.get(Calendar.DAY_OF_MONTH) + " ";
         readableTime += calendar.get(Calendar.HOUR_OF_DAY) + ":" + String.format("%02d", calendar.get(Calendar.MINUTE));
         if(showSeconds) readableTime += ":" + String.format("%02d", calendar.get(Calendar.SECOND));
         if(showMillis) readableTime += "." + String.format("%03d", calendar.get(Calendar.MILLISECOND));
