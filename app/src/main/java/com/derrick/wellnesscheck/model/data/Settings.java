@@ -1,6 +1,6 @@
 package com.derrick.wellnesscheck.model.data;
 
-import static android.text.format.DateUtils.HOUR_IN_MILLIS;
+import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 
 import static com.derrick.wellnesscheck.WellnessCheck.db;
 
@@ -12,8 +12,12 @@ import androidx.room.PrimaryKey;
 
 import com.derrick.wellnesscheck.MonitorReceiver;
 
+import java.lang.reflect.Field;
+
 @Entity
 public class Settings {
+    static final String TAG = "Settings";
+
     @NonNull
     @PrimaryKey
     public int id = 1;
@@ -28,29 +32,43 @@ public class Settings {
         fromMinute = 0;
         toHour = 20;
         toMinute = 0;
-        fallDetection = false;
+        prevCheckIn = 0;
+        nextCheckIn = 0;
         allDay = false;
         monitoringOn = false;
-        nextCheckIn = 0;
-        prevCheckIn = 0;
         checkedIn = false;
+        fallDetection = false;
     }
 
     public static Settings Init(){
         Settings settings = db.settingsDao().getSettings();
         if(settings == null) {
+            Log.d(TAG, "settings null, creating new");
             settings = new Settings();
             db.settingsDao().insert(settings);
         }
         return settings;
     }
 
-    public void update(){new Thread(() -> db.settingsDao().update(this));}
+    public void update(){new Thread(() -> db.settingsDao().update(this)).start();}
+
+    @NonNull
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        try {
+            for (Field f : getClass().getDeclaredFields())
+                sb.append(String.format("%s:%s, ", f.getName(), f.get(this)));
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return sb.substring(0, sb.length() - 2);
+    }
 
     public Bundle toBundle(){
         Bundle bundle = new Bundle();
         bundle.putInt(MonitorReceiver.EXTRA_INTERVAL1, checkInHours);
-        bundle.putLong(MonitorReceiver.EXTRA_INTERVAL2, respondMinutes * HOUR_IN_MILLIS);
+        bundle.putLong(MonitorReceiver.EXTRA_INTERVAL2, respondMinutes * MINUTE_IN_MILLIS);
         bundle.putInt(MonitorReceiver.EXTRA_FROM_HOUR, fromHour);
         bundle.putInt(MonitorReceiver.EXTRA_FROM_MINUTE, fromMinute);
         bundle.putInt(MonitorReceiver.EXTRA_TO_HOUR, toHour);

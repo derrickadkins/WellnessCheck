@@ -10,13 +10,16 @@ import androidx.room.PrimaryKey;
 public class Entry {
     @NonNull
     @PrimaryKey
+    public int id;
     public long time;
     public String entry;
 
-    public Entry(String entry){
+    public Entry(){}
+    public Entry(int id, String entry){
+        this.id = id;
         this.time = System.currentTimeMillis();
         this.entry = entry;
     }
 
-    public void insert() {new Thread(() -> db.logDao().insert(this));}
+    public synchronized void insert() {new Thread(() -> db.logDao().insert(this)).start();}
 }

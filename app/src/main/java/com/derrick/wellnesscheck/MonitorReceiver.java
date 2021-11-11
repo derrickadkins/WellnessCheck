@@ -2,6 +2,8 @@ package com.derrick.wellnesscheck;
 
 import static android.content.Intent.ACTION_BOOT_COMPLETED;
 import static android.content.Intent.ACTION_DELETE;
+import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -80,7 +82,6 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                 long responseInterval = intent.getLongExtra(EXTRA_INTERVAL2, 60 * 1000);
 
                 nextCheckIn = WellnessCheck.getNextCheckIn(checkInHours, fromHour, fromMinute, toHour, toMinute, allDay);
-                Log.d(TAG, "Next check-in scheduled for " + getReadableTime(nextCheckIn));
 
                 //next check-in
                 WellnessCheck.setAlarm(context, nextCheckIn, ACTION_ALARM, intent.getExtras());
@@ -157,21 +158,6 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                 WellnessCheck.setAlarm(context, nextCheckIn, ACTION_ALARM, intent.getExtras());
                 break;
         }
-    }
-
-    public static String getReadableTime(long time, boolean showDate, boolean showSeconds, boolean showMillis){
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(time);
-        String readableTime = "";
-        if(showDate) readableTime += (calendar.get(Calendar.MONTH)+1) + "/" + calendar.get(Calendar.DAY_OF_MONTH) + " ";
-        readableTime += calendar.get(Calendar.HOUR_OF_DAY) + ":" + String.format("%02d", calendar.get(Calendar.MINUTE));
-        if(showSeconds) readableTime += ":" + String.format("%02d", calendar.get(Calendar.SECOND));
-        if(showMillis) readableTime += "." + String.format("%03d", calendar.get(Calendar.MILLISECOND));
-        return readableTime;
-    }
-
-    public static String getReadableTime(long time){
-        return getReadableTime(time, true, true, true);
     }
 
     void sendMissedCheckInSMS(){

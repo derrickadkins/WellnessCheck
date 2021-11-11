@@ -13,6 +13,7 @@ import android.view.MenuItem;
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.WellnessCheck;
 import com.derrick.wellnesscheck.model.DB;
+import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Settings;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.derrick.wellnesscheck.view.fragments.*;
@@ -23,6 +24,7 @@ import com.google.android.material.navigation.NavigationBarView;
 import java.util.ArrayList;
 
 public class MainActivity extends PermissionsRequestingActivity implements NavigationBarView.OnItemSelectedListener, DB.DbListener {
+    static final String TAG = "MainActivity";
     HomeFragment homeFragment = new HomeFragment();
     EmergencyContactsFragment emergencyContactsFragment = new EmergencyContactsFragment();
     MentalHealthResourcesFragment mentalHealthResourcesFragment = new MentalHealthResourcesFragment();
@@ -42,15 +44,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
     public void onDbReady(DB db) {
         setContentView(R.layout.activity_main);
         Settings settings = db.settings;
-
-        fragments.add(homeFragment);
-        fragments.add(emergencyContactsFragment);
-        fragments.add(logFragment);
-
-        bottomNavigationView = findViewById(R.id.nav);
-        bottomNavigationView.setOnItemSelectedListener(this);
-        bottomNavigationView.setSelectedItemId(R.id.action_home);
-
+        Log.d(TAG, "settings:" + settings.toString());
         if(settings.monitoringOn && !WellnessCheck.isMonitoring()){
             long now = System.currentTimeMillis();
             long responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
@@ -60,10 +54,18 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
             }
             long time = settings.nextCheckIn;
             if(!settings.checkedIn && settings.prevCheckIn + responseInterval > now)
-                    time = settings.prevCheckIn + responseInterval - now;
+                time = settings.prevCheckIn + responseInterval - now;
 
             WellnessCheck.setAlarm(this, time, MonitorReceiver.ACTION_ALARM, settings.toBundle());
         }
+
+        fragments.add(homeFragment);
+        fragments.add(emergencyContactsFragment);
+        fragments.add(logFragment);
+
+        bottomNavigationView = findViewById(R.id.nav);
+        bottomNavigationView.setOnItemSelectedListener(this);
+        bottomNavigationView.setSelectedItemId(R.id.action_home);
     }
 
     @Override

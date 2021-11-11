@@ -25,6 +25,7 @@ import com.derrick.wellnesscheck.WellnessCheck;
 import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
+import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Settings;
 import com.derrick.wellnesscheck.view.activities.SetupContactsActivity;
 import com.derrick.wellnesscheck.controller.SmsController;
@@ -75,9 +76,9 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         btnTurnOff = homeFragmentView.findViewById(R.id.btnTurnOff);
         btnTurnOff.setOnClickListener(v -> {
             int riskLvl = 1;
-            for(int i = 0; i < contacts.size(); i++){
-                if(contacts.get(i).riskLvl > riskLvl)
-                    riskLvl = contacts.get(i).riskLvl;
+            for(Contact contact : contacts.values()){
+                if(contact.riskLvl > riskLvl)
+                    riskLvl = contact.riskLvl;
             }
             String message = "Are you sure you want to turn off monitoring?";
             if(riskLvl > 1) message = "Request permission from Emergency Contacts to turn off monitoring?";
@@ -102,10 +103,8 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         progressBar = homeFragmentView.findViewById(R.id.progressBar);
         progressBar.setOnClickListener(v -> {
             if (settings.monitoringOn) {
-                if (inResponseTimer) {
-                    onCheckIn();
+                if (inResponseTimer)
                     getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(MonitorReceiver.ACTION_RESPONSE).putExtras(bundle));
-                }
                 return;
             }
 
@@ -151,6 +150,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         tvNextCheckIn.setText("at " + String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)));
         tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
         progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) (settings.nextCheckIn - settings.prevCheckIn));
+        Log.d(TAG, "timer started; millis:"+ms+", progressBarMax:"+progressBar.getMax());
         if(timer != null) timer.cancel();
         timer = new CountDownTimer(ms, 10) {
             @Override
@@ -167,13 +167,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             @Override
             public void onFinish() {
                 inResponseTimer = !inResponseTimer;
-                if(inResponseTimer) {
-                    settings.nextCheckIn = WellnessCheck.getNextCheckIn();
-                    settings.update();
-                    startTimer(responseInterval);
-                }else{
-                    startTimer(settings.nextCheckIn - System.currentTimeMillis());
-                }
+                startTimer(inResponseTimer ? responseInterval : settings.nextCheckIn - System.currentTimeMillis());
             }
         }.start();
     }
@@ -206,7 +200,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
     @Override
     public void onCheckIn() {
-        if(timer != null) timer.cancel();
         inResponseTimer = false;
         startTimer(settings.nextCheckIn - System.currentTimeMillis());
     }

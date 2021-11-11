@@ -1,5 +1,7 @@
 package com.derrick.wellnesscheck;
 
+import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
+
 import android.app.AlarmManager;
 import android.app.Application;
 import android.app.PendingIntent;
@@ -38,7 +40,7 @@ public class WellnessCheck extends Application {
         PendingIntent pendingIntent = getAlarmIntent(context, action, bundle);
         AlarmManager.AlarmClockInfo alarmClockInfo = new AlarmManager.AlarmClockInfo(time, pendingIntent);
         alarmManager.setAlarmClock(alarmClockInfo, pendingIntent);
-        Log.d(TAG, action + " alarm set for " + MonitorReceiver.getReadableTime(time));
+        Log.d(TAG, action + " alarm set for " + getReadableTime(time));
     }
 
     public static void cancelAlarm(Context context, String action, Bundle bundle){

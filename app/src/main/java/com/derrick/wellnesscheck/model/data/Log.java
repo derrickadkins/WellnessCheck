@@ -26,7 +26,8 @@ public class Log extends ArrayList<Entry> {
     }
 
     public Entry add(String msg) {
-        Entry entry = new Entry(msg);
+        Entry entry = new Entry(size(), msg);
+        entry.insert();
         super.add(0, entry);
         return entry;
     }

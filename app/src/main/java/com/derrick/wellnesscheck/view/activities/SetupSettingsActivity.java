@@ -1,7 +1,7 @@
 package com.derrick.wellnesscheck.view.activities;
 
 import static android.text.format.DateUtils.HOUR_IN_MILLIS;
-import static com.derrick.wellnesscheck.MonitorReceiver.getReadableTime;
+import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
 import static com.derrick.wellnesscheck.WellnessCheck.db;
 
 import android.Manifest;
@@ -18,7 +18,6 @@ import androidx.annotation.Nullable;
 
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.WellnessCheck;
-import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Settings;
 import com.derrick.wellnesscheck.utils.*;

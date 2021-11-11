@@ -1,6 +1,7 @@
 package com.derrick.wellnesscheck.view.fragments;
 
 import static com.derrick.wellnesscheck.WellnessCheck.db;
+import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -61,7 +62,7 @@ public class LogFragment extends Fragment implements Log.Listener {
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             ((TextView)holder.itemView.findViewById(android.R.id.text1))
-                    .setText(MonitorReceiver.getReadableTime(db.log.get(position).time) + " : " + db.log.get(position).entry);
+                    .setText(getReadableTime(db.log.get(position).time) + " : " + db.log.get(position).entry);
         }
 
         @Override

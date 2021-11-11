@@ -29,6 +29,7 @@ import com.derrick.wellnesscheck.R;
 import com.derrick.wellnesscheck.controller.EmergencyContactsRecyclerAdapter;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
+import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.utils.PermissionsListener;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.derrick.wellnesscheck.SmsBroadcastManager;
@@ -46,6 +47,7 @@ import static com.derrick.wellnesscheck.WellnessCheck.db;
 import static com.derrick.wellnesscheck.utils.Utils.sameNumbers;
 
 public class EmergencyContactsFragment extends Fragment implements EmergencyContactsRecyclerAdapter.OnContactDeleteListener {
+    static final String TAG = "EmergencyContactsFragment";
     FloatingActionButton fab;
     EmergencyContactsRecyclerAdapter emergencyContactsRecyclerAdapter;
     RecyclerView contactsList;
@@ -144,7 +146,7 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
         });
 
         setupNext = emergencyContactsFragmentView.findViewById(R.id.btnSetupNext);
-        setupNext.setVisibility(getActivity().getLocalClassName().equalsIgnoreCase("SetupContactsActivity") ? View.VISIBLE : View.GONE);
+        setupNext.setVisibility(getActivity().getLocalClassName().contains("SetupContactsActivity") ? View.VISIBLE : View.GONE);
         setupNext.setEnabled(false);
         setupNext.setOnClickListener(v -> startActivity(new Intent(getActivity(), SetupSettingsActivity.class)));
         return emergencyContactsFragmentView;
@@ -199,17 +201,20 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
     }
 
     public void addContact(Contact mContact){
+        contacts.add(mContact);
         emergencyContactsRecyclerAdapter.add(mContact);
         onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
     }
 
     @Override
     public void onDeleteContact(Contact mContact) {
+        contacts.remove(mContact);
         onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
     }
 
     @Override
     public void onUndoDeleteContact(Contact mContact) {
+        contacts.add(mContact);
         onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
     }
 
