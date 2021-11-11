@@ -22,8 +22,6 @@ import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Settings;
 
-import java.util.Calendar;
-
 public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener {
 
     final String TAG = "MonitorReceiver";
@@ -147,15 +145,8 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                 settings.update();
                 break;
             case ACTION_BOOT_COMPLETED:
-                if(!settings.monitoringOn) return;
                 //todo: notify immediately if check-in was missed?
-                nextCheckIn = WellnessCheck.getNextCheckIn();
-                settings.prevCheckIn = db.settings.nextCheckIn;
-                settings.nextCheckIn = nextCheckIn;
-                settings.update();
-                Log.d(TAG, "Next check-in scheduled for " + getReadableTime(nextCheckIn));
-                //next check-in
-                WellnessCheck.setAlarm(context, nextCheckIn, ACTION_ALARM, intent.getExtras());
+                WellnessCheck.applySettings(context, settings);
                 break;
         }
     }

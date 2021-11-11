@@ -1,7 +1,5 @@
 package com.derrick.wellnesscheck.view.activities;
 
-import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
-
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -10,7 +8,6 @@ import androidx.fragment.app.FragmentManager;
 
 import android.view.MenuItem;
 
-import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.WellnessCheck;
 import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Log;
@@ -45,19 +42,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         setContentView(R.layout.activity_main);
         Settings settings = db.settings;
         Log.d(TAG, "settings:" + settings.toString());
-        if(settings.monitoringOn && !WellnessCheck.isMonitoring()){
-            long now = System.currentTimeMillis();
-            long responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
-            if(settings.nextCheckIn < now) {
-                settings.nextCheckIn = WellnessCheck.getNextCheckIn();
-                settings.update();
-            }
-            long time = settings.nextCheckIn;
-            if(!settings.checkedIn && settings.prevCheckIn + responseInterval > now)
-                time = settings.prevCheckIn + responseInterval - now;
-
-            WellnessCheck.setAlarm(this, time, MonitorReceiver.ACTION_ALARM, settings.toBundle());
-        }
+        WellnessCheck.applySettings(this, settings);
 
         fragments.add(homeFragment);
         fragments.add(emergencyContactsFragment);

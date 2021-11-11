@@ -1,5 +1,6 @@
 package com.derrick.wellnesscheck;
 
+import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
 
 import android.app.AlarmManager;
@@ -28,10 +29,25 @@ public class WellnessCheck extends Application {
         Log.d(TAG, "onCreate");
     }
 
-    public static boolean isMonitoring(){
+    public static boolean applySettings(Context context, Settings settings){
         AlarmManager alarmManager = (AlarmManager) context.getApplicationContext().getSystemService(Service.ALARM_SERVICE);
         AlarmManager.AlarmClockInfo alarmClockInfo = alarmManager.getNextAlarmClock();
-        return alarmClockInfo != null;
+        if(settings.monitoringOn && alarmClockInfo != null){
+            long now = System.currentTimeMillis();
+            if(settings.nextCheckIn < now) {
+                settings.prevCheckIn = settings.nextCheckIn;
+                settings.nextCheckIn = WellnessCheck.getNextCheckIn();
+                settings.update();
+            }
+            long time = settings.nextCheckIn;
+            long responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
+            if(!settings.checkedIn && settings.prevCheckIn + responseInterval > now)
+                time = settings.prevCheckIn + responseInterval - now;
+
+            WellnessCheck.setAlarm(context, time, MonitorReceiver.ACTION_ALARM, settings.toBundle());
+            return true;
+        }
+        return false;
     }
 
     public static void setAlarm(Context context, long time, String action, Bundle bundle){
