@@ -48,8 +48,7 @@ public class SmsBroadcastManager extends BroadcastReceiver {
                         SmsMessage currentSMS = SmsMessage.createFromPdu((byte[]) pdus[i], format);
                         String senderNo = currentSMS.getDisplayOriginatingAddress();
                         String message = currentSMS.getDisplayMessageBody();
-                        String normalizedNumber = SmsController.normalizeNumber(senderNo);
-                        if(smsController != null) smsController.onSmsReceived(normalizedNumber, message);
+                        if(smsController != null) smsController.onSmsReceived(senderNo, message);
                     }
                 }
                 break;

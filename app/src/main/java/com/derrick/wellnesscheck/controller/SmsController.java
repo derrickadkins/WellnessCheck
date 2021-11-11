@@ -1,5 +1,7 @@
 package com.derrick.wellnesscheck.controller;
 
+import static com.derrick.wellnesscheck.utils.Utils.normalizeNumber;
+
 import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -73,15 +75,5 @@ public abstract class SmsController {
 
             }
         });
-    }
-
-    public static String normalizeNumber(String number){
-        //get rid of all non digits
-        String normalizedNumber = number.replaceAll("\\D+", "");
-        //get only the last 10 digits
-        if(normalizedNumber.length() > 10){
-            normalizedNumber = normalizedNumber.substring(normalizedNumber.length()-10);
-        }
-        return normalizedNumber;
     }
 }

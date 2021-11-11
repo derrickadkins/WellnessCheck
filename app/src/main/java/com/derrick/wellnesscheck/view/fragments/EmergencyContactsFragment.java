@@ -37,16 +37,13 @@ import com.derrick.wellnesscheck.controller.SwipeToDeleteCallback;
 import com.derrick.wellnesscheck.view.activities.SetupSettingsActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import static android.app.Activity.RESULT_OK;
 import static com.derrick.wellnesscheck.WellnessCheck.db;
+import static com.derrick.wellnesscheck.utils.Utils.sameNumbers;
 
 public class EmergencyContactsFragment extends Fragment implements EmergencyContactsRecyclerAdapter.OnContactDeleteListener {
     FloatingActionButton fab;
@@ -164,49 +161,41 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
     }
 
     public void loadContacts() {
-        //used for filtering out deleted contacts
-        Hashtable<String, Contact> tmpContactsDictCopy =  contacts.getDetachedCopy();
-        //get all contacts
         ContentResolver contentResolver = getActivity().getContentResolver();
-        Cursor cursor = contentResolver.query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
-        if (cursor.getCount() <= 0) return;
-        List<Contact> tmpContactsList = new ArrayList<>();
-        while (cursor.moveToNext()) {
-            String contact_id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
-            //if it's not already added, move on to the next one
-            if (!tmpContactsDictCopy.containsKey(contact_id)) continue;
-            Contact android_contact = new Contact(contact_id, "", "", tmpContactsDictCopy.get(contact_id).riskLvl);
-            String contact_display_name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
-            android_contact.name = contact_display_name;
+        for(Contact contact : contacts.values()) {
+            Cursor cursor = contentResolver.query(ContactsContract.Contacts.CONTENT_URI, null, ContactsContract.Contacts._ID + " = ?", new String[]{contact.id}, null);
+            if (!cursor.moveToFirst()) {
+                contacts.remove(contact);
+                continue;
+            }
+            String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
+            String number = null;
             int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)));
             if (hasPhoneNumber > 0) {
                 Cursor phoneCursor = contentResolver.query(
                         ContactsContract.CommonDataKinds.Phone.CONTENT_URI
                         , null
                         , ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?"
-                        , new String[]{contact_id}
+                        , new String[]{contact.id}
                         , null);
                 while (phoneCursor.moveToNext()) {
                     String phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
-                    android_contact.number = phoneNumber;
+                    if(number == null) number = phoneNumber;
+                    if(sameNumbers(contact.number, phoneNumber)) {
+                        number = contact.number;
+                        break;
+                    }
                 }
                 phoneCursor.close();
             }
-            //id recognized, add for comparison
-            tmpContactsList.add(android_contact);
-        }
-        //check for updates in contact info
-        for (int i = 0; i < tmpContactsList.size(); i++) {
-            Contact contact = tmpContactsList.get(i);
-            Contact mContact = tmpContactsDictCopy.get(contact.id);
-            if (!contact.matches(mContact))
-                //todo: maybe re-verify contact here?
+            cursor.close();
+
+            if(!contact.name.equals(name) || !contact.number.equals(number)){
+                if(!contact.name.equals(name)) contact.name = name;
+                if(!contact.number.equals(number)) contact.number = number;
                 contacts.update(contact);
-            tmpContactsDictCopy.remove(contact.id);
+            }
         }
-        //delete contact if removed from phone
-        //todo: maybe delete this loop?
-        for(Contact contact : tmpContactsDictCopy.values()) contacts.remove(contact);
     }
 
     public void addContact(Contact mContact){
@@ -244,9 +233,8 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
         SmsController smsController = new SmsController() {
             @Override
             public void onSmsReceived(String number, String message) {
-                String normalizedContactNumber = SmsController.normalizeNumber(contact.number);
                 message = message.toUpperCase(Locale.ROOT).trim();
-                if (number.equalsIgnoreCase(normalizedContactNumber)) {
+                if (sameNumbers(number, contact.number)) {
                     if (message.replaceAll("\\d+", "").equals("Y")) {
                         if (message.equals("Y1"))
                             contact.riskLvl = 1;

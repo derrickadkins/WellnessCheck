@@ -1,6 +1,7 @@
 package com.derrick.wellnesscheck.view.fragments;
 
 import static com.derrick.wellnesscheck.WellnessCheck.db;
+import static com.derrick.wellnesscheck.utils.Utils.sameNumbers;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -234,8 +235,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 boolean messageReceivedFromContact = false;
                 message = message.trim().toLowerCase(Locale.ROOT);
                 for (Contact contact : contacts.values()) {
-                    String normalizedContactNumber = normalizeNumber(contact.number);
-                    if (number.equals(normalizedContactNumber)){
+                    if (sameNumbers(number, contact.number)){
                         messageReceivedFromContact = true;
                         if(message.equals("yes")) {
                             allowed = true;
