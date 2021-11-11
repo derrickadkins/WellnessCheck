@@ -1,6 +1,6 @@
 package com.derrick.wellnesscheck.view.fragments;
 
-import static com.derrick.wellnesscheck.controller.DbController.log;
+import static com.derrick.wellnesscheck.WellnessCheck.db;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -15,9 +15,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.derrick.wellnesscheck.R;
-import com.derrick.wellnesscheck.model.data.LogEntry;
-import com.derrick.wellnesscheck.controller.DbController;
-import com.derrick.wellnesscheck.utils.Log;
+import com.derrick.wellnesscheck.model.DB;
+import com.derrick.wellnesscheck.model.data.Entry;
+import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.MonitorReceiver;
 
 public class LogFragment extends Fragment implements Log.Listener {
@@ -37,17 +37,17 @@ public class LogFragment extends Fragment implements Log.Listener {
     @Override
     public void onResume() {
         super.onResume();
-        DbController.logListener = this;
+        Log.listener = this;
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        DbController.logListener = null;
+        Log.listener = null;
     }
 
     @Override
-    public void onLog(LogEntry entry) {
+    public void onLog(Entry entry) {
         logAdapter.notifyItemInserted(0);
     }
 
@@ -61,11 +61,11 @@ public class LogFragment extends Fragment implements Log.Listener {
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             ((TextView)holder.itemView.findViewById(android.R.id.text1))
-                    .setText(MonitorReceiver.getReadableTime(log.get(position).time) + " : " + log.get(position).entry);
+                    .setText(MonitorReceiver.getReadableTime(db.log.get(position).time) + " : " + db.log.get(position).entry);
         }
 
         @Override
-        public int getItemCount() { return log.size(); }
+        public int getItemCount() { return db.log.size(); }
 
         class ViewHolder extends RecyclerView.ViewHolder{
             ViewHolder(View v){super(v);}

@@ -10,7 +10,7 @@ import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 
 import com.derrick.wellnesscheck.controller.SmsController;
-import com.derrick.wellnesscheck.utils.Log;
+import com.derrick.wellnesscheck.model.data.Log;
 
 public class SmsBroadcastManager extends BroadcastReceiver {
     public static final String ACTION_SEND_SMS_RESULT = "send_sms_result";

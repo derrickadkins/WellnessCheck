@@ -10,23 +10,25 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.derrick.wellnesscheck.R;
+import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Contact;
+import com.derrick.wellnesscheck.model.data.Contacts;
 import com.google.android.material.snackbar.Snackbar;
 
-import java.util.List;
+import java.util.ArrayList;
 
 public class EmergencyContactsRecyclerAdapter extends RecyclerView.Adapter<EmergencyContactsRecyclerAdapter.ViewHolder> {
-    private List<Contact> mData;
+    private ArrayList<Contact> mData;
     private LayoutInflater mInflater;
     private Contact mRecentlyDeletedItem;
     private int mRecentlyDeletedItemPosition;
     private Context context;
     private OnContactDeleteListener contactDeleteListener;
 
-    public EmergencyContactsRecyclerAdapter(Context context, List<Contact> dataSet, OnContactDeleteListener contactDeleteListener){
+    public EmergencyContactsRecyclerAdapter(Context context, Contacts dataSet, OnContactDeleteListener contactDeleteListener){
         this.context = context;
         mInflater = LayoutInflater.from(context);
-        mData = dataSet;
+        mData = new ArrayList<>(dataSet.values());
         this.contactDeleteListener = contactDeleteListener;
     }
 
@@ -50,9 +52,7 @@ public class EmergencyContactsRecyclerAdapter extends RecyclerView.Adapter<Emerg
     }
 
     public boolean contains(String id){
-        for (Contact contact: mData) {
-            if(contact.id == id) return true;
-        }
+        for(Contact contact : mData) if(contact.id.equals(id)) return true;
         return false;
     }
 
@@ -79,8 +79,7 @@ public class EmergencyContactsRecyclerAdapter extends RecyclerView.Adapter<Emerg
     }
 
     private void undoDelete() {
-        mData.add(mRecentlyDeletedItemPosition,
-                mRecentlyDeletedItem);
+        mData.add(mRecentlyDeletedItemPosition, mRecentlyDeletedItem);
         contactDeleteListener.onUndoDeleteContact(mRecentlyDeletedItem);
         notifyItemInserted(mRecentlyDeletedItemPosition);
     }

@@ -1,14 +1,10 @@
 package com.derrick.wellnesscheck.view.activities;
 
-import static com.derrick.wellnesscheck.WellnessCheck.getNextCheckIn;
-import static com.derrick.wellnesscheck.controller.DbController.settings;
-import static com.derrick.wellnesscheck.controller.DbController.updateSettings;
+import static android.text.format.DateUtils.HOUR_IN_MILLIS;
 import static com.derrick.wellnesscheck.MonitorReceiver.getReadableTime;
+import static com.derrick.wellnesscheck.WellnessCheck.db;
 
 import android.Manifest;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.app.Service;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -20,9 +16,12 @@ import android.widget.Switch;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
 
-import com.derrick.wellnesscheck.WellnessCheck;
-import com.derrick.wellnesscheck.utils.*;
 import com.derrick.wellnesscheck.MonitorReceiver;
+import com.derrick.wellnesscheck.WellnessCheck;
+import com.derrick.wellnesscheck.model.DB;
+import com.derrick.wellnesscheck.model.data.Log;
+import com.derrick.wellnesscheck.model.data.Settings;
+import com.derrick.wellnesscheck.utils.*;
 import com.derrick.wellnesscheck.R;
 
 import java.util.Calendar;
@@ -37,14 +36,15 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     Switch allDay, fallDetection;
     Button finishSetup;
     Timer timer = new Timer();
-    static final long MINUTE_IN_MILLIS = 60 * 1000;
-    static final long HOUR_IN_MILLIS = 60 * MINUTE_IN_MILLIS;
+    Settings settings;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.settings_activity);
+
+        settings = db.settings;
 
         finishSetup = findViewById(R.id.btnFinishSetup);
         finishSetup.setVisibility(View.VISIBLE);
@@ -74,7 +74,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         checkInHours.setValue(settings.checkInHours);
         checkInHours.setOnValueChangedListener((picker, oldVal, newVal) -> {
             settings.checkInHours = newVal;
-            updateSettings();
+            settings.update();
             setFirstCheckText();
         });
 
@@ -84,7 +84,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         respondMinutes.setValue(settings.respondMinutes);
         respondMinutes.setOnValueChangedListener((picker, oldVal, newVal) -> {
             settings.respondMinutes = newVal;
-            updateSettings();
+            settings.update();
         });
 
         View.OnClickListener onTimeClickListener = v -> {
@@ -116,7 +116,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                         }
                         checkInterval();
                         setFirstCheckText();
-                        updateSettings();
+                        settings.update();
                     }, hourOfDay, minute, true).show();
         };
 
@@ -141,7 +141,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                     break;
             }
 
-            updateSettings();
+            settings.update();
         };
 
         allDay = findViewById(R.id.switchAllDay);
@@ -199,7 +199,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     }
 
     void setFirstCheckText(){
-        long firstCheckIn = getNextCheckIn();
+        long firstCheckIn = WellnessCheck.getNextCheckIn();
         tvFirstCheck.setText("First wellness check will be at " + getFirstCheckInString(firstCheckIn));
         timer.cancel();
         timer = new Timer();
@@ -207,7 +207,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
             @Override
             public void run() {
                 timer = new Timer();
-                timer.schedule(this, new Date(getNextCheckIn()));
+                timer.schedule(this, new Date(WellnessCheck.getNextCheckIn()));
             }
         }, new Date(firstCheckIn));
     }
@@ -217,31 +217,12 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
         settings.monitoringOn = true;
         settings.checkedIn = true;
-        settings.nextCheckIn = getNextCheckIn();
+        settings.nextCheckIn = WellnessCheck.getNextCheckIn();
         settings.prevCheckIn = System.currentTimeMillis();
-        updateSettings();
+        settings.update();
         Log.d(TAG, "triggering first alarm at " + getReadableTime(settings.nextCheckIn));
 
-        AlarmManager alarmManager = (AlarmManager) getApplicationContext().getSystemService(Service.ALARM_SERVICE);
-
-        Bundle bundle = new Bundle();
-        bundle.putInt(MonitorReceiver.EXTRA_INTERVAL1, settings.checkInHours);
-        bundle.putLong(MonitorReceiver.EXTRA_INTERVAL2, settings.respondMinutes * MINUTE_IN_MILLIS);
-        bundle.putInt(MonitorReceiver.EXTRA_FROM_HOUR, settings.fromHour);
-        bundle.putInt(MonitorReceiver.EXTRA_FROM_MINUTE, settings.fromMinute);
-        bundle.putInt(MonitorReceiver.EXTRA_TO_HOUR, settings.toHour);
-        bundle.putInt(MonitorReceiver.EXTRA_TO_MINUTE, settings.toMinute);
-        bundle.putBoolean(MonitorReceiver.EXTRA_ALL_DAY, settings.allDay);
-
-        Intent intent = new Intent(getApplicationContext(), MonitorReceiver.class).setAction(MonitorReceiver.ACTION_ALARM)
-                .addFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(bundle);
-
-        PendingIntent pendingNotifyIntent = PendingIntent.getBroadcast(getApplicationContext(), 1,
-                intent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        AlarmManager.AlarmClockInfo alarmClockInfo = new AlarmManager.AlarmClockInfo(settings.nextCheckIn, pendingNotifyIntent);
-
-        alarmManager.setAlarmClock(alarmClockInfo, pendingNotifyIntent);
+        WellnessCheck.setAlarm(this, settings.nextCheckIn, MonitorReceiver.ACTION_ALARM, settings.toBundle());
 
         startActivity(new Intent(SetupSettingsActivity.this, MainActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK));

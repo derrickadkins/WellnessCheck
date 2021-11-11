@@ -1,9 +1,6 @@
 package com.derrick.wellnesscheck.view.fragments;
 
-import static com.derrick.wellnesscheck.controller.DbController.settings;
-import static com.derrick.wellnesscheck.controller.DbController.updateSettings;
-import static com.derrick.wellnesscheck.controller.DbController.contacts;
-import static com.derrick.wellnesscheck.WellnessCheck.getNextCheckIn;
+import static com.derrick.wellnesscheck.WellnessCheck.db;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -23,7 +20,11 @@ import androidx.fragment.app.Fragment;
 import com.derrick.wellnesscheck.R;
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.SmsBroadcastManager;
+import com.derrick.wellnesscheck.WellnessCheck;
+import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Contact;
+import com.derrick.wellnesscheck.model.data.Contacts;
+import com.derrick.wellnesscheck.model.data.Settings;
 import com.derrick.wellnesscheck.view.activities.SetupContactsActivity;
 import com.derrick.wellnesscheck.controller.SmsController;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
@@ -44,10 +45,14 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     boolean inResponseTimer = false;
     final String TAG = "HomeFragment";
     static final long MINUTE_IN_MILLIS = 60 * 1000;
+    Settings settings;
+    Contacts contacts;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        settings = db.settings;
+        contacts = db.contacts;
 
         responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
 
@@ -162,8 +167,8 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             public void onFinish() {
                 inResponseTimer = !inResponseTimer;
                 if(inResponseTimer) {
-                    settings.nextCheckIn = getNextCheckIn();
-                    updateSettings();
+                    settings.nextCheckIn = WellnessCheck.getNextCheckIn();
+                    settings.update();
                     startTimer(responseInterval);
                 }else{
                     startTimer(settings.nextCheckIn - System.currentTimeMillis());
@@ -193,7 +198,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             timer.cancel();
             timer = null;
         }
-        updateSettings();
+        settings.update();
         setTimerVisibility();
         getActivity().sendBroadcast(new Intent(getActivity(), MonitorReceiver.class).setAction(Intent.ACTION_DELETE).putExtras(bundle));
     }
@@ -228,7 +233,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 boolean allowed = false;
                 boolean messageReceivedFromContact = false;
                 message = message.trim().toLowerCase(Locale.ROOT);
-                for (Contact contact : contacts) {
+                for (Contact contact : contacts.values()) {
                     String normalizedContactNumber = normalizeNumber(contact.number);
                     if (number.equals(normalizedContactNumber)){
                         messageReceivedFromContact = true;
@@ -278,7 +283,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             }
         };
 
-        for (Contact contact : contacts) {
+        for (Contact contact : contacts.values()) {
             smsController.sendSMS((PermissionsRequestingActivity) getContext(), smsBroadcastManager, smsController, contact.number, getString(R.string.turn_off_request));
         }
     }

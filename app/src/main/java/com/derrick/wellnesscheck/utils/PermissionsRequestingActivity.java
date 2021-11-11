@@ -11,6 +11,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.derrick.wellnesscheck.model.data.Log;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

@@ -1,10 +1,17 @@
 package com.derrick.wellnesscheck.model;
 
+import static com.derrick.wellnesscheck.WellnessCheck.db;
+
+import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+
 import androidx.room.Dao;
 import androidx.room.Database;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.Update;
 import androidx.room.migration.Migration;
@@ -14,21 +21,67 @@ import com.derrick.wellnesscheck.model.data.*;
 
 import java.util.List;
 
-@Database(entities = {Contact.class, AppSettings.class, LogEntry.class}, version = 1, exportSchema = false)
+@Database(entities = {Contact.class, Settings.class, Entry.class}, version = 1, exportSchema = false)
 public abstract class DB extends RoomDatabase {
     public abstract ContactDao contactDao();
     public abstract SettingsDao settingsDao();
     public abstract LogDao logDao();
 
+    public Settings settings;
+    public Contacts contacts;
+    public Log log;
+
+    public interface DbListener {
+        void onDbReady(DB db);
+    }
+
+    static void InitDbSync(Context context, DbListener dbListener, boolean settings, boolean contacts, boolean log){
+        if(db == null)
+            db = Room.databaseBuilder(context,
+                    DB.class, "database-name")
+                    .fallbackToDestructiveMigration()
+                    .build();
+
+        if(settings && db.settings == null) db.settings = Settings.Init();
+        if(contacts && db.contacts == null) db.contacts = Contacts.Init();
+        if(log && db.log == null) db.log = Log.Init();
+
+        if(dbListener != null) {
+            new Handler(Looper.getMainLooper()).post(() -> dbListener.onDbReady(db));
+        }
+    }
+
+    public static void InitDB(Context context){
+        DbListener dbListener = null;
+        if(context instanceof DbListener)
+            dbListener = (DbListener) context;
+        InitDB(context, dbListener);
+    }
+
+    public static void InitDB(Context context, DbListener dbListener){
+        new Thread(() -> InitDbSync(context, dbListener, true, true, true)).start();
+    }
+
+    public static void InitDB(Context context, boolean settings, boolean contacts, boolean log){
+        DbListener dbListener = null;
+        if(context instanceof DbListener)
+            dbListener = (DbListener) context;
+        InitDB(context, dbListener, settings, contacts, log);
+    }
+
+    public static void InitDB(Context context, DbListener dbListener, boolean settings, boolean contacts, boolean log){
+        new Thread(() -> InitDbSync(context, dbListener, settings, contacts, log)).start();
+    }
+
     @Dao
     public interface LogDao {
-        @Query("SELECT * FROM logEntry ORDER BY time DESC")
-        List<LogEntry> getAll();
+        @Query("SELECT * FROM entry ORDER BY time DESC")
+        List<Entry> getAll();
 
         @Insert
-        void insert(LogEntry... logEntries);
+        void insert(Entry... entries);
 
-        @Query("DELETE FROM LogEntry")
+        @Query("DELETE FROM entry")
         void nukeTable();
     }
 
@@ -58,14 +111,14 @@ public abstract class DB extends RoomDatabase {
 
     @Dao
     public interface SettingsDao {
-        @Query("SELECT * FROM appsettings LIMIT 1")
-        AppSettings getSettings();
+        @Query("SELECT * FROM settings LIMIT 1")
+        Settings getSettings();
 
         @Update
-        void update(AppSettings appSettings);
+        void update(Settings settings);
 
         @Insert
-        void insert(AppSettings appSettings);
+        void insert(Settings settings);
     }
 
     static final Migration MIGRATION_1_2 = new Migration(1, 2) {

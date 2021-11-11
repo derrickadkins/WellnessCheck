@@ -26,8 +26,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.derrick.wellnesscheck.R;
-import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.controller.EmergencyContactsRecyclerAdapter;
+import com.derrick.wellnesscheck.model.data.Contact;
+import com.derrick.wellnesscheck.model.data.Contacts;
 import com.derrick.wellnesscheck.utils.PermissionsListener;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.derrick.wellnesscheck.SmsBroadcastManager;
@@ -40,19 +41,19 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import static android.app.Activity.RESULT_OK;
-import static com.derrick.wellnesscheck.controller.DbController.db;
-import static com.derrick.wellnesscheck.controller.DbController.contacts;
-import static com.derrick.wellnesscheck.controller.DbController.settings;
+import static com.derrick.wellnesscheck.WellnessCheck.db;
 
 public class EmergencyContactsFragment extends Fragment implements EmergencyContactsRecyclerAdapter.OnContactDeleteListener {
     FloatingActionButton fab;
     EmergencyContactsRecyclerAdapter emergencyContactsRecyclerAdapter;
     RecyclerView contactsList;
     Button setupNext;
+    Contacts contacts;
 
     ActivityResultLauncher<Object> contactChooserResult = registerForActivityResult(new ActivityResultContract<Object, Object>() {
         @NonNull
@@ -71,8 +72,8 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
                 if (cursor.moveToFirst()) {
                     String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
                     //make sure id doesn't already exist in DB
-                    for (Contact contact : contacts)
-                        if (contact.id.equalsIgnoreCase(id))
+                    for (String contactId : contacts.keySet())
+                        if (contactId.equalsIgnoreCase(id))
                             return null;
                     String hasPhone = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER));
                     if (hasPhone.equalsIgnoreCase("1")) {
@@ -101,6 +102,8 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View emergencyContactsFragmentView = inflater.inflate(R.layout.emergency_contacts_fragment, container, false);
+
+        contacts = db.contacts;
 
         fab = emergencyContactsFragmentView.findViewById(R.id.fab);
         fab.setOnClickListener(view -> ((PermissionsRequestingActivity) getContext()).checkPermissions(new String[]{Manifest.permission.READ_CONTACTS}, new PermissionsListener() {
@@ -154,87 +157,71 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
         onContactListSizeChange(contacts.size());
         emergencyContactsRecyclerAdapter = new EmergencyContactsRecyclerAdapter(getContext(), contacts, this);
         contactsList.setAdapter(emergencyContactsRecyclerAdapter);
-        if(!settings.monitoringOn || getActivity().getLocalClassName().equalsIgnoreCase("SetupContactsActivity")) {
+        if(!db.settings.monitoringOn || getActivity().getLocalClassName().equalsIgnoreCase("SetupContactsActivity")) {
             ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new SwipeToDeleteCallback(emergencyContactsRecyclerAdapter));
             itemTouchHelper.attachToRecyclerView(contactsList);
         }
     }
 
-    public void loadContacts(){
-        //create a copy to compare to for updates later
-        ArrayList<Contact> dbData = new ArrayList<>(contacts);
+    public void loadContacts() {
         //used for filtering out deleted contacts
-        Hashtable<String, Contact> tempContacts = new Hashtable<>();
-        for (Contact contact:dbData) {
-            tempContacts.put(contact.id, contact);
-        }
+        Hashtable<String, Contact> tmpContactsDictCopy =  contacts.getDetachedCopy();
         //get all contacts
         ContentResolver contentResolver = getActivity().getContentResolver();
         Cursor cursor = contentResolver.query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
-        if (cursor.getCount() > 0) {
-            contacts = new ArrayList<>();
-            while (cursor.moveToNext()) {
-                String contact_id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
-                //if it's not already added, move on to the next one
-                if (!tempContacts.containsKey(contact_id)) {
-                    continue;
+        if (cursor.getCount() <= 0) return;
+        List<Contact> tmpContactsList = new ArrayList<>();
+        while (cursor.moveToNext()) {
+            String contact_id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
+            //if it's not already added, move on to the next one
+            if (!tmpContactsDictCopy.containsKey(contact_id)) continue;
+            Contact android_contact = new Contact(contact_id, "", "", tmpContactsDictCopy.get(contact_id).riskLvl);
+            String contact_display_name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
+            android_contact.name = contact_display_name;
+            int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)));
+            if (hasPhoneNumber > 0) {
+                Cursor phoneCursor = contentResolver.query(
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+                        , null
+                        , ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?"
+                        , new String[]{contact_id}
+                        , null);
+                while (phoneCursor.moveToNext()) {
+                    String phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                    android_contact.number = phoneNumber;
                 }
-                Contact android_contact = new Contact(contact_id, "", "", tempContacts.get(contact_id).riskLvl);
-                String contact_display_name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
-                android_contact.name = contact_display_name;
-                int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)));
-                if (hasPhoneNumber > 0) {
-                    Cursor phoneCursor = contentResolver.query(
-                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI
-                            , null
-                            , ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?"
-                            , new String[]{contact_id}
-                            , null);
-                    while (phoneCursor.moveToNext()) {
-                        String phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
-                        android_contact.number = phoneNumber;
-                    }
-                    phoneCursor.close();
-                }
-                //id recognized, add for comparison
-                contacts.add(android_contact);
+                phoneCursor.close();
             }
-            //check for updates in contact info
-            for (int i = 0; i < dbData.size(); i++) {
-                Contact contact = dbData.get(i);
-                Contact mContact = contacts.get(i);
-                if (!contact.number.equalsIgnoreCase(mContact.number) || !contact.name.equalsIgnoreCase(mContact.name))
-                    //todo: maybe re-verify contact here?
-                    db.contactDao().update(mContact);
-                tempContacts.remove(contact.id);
-            }
-            //delete contact if removed from phone
-            //todo: maybe delete this loop?
-            if (tempContacts.size() > 0) {
-                List<Contact> tempContactsList = new ArrayList<>(tempContacts.values());
-                for (Contact contact : tempContactsList) {
-                    db.contactDao().delete(contact);
-                }
-            }
+            //id recognized, add for comparison
+            tmpContactsList.add(android_contact);
         }
+        //check for updates in contact info
+        for (int i = 0; i < tmpContactsList.size(); i++) {
+            Contact contact = tmpContactsList.get(i);
+            Contact mContact = tmpContactsDictCopy.get(contact.id);
+            if (!contact.matches(mContact))
+                //todo: maybe re-verify contact here?
+                contacts.update(contact);
+            tmpContactsDictCopy.remove(contact.id);
+        }
+        //delete contact if removed from phone
+        //todo: maybe delete this loop?
+        for(Contact contact : tmpContactsDictCopy.values()) contacts.remove(contact);
     }
 
     public void addContact(Contact mContact){
         emergencyContactsRecyclerAdapter.add(mContact);
         onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
-        new Thread(() -> db.contactDao().insertAll(mContact)).start();
     }
 
     @Override
     public void onDeleteContact(Contact mContact) {
         onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
-        new Thread(() -> db.contactDao().delete(mContact)).start();
     }
 
     @Override
     public void onUndoDeleteContact(Contact mContact) {
         onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
-        new Thread(() -> db.contactDao().insertAll(mContact)).start();
     }
 
     public void onContactListSizeChange(int size) {

@@ -2,13 +2,6 @@ package com.derrick.wellnesscheck;
 
 import static android.content.Intent.ACTION_BOOT_COMPLETED;
 import static android.content.Intent.ACTION_DELETE;
-import static com.derrick.wellnesscheck.controller.DbController.InitDB;
-import static com.derrick.wellnesscheck.controller.DbController.contacts;
-import static com.derrick.wellnesscheck.controller.DbController.settings;
-import static com.derrick.wellnesscheck.controller.DbController.updateSettings;
-import static com.derrick.wellnesscheck.WellnessCheck.getNextCheckIn;
-
-import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -21,14 +14,15 @@ import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
-import com.derrick.wellnesscheck.model.data.Contact;
-import com.derrick.wellnesscheck.controller.DbController;
+import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.controller.SmsController;
-import com.derrick.wellnesscheck.utils.Log;
+import com.derrick.wellnesscheck.model.data.Contact;
+import com.derrick.wellnesscheck.model.data.Log;
+import com.derrick.wellnesscheck.model.data.Settings;
 
 import java.util.Calendar;
 
-public class MonitorReceiver extends BroadcastReceiver implements DbController.DbListener {
+public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener {
 
     final String TAG = "MonitorReceiver";
 
@@ -46,11 +40,8 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
 
     final int NOTIFICATION_ID = 0;
     final String CHANNEL_ID = "WellnessCheck.CheckInService";
-    AlarmManager alarmManager;
     NotificationCompat.Builder builder;
     NotificationManagerCompat notificationManagerCompat;
-    Intent smsIntent, alarmIntent, responseIntent, lateResponseIntent;
-    PendingIntent smsPendingIntent, alarmPendingIntent, responsePendingIntent, lateResponsePendingIntent;
 
     public static CheckInListener checkInListener;
     public interface CheckInListener {
@@ -73,20 +64,6 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
         createNotificationChannel();
         notificationManagerCompat = NotificationManagerCompat.from(context);
 
-        alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-
-        smsIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_SMS).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
-        smsPendingIntent = PendingIntent.getBroadcast(context, 0, smsIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        alarmIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_ALARM).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
-        alarmPendingIntent = PendingIntent.getBroadcast(context, 1, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        responseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_RESPONSE).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
-        responsePendingIntent = PendingIntent.getBroadcast(context, 2, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        lateResponseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_LATE_RESPONSE).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
-        lateResponsePendingIntent = PendingIntent.getBroadcast(context, 3, lateResponseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
         builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.alert_light_frame)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -102,16 +79,17 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
                 int toMinute = intent.getIntExtra(EXTRA_TO_MINUTE, 0);
                 long responseInterval = intent.getLongExtra(EXTRA_INTERVAL2, 60 * 1000);
 
-                nextCheckIn = getNextCheckIn(checkInHours, fromHour, fromMinute, toHour, toMinute, allDay);
+                nextCheckIn = WellnessCheck.getNextCheckIn(checkInHours, fromHour, fromMinute, toHour, toMinute, allDay);
                 Log.d(TAG, "Next check-in scheduled for " + getReadableTime(nextCheckIn));
 
                 //next check-in
-                alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(nextCheckIn,
-                        alarmPendingIntent), alarmPendingIntent);
+                WellnessCheck.setAlarm(context, nextCheckIn, ACTION_ALARM, intent.getExtras());
                 //send sms
                 long smsAlarmTime = System.currentTimeMillis() + responseInterval;
-                alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(smsAlarmTime,
-                        smsPendingIntent), smsPendingIntent);
+                WellnessCheck.setAlarm(context, smsAlarmTime, ACTION_SMS, intent.getExtras());
+
+                Intent responseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_RESPONSE).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
+                PendingIntent responsePendingIntent = PendingIntent.getBroadcast(context, 2, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
                 builder.setContentTitle("Time To Check In")
                     .setOngoing(true)
                     .setContentText("Click to check in by " + getReadableTime(smsAlarmTime, false, false, false))
@@ -125,10 +103,12 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
             case ACTION_RESPONSE:
                 if(checkInListener != null) checkInListener.onCheckIn();
                 notificationManagerCompat.cancel(NOTIFICATION_ID);
-                alarmManager.cancel(smsPendingIntent);
+                WellnessCheck.cancelAlarm(context, ACTION_SMS, intent.getExtras());
                 doDBStuff();
                 break;
             case ACTION_SMS:
+                Intent lateResponseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_LATE_RESPONSE).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
+                PendingIntent lateResponsePendingIntent = PendingIntent.getBroadcast(context, 3, lateResponseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
                 builder.setOngoing(false)
                         .setContentIntent(lateResponsePendingIntent)
                         .setContentTitle("You've missed your check-in")
@@ -138,8 +118,8 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
                 break;
             case ACTION_DELETE:
                 notificationManagerCompat.deleteNotificationChannel(CHANNEL_ID);
-                alarmManager.cancel(alarmPendingIntent);
-                alarmManager.cancel(smsPendingIntent);
+                WellnessCheck.cancelAlarm(context, ACTION_ALARM, intent.getExtras());
+                WellnessCheck.cancelAlarm(context, ACTION_SMS, intent.getExtras());
                 break;
             case ACTION_LATE_RESPONSE:
                 //do nothing
@@ -148,33 +128,33 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
     }
 
     public void doDBStuff(){
-        if(settings == null) InitDB(context, this, true, false, false);
-        else onDbReady();
+        DB.InitDB(context, this, true, false, false);
     }
 
     @Override
-    public void onDbReady() {
+    public void onDbReady(DB db) {
+        Settings settings = db.settings;
         switch (intent.getAction()){
             case ACTION_ALARM:
                 settings.checkedIn = false;
                 settings.prevCheckIn = settings.nextCheckIn;
                 settings.nextCheckIn = nextCheckIn;
-                updateSettings();
+                settings.update();
                 break;
             case ACTION_RESPONSE:
                 settings.checkedIn = true;
-                updateSettings();
+                settings.update();
                 break;
             case ACTION_BOOT_COMPLETED:
                 if(!settings.monitoringOn) return;
                 //todo: notify immediately if check-in was missed?
-                nextCheckIn = getNextCheckIn();
-                settings.prevCheckIn = settings.nextCheckIn;
+                nextCheckIn = WellnessCheck.getNextCheckIn();
+                settings.prevCheckIn = db.settings.nextCheckIn;
                 settings.nextCheckIn = nextCheckIn;
+                settings.update();
                 Log.d(TAG, "Next check-in scheduled for " + getReadableTime(nextCheckIn));
                 //next check-in
-                alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(nextCheckIn,
-                        alarmPendingIntent), alarmPendingIntent);
+                WellnessCheck.setAlarm(context, nextCheckIn, ACTION_ALARM, intent.getExtras());
                 break;
         }
     }
@@ -206,13 +186,12 @@ public class MonitorReceiver extends BroadcastReceiver implements DbController.D
         };
 
         SmsBroadcastManager.smsController = smsController;
-        DbController.DbListener dbListener = () -> {
-            for(Contact contact : contacts)
+        DB.DbListener dbListener = (DB db) -> {
+            for(Contact contact : db.contacts.values())
                 smsController.sendSMS(context.getApplicationContext(), smsBroadcastManager, smsController, contact.number, context.getString(R.string.missed_check_in));
         };
 
-        if(settings == null) InitDB(context, dbListener, false, true, false);
-        else dbListener.onDbReady();
+        DB.InitDB(context, dbListener, false, true, false);
     }
 
     private void createNotificationChannel() {
