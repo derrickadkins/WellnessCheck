@@ -32,18 +32,15 @@ public class WellnessCheck extends Application {
     public static boolean applySettings(Context context, Settings settings){
         AlarmManager alarmManager = (AlarmManager) context.getApplicationContext().getSystemService(Service.ALARM_SERVICE);
         AlarmManager.AlarmClockInfo alarmClockInfo = alarmManager.getNextAlarmClock();
-        if(settings.monitoringOn && alarmClockInfo != null){
+        if(settings.monitoringOn && alarmClockInfo == null){
             long now = System.currentTimeMillis();
-            if(settings.nextCheckIn < now) {
-                settings.prevCheckIn = settings.nextCheckIn;
-                settings.nextCheckIn = WellnessCheck.getNextCheckIn();
-                settings.update();
-            }
+            if(settings.nextCheckIn < now) settings.updateCheckIn(WellnessCheck.getNextCheckIn());
             long time = settings.nextCheckIn;
             long responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
             if(!settings.checkedIn && settings.prevCheckIn + responseInterval > now)
                 time = settings.prevCheckIn + responseInterval - now;
 
+            if(settings.fallDetection) context.startService(new Intent(context, FallDetectionService.class));
             WellnessCheck.setAlarm(context, time, MonitorReceiver.ACTION_ALARM, settings.toBundle());
             return true;
         }

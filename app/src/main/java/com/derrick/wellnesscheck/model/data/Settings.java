@@ -3,6 +3,7 @@ package com.derrick.wellnesscheck.model.data;
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 
 import static com.derrick.wellnesscheck.WellnessCheck.db;
+import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
 
 import android.os.Bundle;
 
@@ -11,6 +12,7 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 import com.derrick.wellnesscheck.MonitorReceiver;
+import com.derrick.wellnesscheck.WellnessCheck;
 
 import java.lang.reflect.Field;
 
@@ -50,6 +52,13 @@ public class Settings {
         return settings;
     }
 
+    public void updateCheckIn(long nextCheckIn){
+        if(this.nextCheckIn == nextCheckIn) return;
+        prevCheckIn = this.nextCheckIn;
+        this.nextCheckIn = nextCheckIn;
+        update();
+    }
+
     public void update(){new Thread(() -> db.settingsDao().update(this)).start();}
 
     @NonNull
@@ -57,8 +66,13 @@ public class Settings {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         try {
-            for (Field f : getClass().getDeclaredFields())
-                sb.append(String.format("%s:%s, ", f.getName(), f.get(this)));
+            for (Field f : getClass().getDeclaredFields()) {
+                Object v = f.get(this);
+                if (v instanceof Long)
+                    sb.append(String.format("%s:%s(%s), ", f.getName(), v, getReadableTime((long) v)));
+                else
+                    sb.append(String.format("%s:%s, ", f.getName(), v));
+            }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }

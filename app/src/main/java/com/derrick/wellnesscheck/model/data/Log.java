@@ -33,11 +33,12 @@ public class Log extends ArrayList<Entry> {
     }
 
     public static int d(String tag, String msg){
+        int result = android.util.Log.println(android.util.Log.DEBUG, tag, msg);
         DB.InitDB(WellnessCheck.context, db -> {
             Entry entry = db.log.add(tag + ": " + msg);
             if(Log.listener != null) new Handler(Looper.getMainLooper()).post(() -> Log.listener.onLog(entry));
         }, false, false, true);
-        return android.util.Log.println(android.util.Log.DEBUG, tag, msg);
+        return result;
     }
 
     public static Log Init(){return new Log(db.logDao().getAll());}

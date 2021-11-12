@@ -21,5 +21,5 @@ public class Entry {
         this.entry = entry;
     }
 
-    public synchronized void insert() {new Thread(() -> db.logDao().insert(this)).start();}
+    public synchronized void insert() {new Thread(() -> {try{db.logDao().insert(this);}catch (Exception ex){}}).start();}
 }

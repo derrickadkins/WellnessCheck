@@ -12,12 +12,12 @@ import android.telephony.SmsMessage;
 import com.derrick.wellnesscheck.controller.SmsController;
 import com.derrick.wellnesscheck.model.data.Log;
 
-public class SmsBroadcastManager extends BroadcastReceiver {
+public class SmsReceiver extends BroadcastReceiver {
     public static final String ACTION_SEND_SMS_RESULT = "send_sms_result";
     public static SmsController smsController;
     final String TAG = "SmsReceiver";
-    public SmsBroadcastManager(){super();}
-    SmsBroadcastManager(SmsController smsController){super(); this.smsController = smsController;}
+    public SmsReceiver(){super();}
+    SmsReceiver(SmsController smsController){super(); this.smsController = smsController;}
 
     @Override
     public void onReceive(Context context, Intent intent) {

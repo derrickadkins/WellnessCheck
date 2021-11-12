@@ -100,7 +100,6 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                 doDBStuff();
                 break;
             case ACTION_RESPONSE:
-                if(checkInListener != null) checkInListener.onCheckIn();
                 notificationManagerCompat.cancel(NOTIFICATION_ID);
                 WellnessCheck.cancelAlarm(context, ACTION_SMS, intent.getExtras());
                 doDBStuff();
@@ -136,23 +135,24 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
         switch (intent.getAction()){
             case ACTION_ALARM:
                 settings.checkedIn = false;
-                settings.prevCheckIn = settings.nextCheckIn;
-                settings.nextCheckIn = nextCheckIn;
-                settings.update();
+                settings.updateCheckIn(nextCheckIn);
                 break;
             case ACTION_RESPONSE:
                 settings.checkedIn = true;
                 settings.update();
+                if(checkInListener != null) checkInListener.onCheckIn();
                 break;
             case ACTION_BOOT_COMPLETED:
                 //todo: notify immediately if check-in was missed?
+                settings.checkedIn = false;
+                settings.update();
                 WellnessCheck.applySettings(context, settings);
                 break;
         }
     }
 
     void sendMissedCheckInSMS(){
-        SmsBroadcastManager smsBroadcastManager = new SmsBroadcastManager();
+        SmsReceiver smsReceiver = new SmsReceiver();
         SmsController smsController = new SmsController() {
             @Override
             public void onSmsReceived(String number, String message) {}
@@ -162,10 +162,10 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
             public void onSmsSent() {}
         };
 
-        SmsBroadcastManager.smsController = smsController;
+        SmsReceiver.smsController = smsController;
         DB.DbListener dbListener = (DB db) -> {
             for(Contact contact : db.contacts.values())
-                smsController.sendSMS(context.getApplicationContext(), smsBroadcastManager, smsController, contact.number, context.getString(R.string.missed_check_in));
+                smsController.sendSMS(context.getApplicationContext(), smsReceiver, smsController, contact.number, context.getString(R.string.missed_check_in));
         };
 
         DB.InitDB(context, dbListener, false, true, false);

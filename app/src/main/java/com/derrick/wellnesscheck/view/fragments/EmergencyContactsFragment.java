@@ -29,10 +29,9 @@ import com.derrick.wellnesscheck.R;
 import com.derrick.wellnesscheck.controller.EmergencyContactsRecyclerAdapter;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
-import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.utils.PermissionsListener;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
-import com.derrick.wellnesscheck.SmsBroadcastManager;
+import com.derrick.wellnesscheck.SmsReceiver;
 import com.derrick.wellnesscheck.controller.SmsController;
 import com.derrick.wellnesscheck.controller.SwipeToDeleteCallback;
 import com.derrick.wellnesscheck.view.activities.SetupSettingsActivity;
@@ -223,7 +222,7 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
     }
 
     public void onTryAddContact(Contact contact) {
-        final SmsBroadcastManager smsBroadcastManager = new SmsBroadcastManager();
+        final SmsReceiver smsReceiver = new SmsReceiver();
 
         AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), R.style.AppTheme_Dialog_Alert)
                 .setMessage("Sending request via SMS ...")
@@ -231,7 +230,7 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
                 .setCancelable(false)
                 .setNegativeButton("Cancel", (dialog, which) -> {
                     dialog.cancel();
-                    getActivity().unregisterReceiver(smsBroadcastManager);
+                    getActivity().unregisterReceiver(smsReceiver);
                 })
                 .create();
 
@@ -250,7 +249,7 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
                         addContact(contact);
                     }
                     alertDialog.cancel();
-                    getActivity().unregisterReceiver(smsBroadcastManager);
+                    getActivity().unregisterReceiver(smsReceiver);
                 }
             }
 
@@ -275,6 +274,6 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
 
         alertDialog.show();
 
-        smsController.sendSMS((PermissionsRequestingActivity) getContext(), smsBroadcastManager, smsController, contact.number, getString(R.string.contact_request));
+        smsController.sendSMS((PermissionsRequestingActivity) getContext(), smsReceiver, smsController, contact.number, getString(R.string.contact_request));
     }
 }
