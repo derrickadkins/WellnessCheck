@@ -20,16 +20,16 @@ import java.util.Map;
 
 public abstract class PermissionsRequestingActivity extends AppCompatActivity {
     private final String TAG = "PermissionsRequestingActivity";
-    private static Map<String, Integer> permissionsToAPI;
+    private static List<String> permissions;
     private PermissionsListener permissionsListener;
 
     public void checkPermissions(String[] permissions, PermissionsListener permissionsListener) {
         this.permissionsListener = permissionsListener;
-        if(permissionsToAPI == null) initMap();
+        if(PermissionsRequestingActivity.permissions == null) initPermissions();
         List<String> deniedPermissions = new ArrayList<>();
 
         for(String permission : permissions) {
-            if (!permissionsToAPI.containsKey(permission)) continue;
+            if (!PermissionsRequestingActivity.permissions.contains(permission)) continue;
             if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
                 Log.d(TAG, permission + ": GRANTED");
             } else {
@@ -58,19 +58,20 @@ public abstract class PermissionsRequestingActivity extends AppCompatActivity {
         } else permissionsListener.permissionsGranted();
     }
 
-    private void initMap(){
-        permissionsToAPI = new HashMap<>();
-        permissionsToAPI.put(Manifest.permission.READ_CONTACTS, Build.VERSION_CODES.BASE);
-        permissionsToAPI.put(Manifest.permission.SEND_SMS, Build.VERSION_CODES.BASE);
-        permissionsToAPI.put(Manifest.permission.READ_SMS, Build.VERSION_CODES.BASE);
-        permissionsToAPI.put(Manifest.permission.RECEIVE_SMS, Build.VERSION_CODES.BASE);
-        permissionsToAPI.put(Manifest.permission.RECEIVE_BOOT_COMPLETED, Build.VERSION_CODES.BASE);
+    private void initPermissions(){
+        permissions = new ArrayList<>();
+        permissions.add(Manifest.permission.READ_CONTACTS);
+        permissions.add(Manifest.permission.SEND_SMS);
+        permissions.add(Manifest.permission.READ_SMS);
+        permissions.add(Manifest.permission.RECEIVE_SMS);
+        permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        permissions.add(Manifest.permission.RECEIVE_BOOT_COMPLETED);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-            permissionsToAPI.put(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Build.VERSION_CODES.M);
+            permissions.add(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-            permissionsToAPI.put(Manifest.permission.FOREGROUND_SERVICE, Build.VERSION_CODES.P);
+            permissions.add(Manifest.permission.FOREGROUND_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-            permissionsToAPI.put(Manifest.permission.SCHEDULE_EXACT_ALARM, Build.VERSION_CODES.S);
+            permissions.add(Manifest.permission.SCHEDULE_EXACT_ALARM);
     }
 
     private ActivityResultLauncher<String[]> permissionsResult = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),

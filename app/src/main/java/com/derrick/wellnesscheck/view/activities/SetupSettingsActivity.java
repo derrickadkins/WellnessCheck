@@ -1,8 +1,9 @@
 package com.derrick.wellnesscheck.view.activities;
 
 import static android.text.format.DateUtils.HOUR_IN_MILLIS;
-import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
 import static com.derrick.wellnesscheck.WellnessCheck.db;
+import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
+import static com.derrick.wellnesscheck.utils.Utils.getTime;
 
 import android.Manifest;
 import android.app.TimePickerDialog;
@@ -12,10 +13,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.NumberPicker;
+import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
-import androidx.annotation.Nullable;
 
+import com.derrick.wellnesscheck.FallDetectionService;
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.WellnessCheck;
 import com.derrick.wellnesscheck.model.data.Log;
@@ -23,6 +25,9 @@ import com.derrick.wellnesscheck.model.data.Settings;
 import com.derrick.wellnesscheck.utils.*;
 import com.derrick.wellnesscheck.R;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Timer;
@@ -31,8 +36,9 @@ import java.util.TimerTask;
 public class SetupSettingsActivity extends PermissionsRequestingActivity {
     static final String TAG = "SetupSettingsActivity";
     NumberPicker checkInHours, respondMinutes;
-    TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck;
-    Switch allDay, fallDetection;
+    TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck, tvSensitivity;
+    SeekBar sbSensitivity;
+    Switch allDay, fallDetection, reportLocation;
     Button finishSetup;
     Timer timer = new Timer();
     Settings settings;
@@ -48,8 +54,11 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         finishSetup = findViewById(R.id.btnFinishSetup);
         finishSetup.setVisibility(View.VISIBLE);
         finishSetup.setOnClickListener(v -> {
-            checkPermissions(new String[]{Manifest.permission.SCHEDULE_EXACT_ALARM,
-                    Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS}, new PermissionsListener() {
+            ArrayList permissions = new ArrayList();
+            permissions.add(Manifest.permission.SCHEDULE_EXACT_ALARM);
+            permissions.add(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            if(settings.fallDetection) permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+            checkPermissions((String[])permissions.toArray(new String[permissions.size()]), new PermissionsListener() {
                 @Override
                 public void permissionsGranted() {
                     startMonitoring();
@@ -103,7 +112,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
             }
             new TimePickerDialog(SetupSettingsActivity.this, android.R.style.Theme_DeviceDefault_Dialog,
                     (view, hourOfDay1, minute1) -> {
-                        ((TextView) v).setText(String.format("%02d:%02d", hourOfDay1, minute1));
+                        ((TextView) v).setText(getTime(hourOfDay1, minute1));
                         switch (v.getId()) {
                             case R.id.tvFromTime:
                                 settings.fromHour = hourOfDay1;
@@ -116,13 +125,18 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                         checkInterval();
                         setFirstCheckText();
                         settings.update();
-                    }, hourOfDay, minute, true).show();
+                    }, hourOfDay, minute, android.provider.Settings.System.TIME_12_24 == "24").show();
         };
 
         CompoundButton.OnCheckedChangeListener checkedChangeListener = (buttonView, isChecked) -> {
             switch (buttonView.getId()) {
+                case R.id.switchReportLocation:
+                    settings.reportLocation = isChecked;
+                    break;
                 case R.id.switchFallDetection:
                     settings.fallDetection = isChecked;
+                    tvSensitivity.setVisibility(isChecked?View.VISIBLE:View.GONE);
+                    sbSensitivity.setVisibility(isChecked?View.VISIBLE:View.GONE);
                     break;
                 case R.id.switchAllDay:
                     settings.allDay = isChecked;
@@ -152,14 +166,21 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         tvTo = findViewById(R.id.tvTo);
         tvTo.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
 
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, settings.fromHour);
+        calendar.set(Calendar.MINUTE, settings.fromMinute);
+
         fromTime = findViewById(R.id.tvFromTime);
         fromTime.setOnClickListener(onTimeClickListener);
-        fromTime.setText(String.format("%02d:%02d", settings.fromHour, settings.fromMinute));
+        fromTime.setText(getTime(calendar));
         fromTime.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
+
+        calendar.set(Calendar.HOUR_OF_DAY, settings.toHour);
+        calendar.set(Calendar.MINUTE, settings.toMinute);
 
         toTime = findViewById(R.id.tvToTime);
         toTime.setOnClickListener(onTimeClickListener);
-        toTime.setText(String.format("%02d:%02d", settings.toHour, settings.toMinute));
+        toTime.setText(getTime(calendar));
         toTime.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
 
         tvFirstCheck = findViewById(R.id.tvFirstCheck);
@@ -167,6 +188,33 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
         fallDetection = findViewById(R.id.switchFallDetection);
         fallDetection.setChecked(settings.fallDetection);
+        fallDetection.setOnCheckedChangeListener(checkedChangeListener);
+
+        tvSensitivity = findViewById(R.id.tvSensitivity);
+        sbSensitivity = findViewById(R.id.seekBar_fallSensitivity);
+        sbSensitivity.setKeyProgressIncrement(5);
+        sbSensitivity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                settings.fallSensitivity = seekBar.getProgress();
+                settings.update();
+            }
+        });
+        tvSensitivity.setVisibility(settings.fallDetection?View.VISIBLE:View.GONE);
+        sbSensitivity.setVisibility(settings.fallDetection?View.VISIBLE:View.GONE);
+
+        reportLocation = findViewById(R.id.switchReportLocation);
+        reportLocation.setOnCheckedChangeListener(checkedChangeListener);
     }
 
     @Override
@@ -223,6 +271,8 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
         WellnessCheck.setAlarm(this, settings.nextCheckIn, MonitorReceiver.ACTION_ALARM, settings.toBundle());
 
+        if(settings.fallDetection) startService(new Intent(this, FallDetectionService.class));
+
         startActivity(new Intent(SetupSettingsActivity.this, MainActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK));
 
@@ -232,7 +282,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     private String getFirstCheckInString(long firstCheckIn){
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(firstCheckIn);
-        String time = String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
+        String time = getTime(calendar);
         if(firstCheckIn > WellnessCheck.getMidnight(calendar)) time += " tomorrow";
         return time;
     }

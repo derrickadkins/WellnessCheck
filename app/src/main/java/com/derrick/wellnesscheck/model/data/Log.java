@@ -10,9 +10,11 @@ import com.derrick.wellnesscheck.model.DB;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Queue;
 
 public class Log extends ArrayList<Entry> {
     public static Listener listener;
+    public Queue<Entry> logQ;
     public interface Listener{
         void onLog(Entry entry);
     }
@@ -27,8 +29,8 @@ public class Log extends ArrayList<Entry> {
 
     public Entry add(String msg) {
         Entry entry = new Entry(size(), msg);
-        entry.insert();
-        super.add(0, entry);
+        logQ.add(entry);
+        processQueue();
         return entry;
     }
 
@@ -42,4 +44,12 @@ public class Log extends ArrayList<Entry> {
     }
 
     public static Log Init(){return new Log(db.logDao().getAll());}
+
+    synchronized void processQueue(){
+        while(!logQ.isEmpty()){
+            Entry entry = logQ.poll();
+            entry.insert();
+            super.add(0, entry);
+        }
+    }
 }

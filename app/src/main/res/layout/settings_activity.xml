@@ -2,6 +2,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/settings_layout"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -200,6 +201,58 @@
         android:textSize="18dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/numberPickerHours" />
+
+    <TextView
+        android:id="@+id/tvBeta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="Beta"
+        android:textColor="@color/colorAccent"
+        app:layout_constraintStart_toEndOf="@+id/tvFallDetection"
+        app:layout_constraintTop_toTopOf="@+id/tvFallDetection" />
+
+    <SeekBar
+        android:id="@+id/seekBar_fallSensitivity"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:max="60"
+        android:min="30"
+        android:progress="45"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/tvSensitivity"
+        app:layout_constraintTop_toBottomOf="@+id/switchFallDetection" />
+
+    <TextView
+        android:id="@+id/tvSensitivity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sensitivity"
+        app:layout_constraintBottom_toBottomOf="@+id/seekBar_fallSensitivity"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/seekBar_fallSensitivity" />
+
+    <TextView
+        android:id="@+id/tvReportLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="24dp"
+        android:text="Report Location"
+        android:textSize="18dp"
+        app:layout_constraintStart_toEndOf="@+id/settings_scrollview"
+        app:layout_constraintTop_toBottomOf="@+id/tvSensitivity" />
+
+    <Switch
+        android:id="@+id/switchReportLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@+id/tvReportLocation"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/tvReportLocation"
+        app:layout_constraintVertical_bias="1.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

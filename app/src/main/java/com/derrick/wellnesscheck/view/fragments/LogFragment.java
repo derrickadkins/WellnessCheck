@@ -16,10 +16,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.derrick.wellnesscheck.R;
-import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Entry;
 import com.derrick.wellnesscheck.model.data.Log;
-import com.derrick.wellnesscheck.MonitorReceiver;
 
 public class LogFragment extends Fragment implements Log.Listener {
     LogAdapter logAdapter = new LogAdapter();

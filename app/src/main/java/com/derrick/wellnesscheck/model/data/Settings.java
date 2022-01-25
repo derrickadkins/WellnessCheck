@@ -12,7 +12,6 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 import com.derrick.wellnesscheck.MonitorReceiver;
-import com.derrick.wellnesscheck.WellnessCheck;
 
 import java.lang.reflect.Field;
 
@@ -23,9 +22,9 @@ public class Settings {
     @NonNull
     @PrimaryKey
     public int id = 1;
-    public int checkInHours, respondMinutes, fromHour, fromMinute, toHour, toMinute;
+    public int checkInHours, respondMinutes, fromHour, fromMinute, toHour, toMinute, fallSensitivity;
     public long nextCheckIn, prevCheckIn;
-    public boolean fallDetection, allDay, monitoringOn, checkedIn;
+    public boolean fallDetection, allDay, monitoringOn, checkedIn, reportLocation;
 
     public Settings(){
         checkInHours = 1;
@@ -36,10 +35,12 @@ public class Settings {
         toMinute = 0;
         prevCheckIn = 0;
         nextCheckIn = 0;
+        fallSensitivity = 45;
         allDay = false;
         monitoringOn = false;
         checkedIn = false;
         fallDetection = false;
+        reportLocation = false;
     }
 
     public static Settings Init(){

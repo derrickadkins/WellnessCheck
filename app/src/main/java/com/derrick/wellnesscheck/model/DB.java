@@ -35,7 +35,7 @@ public abstract class DB extends RoomDatabase {
         void onDbReady(DB db);
     }
 
-    static void InitDbSync(Context context, DbListener dbListener, boolean settings, boolean contacts, boolean log){
+    synchronized static void InitDbSync(Context context, DbListener dbListener, boolean settings, boolean contacts, boolean log){
         if(db == null)
             db = Room.databaseBuilder(context,
                     DB.class, "database-name")

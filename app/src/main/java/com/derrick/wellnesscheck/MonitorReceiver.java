@@ -2,7 +2,7 @@ package com.derrick.wellnesscheck;
 
 import static android.content.Intent.ACTION_BOOT_COMPLETED;
 import static android.content.Intent.ACTION_DELETE;
-import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
+import static com.derrick.wellnesscheck.utils.Utils.getTime;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -91,7 +91,7 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                 PendingIntent responsePendingIntent = PendingIntent.getBroadcast(context, 2, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
                 builder.setContentTitle("Time To Check In")
                     .setOngoing(true)
-                    .setContentText("Click to check in by " + getReadableTime(smsAlarmTime, false, false, false))
+                    .setContentText("Click to check in by " + getTime(smsAlarmTime))
                     .setContentIntent(responsePendingIntent);
                 notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
                 doDBStuff();

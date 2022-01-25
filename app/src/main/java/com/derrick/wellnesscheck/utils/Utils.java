@@ -1,6 +1,8 @@
 package com.derrick.wellnesscheck.utils;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 
 public class Utils {
     public static boolean sameNumbers(String num1, String num2){
@@ -30,5 +32,26 @@ public class Utils {
 
     public static String getReadableTime(long time){
         return getReadableTime(time, true, true, true);
+    }
+
+    public static String getTime(Date date){
+        return new SimpleDateFormat(android.provider.Settings.System.TIME_12_24 == "12" ? "hh:mm a" : "HH:MM").format(date);
+    }
+
+    public static String getTime(Calendar calendar){
+        return getTime(calendar.getTime());
+    }
+
+    public static String getTime(int hourOfDay, int minute){
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+        calendar.set(Calendar.MINUTE, minute);
+        return getTime(calendar);
+    }
+
+    public static String getTime(long millis){
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(millis);
+        return getTime(calendar);
     }
 }

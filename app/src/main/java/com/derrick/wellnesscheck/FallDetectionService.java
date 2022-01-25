@@ -10,17 +10,19 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 
 import com.derrick.wellnesscheck.model.data.Log;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -31,8 +33,7 @@ public class FallDetectionService extends Service implements SensorEventListener
     private final int PERIODIC_EVENT_TIMEOUT = 3000;
 
     private Timer fuseTimer = new Timer();
-    private int sendCount = 0;
-    private char sentRecently = 'N';
+    private boolean sentRecently = false;
     //Three Sensor Fusion - Variables:
     // angular speeds from gyro
     private float[] gyro = new float[3];
@@ -70,23 +71,27 @@ public class FallDetectionService extends Service implements SensorEventListener
 
     //Sensor Variables:
     private SensorManager senSensorManager;
-    private Sensor senAccelerometer;
-    private Sensor senProximity;
-    private SensorEvent mSensorEvent;
 
     //GPS
     double latitude, longitude;
-    LocationManager locationManager;
-    LocationListener locationListener;
+    FusedLocationProviderClient fusedLocationClient;
+    OnSuccessListener<Location> onSuccessListener = new OnSuccessListener<Location>() {
+        @Override
+        public void onSuccess(Location location) {
+            if (location == null) return;
+            latitude = location.getLatitude();
+            longitude = location.getLongitude();
+        }
+    };
 
     //SMS Variables
     private Float x, y, z;
 
     private Runnable doPeriodicTask = new Runnable() {
         public void run() {
-            Log.d("Delay", "Delay Ended**********");
-            Log.d("Updating flag", "run: ");
-            sentRecently = 'N';
+            //Log.d("Delay", "Delay Ended**********");
+            //Log.d("Updating flag", "run: ");
+            sentRecently = false;
 //            mPeriodicEventHandler.postDelayed(doPeriodicTask, PERIODIC_EVENT_TIMEOUT);
         }
     };
@@ -101,6 +106,7 @@ public class FallDetectionService extends Service implements SensorEventListener
     @Override
     public void onCreate() {
         Log.d("Initialing Service", "OnCreate");
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         super.onCreate();
     }
 
@@ -109,78 +115,19 @@ public class FallDetectionService extends Service implements SensorEventListener
         super.onDestroy();
         mPeriodicEventHandler.removeCallbacks(doPeriodicTask);
         Log.d("Stopping Service", "OnDestroy");
-        senSensorManager.unregisterListener(this);
-        sendCount = 0;
+        if (senSensorManager != null) senSensorManager.unregisterListener(this);
         Toast.makeText(this, "Stopped Tracking", Toast.LENGTH_SHORT).show();
-        if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-        }else {
-            locationManager.removeUpdates(locationListener);
-        }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flag, int startId) {
         Log.d("Starting work", "OnStart");
 
-        // Acquire a reference to the system Location Manager
-        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-
-        // Define a listener that responds to location updates
-        locationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                latitude = location.getLatitude();
-                longitude = location.getLongitude();
-                Log.d("latitude changed", "" + latitude);
-                Log.d("longitude changed", "" + longitude);
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-
-            }
-        };
-
-        // Register the listener with the Location Manager to receive location updates
-        if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            handler.post(new Runnable() {
-
-                @Override
-                public void run() {
-                    Toast.makeText(FallDetectionService.this.getApplicationContext(), "No GPS Permission!!", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 0, locationListener);
-
-        String locationProvider = LocationManager.NETWORK_PROVIDER;
-        if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            handler.post(new Runnable() {
-
-                @Override
-                public void run() {
-                    Toast.makeText(FallDetectionService.this.getApplicationContext(), "No GPS Permission", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
-        latitude = locationManager.getLastKnownLocation(locationProvider).getLatitude();
-        longitude = locationManager.getLastKnownLocation(locationProvider).getLongitude();
-        Log.d("latitude", ""+latitude);
-        Log.d("longitude", ""+longitude);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+            fusedLocationClient.getLastLocation().addOnSuccessListener(onSuccessListener);
 
         onTaskRemoved(intent);
         senSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         initListeners();
 
         fuseTimer.scheduleAtFixedRate(new calculateFusedOrientationTask(),
@@ -205,23 +152,17 @@ public class FallDetectionService extends Service implements SensorEventListener
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        Sensor mySensor = sensorEvent.sensor;
-
         switch (sensorEvent.sensor.getType()) {
             case Sensor.TYPE_ACCELEROMETER:
                 // copy new accelerometer data into accel array
                 // then calculate new orientation
                 System.arraycopy(sensorEvent.values, 0, accel, 0, 3);
-
-
                 calculateAccMagOrientation();
                 break;
-
             case Sensor.TYPE_GYROSCOPE:
                 // process gyro data
                 gyroFunction(sensorEvent);
                 break;
-
             case Sensor.TYPE_MAGNETIC_FIELD:
                 // copy new magnetometer data into magnet array
                 System.arraycopy(sensorEvent.values, 0, magnet, 0, 3);
@@ -278,8 +219,7 @@ public class FallDetectionService extends Service implements SensorEventListener
 
         // initialisation of the gyroscope based rotation matrix
         if (initState) {
-            float[] initMatrix = new float[9];
-            initMatrix = getRotationMatrixFromOrientation(accMagOrientation);
+            float[] initMatrix = getRotationMatrixFromOrientation(accMagOrientation);
             float[] test = new float[3];
             SensorManager.getOrientation(initMatrix, test);
             gyroMatrix = matrixMultiplication(gyroMatrix, initMatrix);
@@ -399,8 +339,8 @@ public class FallDetectionService extends Service implements SensorEventListener
             double SMV = Math.sqrt(accel[0] * accel[0] + accel[1] * accel[1] + accel[2] * accel[2]);
 //                Log.d("SMV:", ""+SMV);
             if (SMV > 25) {
-                if (sentRecently == 'N') {
-                    Log.d("Accelerometer vector:", "" + SMV);
+                if (!sentRecently) {
+                    //Log.d("Accelerometer vector:", "" + SMV);
                     degreeFloat = (float) (fusedOrientation[1] * 180 / Math.PI);
                     degreeFloat2 = (float) (fusedOrientation[2] * 180 / Math.PI);
                     if (degreeFloat < 0)
@@ -408,53 +348,14 @@ public class FallDetectionService extends Service implements SensorEventListener
                     if (degreeFloat2 < 0)
                         degreeFloat2 = degreeFloat2 * -1;
 //                    Log.d("Degrees:", "" + degreeFloat);
-                    if (degreeFloat > 30 || degreeFloat2 > 30) {
+                    if (degreeFloat > 60 || degreeFloat2 > 60) {
                         Log.d("Degree1:", "" + degreeFloat);
                         Log.d("Degree2:", "" + degreeFloat2);
-                        handler.post(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                Toast.makeText(FallDetectionService.this.getApplicationContext(), "Sensed Danger! Sending SMS", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-/*//                    Toast.makeText(getApplicationContext(), "Sensed Danger! Sending SMS", Toast.LENGTH_SHORT).show();
-
-                        Cursor cursor = sql.query(ContactContract.TABLE_NAME, projection, null, null, null, null, null);
-                        List itemIds = new ArrayList<>();
-                        while (cursor.moveToNext()) {
-                            long itemId = cursor.getLong(
-                                    cursor.getColumnIndexOrThrow(ContactContract.COLUMN_CONTACT));
-                            itemIds.add(itemId);
-                        }
-                        cursor.close();
-                        Iterator it = itemIds.iterator();
-
-                        while (it.hasNext()) {
-//                        if (sendCount < 5) {
-//                                textMsg = "Sensed Danger here => "+"http://maps.google.com/?q=<"+latitude+">,<"+longitude+">";
-
-                            phoneNum = it.next().toString();
-                            if (phoneNum != prevNumber && phoneNum != null) {
-                                textMsg = "Sensed Danger here => " + "http://maps.google.com/?q=<" + String.valueOf(latitude) + ">,<" + String.valueOf(longitude) + ">";
-                                Log.d("Sending-MSG", "onSensorChanged: " + sendCount);
-                                smsManager.sendTextMessage(phoneNum, null, textMsg, null, null);
-                                prevNumber = phoneNum;
-                                sendCount++;
-                            }
-//                        }
-                        }*/
-                    } else {
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(FallDetectionService.this.getApplicationContext(), "Sudden Movement! But looks safe", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                        sendCount++;
+                        handler.post(() -> Toast.makeText(FallDetectionService.this.getApplicationContext(), "Sensed Danger!", Toast.LENGTH_SHORT).show());
+                        Log.d("FallDetection", "Fall Detected");
                     }
-                    sentRecently='Y';
-                    Log.d("Delay", "Delay Start**********");
+                    sentRecently = true;
+                    //Log.d("Delay", "Delay Start**********");
                     mPeriodicEventHandler.postDelayed(doPeriodicTask, PERIODIC_EVENT_TIMEOUT);
                 }
             }
