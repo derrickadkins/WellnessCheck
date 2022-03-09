@@ -4,9 +4,9 @@
 
     <item
         android:id="@+id/action_emergency_contacts"
-        android:orderInCategory="100"
         android:icon="@android:drawable/ic_menu_call"
-        android:title="Emergency Contacts" />
+        android:orderInCategory="100"
+        android:title="Contacts" />
 
     <item
         android:id="@+id/action_home"
@@ -16,7 +16,7 @@
 
     <item
         android:id="@+id/action_mental_health_resources"
-        android:orderInCategory="120"
         android:icon="@drawable/ic_mental_health_resources"
-        android:title="Mental Health Resources" />
+        android:orderInCategory="120"
+        android:title="Resources" />
 </menu>

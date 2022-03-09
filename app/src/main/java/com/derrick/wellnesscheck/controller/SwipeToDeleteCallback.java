@@ -13,11 +13,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class SwipeToDeleteCallback extends ItemTouchHelper.SimpleCallback {
 
-    private final EmergencyContactsRecyclerAdapter adapter;
+    private final ContactsRecyclerAdapter adapter;
     private final Drawable icon;
     private final ColorDrawable background = new ColorDrawable(Color.RED);
 
-    public SwipeToDeleteCallback(EmergencyContactsRecyclerAdapter adapter){
+    public SwipeToDeleteCallback(ContactsRecyclerAdapter adapter){
         super(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT);
         this.adapter = adapter;
         icon = ContextCompat.getDrawable(adapter.getContext(),
@@ -45,8 +45,8 @@ public class SwipeToDeleteCallback extends ItemTouchHelper.SimpleCallback {
         int iconBottom = iconTop + icon.getIntrinsicHeight();
 
         if (dX > 0) { // Swiping to the right
-            int iconLeft = itemView.getLeft() + iconMargin + icon.getIntrinsicWidth();
-            int iconRight = itemView.getLeft() + iconMargin;
+            int iconRight = itemView.getLeft() + iconMargin + icon.getIntrinsicWidth();
+            int iconLeft = itemView.getLeft() + iconMargin;
             icon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
 
             background.setBounds(itemView.getLeft(), itemView.getTop(),

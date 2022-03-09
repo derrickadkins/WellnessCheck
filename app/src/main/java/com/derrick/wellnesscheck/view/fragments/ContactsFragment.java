@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContract;
@@ -26,7 +27,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.derrick.wellnesscheck.R;
-import com.derrick.wellnesscheck.controller.EmergencyContactsRecyclerAdapter;
+import com.derrick.wellnesscheck.controller.ContactsRecyclerAdapter;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
 import com.derrick.wellnesscheck.utils.PermissionsListener;
@@ -45,13 +46,14 @@ import static android.app.Activity.RESULT_OK;
 import static com.derrick.wellnesscheck.WellnessCheck.db;
 import static com.derrick.wellnesscheck.utils.Utils.sameNumbers;
 
-public class EmergencyContactsFragment extends Fragment implements EmergencyContactsRecyclerAdapter.OnContactDeleteListener {
+public class ContactsFragment extends Fragment implements ContactsRecyclerAdapter.OnContactDeleteListener {
     static final String TAG = "EmergencyContactsFragment";
     FloatingActionButton fab;
-    EmergencyContactsRecyclerAdapter emergencyContactsRecyclerAdapter;
+    ContactsRecyclerAdapter contactsRecyclerAdapter;
     RecyclerView contactsList;
     Button setupNext;
     Contacts contacts;
+    TextView tvSwipeToDeleteContact;
 
     ActivityResultLauncher<Object> contactChooserResult = registerForActivityResult(new ActivityResultContract<Object, Object>() {
         @NonNull
@@ -85,7 +87,7 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
                         String number = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
                         String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
                         Contact contact = new Contact(id, name, number, 0);
-                        if (!emergencyContactsRecyclerAdapter.contains(contact.id))
+                        if (!contactsRecyclerAdapter.contains(contact.id))
                             onTryAddContact(contact);
                     }
                 }
@@ -94,12 +96,12 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
         }
     }, result -> { });
 
-    public EmergencyContactsFragment(){super();}
+    public ContactsFragment(){super();}
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View emergencyContactsFragmentView = inflater.inflate(R.layout.emergency_contacts_fragment, container, false);
+        View emergencyContactsFragmentView = inflater.inflate(R.layout.contacts_fragment, container, false);
 
         contacts = db.contacts;
 
@@ -120,6 +122,8 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
 
             }
         }));
+
+        tvSwipeToDeleteContact = emergencyContactsFragmentView.findViewById(R.id.tvSwipeToDeleteContact);
 
         contactsList = emergencyContactsFragmentView.findViewById(R.id.emergency_contacts_recyclerview);
         contactsList.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -153,11 +157,12 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
 
     public void setupAdapter() {
         onContactListSizeChange(contacts.size());
-        emergencyContactsRecyclerAdapter = new EmergencyContactsRecyclerAdapter(getContext(), contacts, this);
-        contactsList.setAdapter(emergencyContactsRecyclerAdapter);
+        contactsRecyclerAdapter = new ContactsRecyclerAdapter(getContext(), contacts, this);
+        contactsList.setAdapter(contactsRecyclerAdapter);
         if(!db.settings.monitoringOn || getActivity().getLocalClassName().equalsIgnoreCase("SetupContactsActivity")) {
-            ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new SwipeToDeleteCallback(emergencyContactsRecyclerAdapter));
+            ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new SwipeToDeleteCallback(contactsRecyclerAdapter));
             itemTouchHelper.attachToRecyclerView(contactsList);
+            tvSwipeToDeleteContact.setVisibility(View.VISIBLE);
         }
     }
 
@@ -201,20 +206,20 @@ public class EmergencyContactsFragment extends Fragment implements EmergencyCont
 
     public void addContact(Contact mContact){
         contacts.add(mContact);
-        emergencyContactsRecyclerAdapter.add(mContact);
-        onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
+        contactsRecyclerAdapter.add(mContact);
+        onContactListSizeChange(contactsRecyclerAdapter.getItemCount());
     }
 
     @Override
     public void onDeleteContact(Contact mContact) {
         contacts.remove(mContact);
-        onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
+        onContactListSizeChange(contactsRecyclerAdapter.getItemCount());
     }
 
     @Override
     public void onUndoDeleteContact(Contact mContact) {
         contacts.add(mContact);
-        onContactListSizeChange(emergencyContactsRecyclerAdapter.getItemCount());
+        onContactListSizeChange(contactsRecyclerAdapter.getItemCount());
     }
 
     public void onContactListSizeChange(int size) {

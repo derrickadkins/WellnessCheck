@@ -143,33 +143,33 @@
         android:id="@+id/tvFrom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
         android:text="From"
         android:textSize="18dp"
-        app:layout_constraintEnd_toStartOf="@id/tvFromTime"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvAllDay" />
 
     <TextView
         android:id="@+id/tvTo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
         android:text="to"
         android:textSize="18dp"
         app:layout_constraintBottom_toBottomOf="@id/tvFromTime"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/tvFromTime"
         app:layout_constraintTop_toTopOf="@id/tvFromTime" />
 
     <TextView
         android:id="@+id/tvFromTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="08:00"
+        android:layout_marginStart="16dp"
+        android:text="12:00 AM"
         android:textSize="24dp"
-        android:layout_marginEnd="16dp"
         app:layout_constraintBottom_toBottomOf="@id/tvFrom"
-        app:layout_constraintEnd_toStartOf="@id/tvTo"
+        app:layout_constraintStart_toEndOf="@+id/tvFrom"
         app:layout_constraintTop_toTopOf="@id/tvFrom" />
 
     <TextView
@@ -177,10 +177,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:text="20:00"
+        android:text="12:00 PM"
         android:textSize="24dp"
         app:layout_constraintBottom_toBottomOf="@id/tvTo"
-        app:layout_constraintStart_toEndOf="@id/tvTo"
+        app:layout_constraintStart_toEndOf="@+id/tvTo"
         app:layout_constraintTop_toTopOf="@id/tvTo" />
 
     <Switch

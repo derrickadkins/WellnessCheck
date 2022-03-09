@@ -10,14 +10,13 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.derrick.wellnesscheck.R;
-import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 
-public class EmergencyContactsRecyclerAdapter extends RecyclerView.Adapter<EmergencyContactsRecyclerAdapter.ViewHolder> {
+public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecyclerAdapter.ViewHolder> {
     private ArrayList<Contact> mData;
     private LayoutInflater mInflater;
     private Contact mRecentlyDeletedItem;
@@ -25,7 +24,7 @@ public class EmergencyContactsRecyclerAdapter extends RecyclerView.Adapter<Emerg
     private Context context;
     private OnContactDeleteListener contactDeleteListener;
 
-    public EmergencyContactsRecyclerAdapter(Context context, Contacts dataSet, OnContactDeleteListener contactDeleteListener){
+    public ContactsRecyclerAdapter(Context context, Contacts dataSet, OnContactDeleteListener contactDeleteListener){
         this.context = context;
         mInflater = LayoutInflater.from(context);
         mData = new ArrayList<>(dataSet.values());

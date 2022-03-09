@@ -4,8 +4,14 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/contact_list_item.xml" value="0.31567028985507245" />
+        <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/contacts_fragment.xml" value="0.3625" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/emergency_contacts_fragment.xml" value="0.31567028985507245" />
+        <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/mental_health_resources_fragment.xml" value="0.3482789855072464" />
+        <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/resource_fragment.xml" value="0.1" />
+        <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/resources_fragment.xml" value="0.3482789855072464" />
+        <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/resources_fragment_bak.xml" value="0.3482789855072464" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/settings_activity.xml" value="0.33" />
+        <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/menu/menu_main.xml" value="0.24479166666666666" />
         <entry key="..\:/Users/derri/AppData/Local/Android/Sdk/platforms/android-31/data/res/layout/simple_list_item_1.xml" value="0.26979166666666665" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/button_rounded_corners.xml" value="0.3828125" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/ic_delete_white_36.xml" value="0.3828125" />

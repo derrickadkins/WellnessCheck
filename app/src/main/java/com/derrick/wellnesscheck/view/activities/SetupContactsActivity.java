@@ -7,18 +7,18 @@ import android.os.Bundle;
 import androidx.annotation.Nullable;
 
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
-import com.derrick.wellnesscheck.view.fragments.EmergencyContactsFragment;
+import com.derrick.wellnesscheck.view.fragments.ContactsFragment;
 import com.derrick.wellnesscheck.R;
 
 public class SetupContactsActivity extends PermissionsRequestingActivity {
-    EmergencyContactsFragment contactsFragment;
+    ContactsFragment contactsFragment;
     final String TAG = "SetupContactActivity";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        contactsFragment = new EmergencyContactsFragment();
+        contactsFragment = new ContactsFragment();
         setContentView(R.layout.activity_setup);
         getSupportFragmentManager().beginTransaction().replace(R.id.activity_setup_layout, contactsFragment).commit();
     }

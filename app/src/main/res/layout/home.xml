@@ -34,7 +34,7 @@
         app:layout_constraintBottom_toBottomOf="parent"/>
 
     <Button
-        android:id="@+id/btnCall911Now"
+        android:id="@+id/btnCallEmergencyNumber"
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:text="Call 911 NOW"

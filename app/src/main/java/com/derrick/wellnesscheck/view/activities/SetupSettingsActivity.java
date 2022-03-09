@@ -8,7 +8,9 @@ import static com.derrick.wellnesscheck.utils.Utils.getTime;
 import android.Manifest;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.text.format.DateFormat;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -16,6 +18,8 @@ import android.widget.NumberPicker;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
+
+import androidx.core.app.ActivityCompat;
 
 import com.derrick.wellnesscheck.FallDetectionService;
 import com.derrick.wellnesscheck.MonitorReceiver;
@@ -88,7 +92,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
         respondMinutes = findViewById(R.id.numberPickerMinutes);
         respondMinutes.setMinValue(1);
-        respondMinutes.setMaxValue(60);
+        respondMinutes.setMaxValue(59);
         respondMinutes.setValue(settings.respondMinutes);
         respondMinutes.setOnValueChangedListener((picker, oldVal, newVal) -> {
             settings.respondMinutes = newVal;
@@ -125,13 +129,25 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                         checkInterval();
                         setFirstCheckText();
                         settings.update();
-                    }, hourOfDay, minute, android.provider.Settings.System.TIME_12_24 == "24").show();
+                    }, hourOfDay, minute, DateFormat.is24HourFormat(this)).show();
         };
 
         CompoundButton.OnCheckedChangeListener checkedChangeListener = (buttonView, isChecked) -> {
             switch (buttonView.getId()) {
                 case R.id.switchReportLocation:
                     settings.reportLocation = isChecked;
+                    if(isChecked)
+                        checkPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION, Manifest.permission.INTERNET},
+                                new PermissionsListener() {
+                                    @Override
+                                    public void permissionsGranted() { }
+
+                                    @Override
+                                    public void permissionsDenied() { reportLocation.setChecked(false); }
+
+                                    @Override
+                                    public void showRationale(String[] permissions) { }
+                                });
                     break;
                 case R.id.switchFallDetection:
                     settings.fallDetection = isChecked;
@@ -166,21 +182,14 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         tvTo = findViewById(R.id.tvTo);
         tvTo.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, settings.fromHour);
-        calendar.set(Calendar.MINUTE, settings.fromMinute);
-
         fromTime = findViewById(R.id.tvFromTime);
         fromTime.setOnClickListener(onTimeClickListener);
-        fromTime.setText(getTime(calendar));
+        fromTime.setText(getTime(settings.fromHour, settings.fromMinute));
         fromTime.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
-
-        calendar.set(Calendar.HOUR_OF_DAY, settings.toHour);
-        calendar.set(Calendar.MINUTE, settings.toMinute);
 
         toTime = findViewById(R.id.tvToTime);
         toTime.setOnClickListener(onTimeClickListener);
-        toTime.setText(getTime(calendar));
+        toTime.setText(getTime(settings.toHour, settings.toMinute));
         toTime.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
 
         tvFirstCheck = findViewById(R.id.tvFirstCheck);

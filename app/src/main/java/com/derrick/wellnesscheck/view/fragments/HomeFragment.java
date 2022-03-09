@@ -5,10 +5,13 @@ import static com.derrick.wellnesscheck.WellnessCheck.getNextCheckIn;
 import static com.derrick.wellnesscheck.utils.Utils.getTime;
 import static com.derrick.wellnesscheck.utils.Utils.sameNumbers;
 
-import android.content.Context;
+import android.Manifest;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.telephony.TelephonyCallback;
+import android.telephony.emergency.EmergencyNumber;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,12 +32,14 @@ import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
 import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Settings;
+import com.derrick.wellnesscheck.utils.PermissionsListener;
+import com.derrick.wellnesscheck.utils.Utils;
+import com.derrick.wellnesscheck.view.activities.MainActivity;
 import com.derrick.wellnesscheck.view.activities.SetupContactsActivity;
 import com.derrick.wellnesscheck.controller.SmsController;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.Timer;
@@ -43,7 +48,7 @@ import java.util.TimerTask;
 public class HomeFragment extends Fragment implements MonitorReceiver.CheckInListener {
     CircularProgressIndicator progressBar;
     TextView tvProgressBar, tvTimerLabel, tvNextCheckIn;
-    Button btnTurnOff;
+    Button btnTurnOff, callEmergencyNumber;
     CountDownTimer timer;
     Bundle bundle;
     long responseInterval;
@@ -68,6 +73,40 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View homeFragmentView = inflater.inflate(R.layout.home, container, false);
+
+        callEmergencyNumber = homeFragmentView.findViewById(R.id.btnCallEmergencyNumber);
+        ((PermissionsRequestingActivity) getActivity()).checkPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, new PermissionsListener() {
+            @Override
+            public void permissionsGranted() {
+                String[] eNums = Utils.getEmergencyNumbers();
+                if(eNums.length == 0) {
+                    callEmergencyNumber.setVisibility(View.GONE);
+                    return;
+                }
+                callEmergencyNumber.setText("Call\n" + eNums[0] + "\nNOW");
+                callEmergencyNumber.setOnClickListener(v -> {
+                    ((MainActivity)getActivity()).checkPermissions(new String[]{Manifest.permission.CALL_PHONE}, new PermissionsListener() {
+                        @Override
+                        public void permissionsGranted() {
+                            startActivity(new Intent(Intent.ACTION_CALL).setData(Uri.parse("tel:"+eNums[0])));
+                        }
+
+                        @Override
+                        public void permissionsDenied() { }
+
+                        @Override
+                        public void showRationale(String[] permissions) { }
+                    });
+                });
+            }
+
+            @Override
+            public void permissionsDenied() { callEmergencyNumber.setVisibility(View.GONE); }
+
+            @Override
+            public void showRationale(String[] permissions) { }
+        });
+
 
         btnTurnOff = homeFragmentView.findViewById(R.id.btnTurnOff);
         btnTurnOff.setOnClickListener(v -> {

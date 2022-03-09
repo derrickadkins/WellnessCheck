@@ -47,4 +47,14 @@
         android:layout_marginBottom="16dp"
         android:text="Next" />
 
+    <TextView
+        android:id="@+id/tvSwipeToDeleteContact"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="Swipe to Delete Contact" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

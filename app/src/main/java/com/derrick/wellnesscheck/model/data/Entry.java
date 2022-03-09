@@ -4,6 +4,7 @@ import static com.derrick.wellnesscheck.WellnessCheck.db;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 @Entity
@@ -15,6 +16,8 @@ public class Entry {
     public String entry;
 
     public Entry(){}
+
+    @Ignore
     public Entry(int id, String entry){
         this.id = id;
         this.time = System.currentTimeMillis();

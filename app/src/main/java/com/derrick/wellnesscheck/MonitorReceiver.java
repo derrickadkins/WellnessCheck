@@ -21,6 +21,7 @@ import com.derrick.wellnesscheck.controller.SmsController;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Settings;
+import com.derrick.wellnesscheck.utils.Utils;
 
 public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener {
 
@@ -164,8 +165,11 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
 
         SmsReceiver.smsController = smsController;
         DB.DbListener dbListener = (DB db) -> {
-            for(Contact contact : db.contacts.values())
-                smsController.sendSMS(context.getApplicationContext(), smsReceiver, smsController, contact.number, context.getString(R.string.missed_check_in));
+            Utils.getLocation(location -> {
+                for(Contact contact : db.contacts.values())
+                    smsController.sendSMS(context.getApplicationContext(), smsReceiver, smsController,
+                            contact.number, context.getString(R.string.missed_check_in) + location);
+            });
         };
 
         DB.InitDB(context, dbListener, false, true, false);

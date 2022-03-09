@@ -23,8 +23,8 @@ import java.util.ArrayList;
 public class MainActivity extends PermissionsRequestingActivity implements NavigationBarView.OnItemSelectedListener, DB.DbListener {
     static final String TAG = "MainActivity";
     HomeFragment homeFragment = new HomeFragment();
-    EmergencyContactsFragment emergencyContactsFragment = new EmergencyContactsFragment();
-    MentalHealthResourcesFragment mentalHealthResourcesFragment = new MentalHealthResourcesFragment();
+    ContactsFragment contactsFragment = new ContactsFragment();
+    ResourcesFragment resourcesFragment = new ResourcesFragment();
     LogFragment logFragment = new LogFragment();
     FragmentManager fragmentManager = getSupportFragmentManager();
     ArrayList<Fragment> fragments = new ArrayList<>();
@@ -45,8 +45,8 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         WellnessCheck.applySettings(this, settings);
 
         fragments.add(homeFragment);
-        fragments.add(emergencyContactsFragment);
-        fragments.add(logFragment);
+        fragments.add(contactsFragment);
+        fragments.add(resourcesFragment);
 
         bottomNavigationView = findViewById(R.id.nav);
         bottomNavigationView.setOnItemSelectedListener(this);
@@ -75,9 +75,9 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         if (id == R.id.action_home) {
             setFragment(fragments.indexOf(homeFragment));
         }else if (id == R.id.action_mental_health_resources) {
-            setFragment(fragments.indexOf(logFragment));
+            setFragment(fragments.indexOf(resourcesFragment));
         }else if (id == R.id.action_emergency_contacts) {
-            setFragment(fragments.indexOf(emergencyContactsFragment));
+            setFragment(fragments.indexOf(contactsFragment));
         }
 
         return true;

@@ -60,11 +60,16 @@ public abstract class PermissionsRequestingActivity extends AppCompatActivity {
 
     private void initPermissions(){
         permissions = new ArrayList<>();
+        permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+        permissions.add(Manifest.permission.INTERNET);
         permissions.add(Manifest.permission.READ_CONTACTS);
+        permissions.add(Manifest.permission.CALL_PHONE);
+        permissions.add(Manifest.permission.READ_PHONE_STATE);
         permissions.add(Manifest.permission.SEND_SMS);
         permissions.add(Manifest.permission.READ_SMS);
         permissions.add(Manifest.permission.RECEIVE_SMS);
-        permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
         permissions.add(Manifest.permission.RECEIVE_BOOT_COMPLETED);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
             permissions.add(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);

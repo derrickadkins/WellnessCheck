@@ -10,6 +10,7 @@ import com.derrick.wellnesscheck.model.DB;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Queue;
 
 public class Log extends ArrayList<Entry> {
@@ -21,10 +22,12 @@ public class Log extends ArrayList<Entry> {
 
     public Log(){
         super();
+        logQ = new LinkedList<>();
     }
 
     public Log(Collection<Entry> logEntries){
         super(logEntries);
+        logQ = new LinkedList<>();
     }
 
     public Entry add(String msg) {
