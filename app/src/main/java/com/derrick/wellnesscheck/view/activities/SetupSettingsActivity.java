@@ -26,6 +26,7 @@ import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.WellnessCheck;
 import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Settings;
+import com.derrick.wellnesscheck.model.data.Task;
 import com.derrick.wellnesscheck.utils.*;
 import com.derrick.wellnesscheck.R;
 
@@ -137,13 +138,13 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                 case R.id.switchReportLocation:
                     settings.reportLocation = isChecked;
                     if(isChecked)
-                        checkPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION, Manifest.permission.INTERNET},
+                        checkPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET},
                                 new PermissionsListener() {
                                     @Override
                                     public void permissionsGranted() { }
 
                                     @Override
-                                    public void permissionsDenied() { reportLocation.setChecked(false); }
+                                    public void permissionsDenied() { reportLocation.setChecked(false); settings.reportLocation = false; }
 
                                     @Override
                                     public void showRationale(String[] permissions) { }
@@ -223,6 +224,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         sbSensitivity.setVisibility(settings.fallDetection?View.VISIBLE:View.GONE);
 
         reportLocation = findViewById(R.id.switchReportLocation);
+        reportLocation.setChecked(settings.reportLocation);
         reportLocation.setOnCheckedChangeListener(checkedChangeListener);
     }
 
@@ -259,13 +261,14 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         tvFirstCheck.setText("First wellness check will be at " + getFirstCheckInString(firstCheckIn));
         timer.cancel();
         timer = new Timer();
-        timer.schedule(new TimerTask() {
+        Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 timer = new Timer();
-                timer.schedule(this, new Date(WellnessCheck.getNextCheckIn()));
+                timer.schedule(new Task(this), new Date(WellnessCheck.getNextCheckIn()));
             }
-        }, new Date(firstCheckIn));
+        };
+        timer.schedule(new Task(runnable), new Date(firstCheckIn));
     }
 
     void startMonitoring(){

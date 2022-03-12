@@ -5,6 +5,7 @@ import static com.derrick.wellnesscheck.WellnessCheck.context;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -84,32 +85,22 @@ public class Utils {
     }
 
     public interface LocationCallback {
-        void onLocationReceived(String location);
+        void onLocationReceived(Location location);
     }
 
     public static void getLocation(LocationCallback locationCallback) {
         FusedLocationProviderClient fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context);
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+                && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            locationCallback.onLocationReceived(null);
             return;
-        fusedLocationProviderClient.getCurrentLocation(LocationRequest.PRIORITY_HIGH_ACCURACY, new CancellationToken() {
-            @Override
-            public boolean isCancellationRequested() {
-                return false;
-            }
-
-            @NonNull
-            @Override
-            public CancellationToken onCanceledRequested(@NonNull OnTokenCanceledListener onTokenCanceledListener) {
-                locationCallback.onLocationReceived(null);
-                return null;
-            }
-        }).addOnSuccessListener(currentLocation -> {
+        }
+        fusedLocationProviderClient.getCurrentLocation(LocationRequest.PRIORITY_HIGH_ACCURACY, null).addOnSuccessListener(currentLocation -> {
             if (currentLocation != null) {
-                locationCallback.onLocationReceived(currentLocation.toString());
+                locationCallback.onLocationReceived(currentLocation);
             } else {
                 fusedLocationProviderClient.getLastLocation().addOnSuccessListener(lastLocation -> {
-                    locationCallback.onLocationReceived(currentLocation.toString());
+                    locationCallback.onLocationReceived(lastLocation);
                 });
             }
         });

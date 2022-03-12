@@ -11,6 +11,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
@@ -165,11 +166,21 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
 
         SmsReceiver.smsController = smsController;
         DB.DbListener dbListener = (DB db) -> {
-            Utils.getLocation(location -> {
+            if(db.settings.reportLocation)
+                Utils.getLocation(location -> {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(context.getString(R.string.missed_check_in));
+                    if(location != null)
+                        sb.append("\n\nhttps://www.google.com/maps/search/?api=1&query=" + location.getLatitude() + "%2C" + location.getLongitude());
+                    for(Contact contact : db.contacts.values())
+                        smsController.sendSMS(context.getApplicationContext(), smsReceiver, smsController,
+                                contact.number, sb.toString());
+                });
+            else {
                 for(Contact contact : db.contacts.values())
                     smsController.sendSMS(context.getApplicationContext(), smsReceiver, smsController,
-                            contact.number, context.getString(R.string.missed_check_in) + location);
-            });
+                            contact.number, context.getString(R.string.missed_check_in));
+            }
         };
 
         DB.InitDB(context, dbListener, false, true, false);
