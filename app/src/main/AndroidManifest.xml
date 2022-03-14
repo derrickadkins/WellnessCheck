@@ -58,13 +58,15 @@
         <activity android:exported="false"
             android:name=".view.activities.SetupContactsActivity"
             android:label="@string/app_name"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:parentActivityName=".view.activities.MainActivity">
         </activity>
 
         <activity android:exported="false"
             android:name=".view.activities.SetupSettingsActivity"
             android:label="@string/app_name"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:parentActivityName=".view.activities.MainActivity">
         </activity>
     </application>
 

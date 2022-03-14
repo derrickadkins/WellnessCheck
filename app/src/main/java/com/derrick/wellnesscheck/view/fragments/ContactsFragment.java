@@ -35,6 +35,7 @@ import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.derrick.wellnesscheck.SmsReceiver;
 import com.derrick.wellnesscheck.controller.SmsController;
 import com.derrick.wellnesscheck.controller.SwipeToDeleteCallback;
+import com.derrick.wellnesscheck.view.activities.MainActivity;
 import com.derrick.wellnesscheck.view.activities.SetupSettingsActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -105,6 +106,8 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
 
         contacts = db.contacts;
 
+        emergencyContactsFragmentView.findViewById(R.id.tvContactsFragmentTitle).setVisibility(getActivity() instanceof MainActivity ? View.VISIBLE : View.INVISIBLE);
+
         fab = emergencyContactsFragmentView.findViewById(R.id.fab);
         fab.setOnClickListener(view -> ((PermissionsRequestingActivity) getContext()).checkPermissions(new String[]{Manifest.permission.READ_CONTACTS}, new PermissionsListener() {
             @Override
@@ -151,7 +154,10 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         setupNext = emergencyContactsFragmentView.findViewById(R.id.btnSetupNext);
         setupNext.setVisibility(getActivity().getLocalClassName().contains("SetupContactsActivity") ? View.VISIBLE : View.GONE);
         setupNext.setEnabled(false);
-        setupNext.setOnClickListener(v -> startActivity(new Intent(getActivity(), SetupSettingsActivity.class)));
+        setupNext.setOnClickListener(v -> startActivity(new Intent(getActivity(), SetupSettingsActivity.class)
+                .putExtra("enable", true)
+                .putExtra("showStart", true)
+                .putExtra("returnToMain", false)));
         return emergencyContactsFragmentView;
     }
 

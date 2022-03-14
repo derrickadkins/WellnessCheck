@@ -3,8 +3,11 @@ package com.derrick.wellnesscheck.view.activities;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.MenuItem;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.NavUtils;
 
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.derrick.wellnesscheck.view.fragments.ContactsFragment;
@@ -20,7 +23,20 @@ public class SetupContactsActivity extends PermissionsRequestingActivity {
 
         contactsFragment = new ContactsFragment();
         setContentView(R.layout.activity_setup);
+        setSupportActionBar(findViewById(R.id.contacts_toolbar));
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportFragmentManager().beginTransaction().replace(R.id.activity_setup_layout, contactsFragment).commit();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                NavUtils.navigateUpFromSameTask(this);
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     void readSMS(){

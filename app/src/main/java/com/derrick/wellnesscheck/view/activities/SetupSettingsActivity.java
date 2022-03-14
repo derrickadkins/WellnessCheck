@@ -8,9 +8,9 @@ import static com.derrick.wellnesscheck.utils.Utils.getTime;
 import android.Manifest;
 import android.app.TimePickerDialog;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.format.DateFormat;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -19,7 +19,9 @@ import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 
-import androidx.core.app.ActivityCompat;
+import androidx.annotation.NonNull;
+import androidx.core.app.NavUtils;
+import androidx.core.app.TaskStackBuilder;
 
 import com.derrick.wellnesscheck.FallDetectionService;
 import com.derrick.wellnesscheck.MonitorReceiver;
@@ -36,15 +38,15 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Timer;
-import java.util.TimerTask;
 
 public class SetupSettingsActivity extends PermissionsRequestingActivity {
     static final String TAG = "SetupSettingsActivity";
+    boolean returnToMain;
     NumberPicker checkInHours, respondMinutes;
     TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck, tvSensitivity;
     SeekBar sbSensitivity;
     Switch allDay, fallDetection, reportLocation;
-    Button finishSetup;
+    Button btnStart;
     Timer timer = new Timer();
     Settings settings;
 
@@ -54,11 +56,19 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
         setContentView(R.layout.settings_activity);
 
+        setSupportActionBar(findViewById(R.id.settings_toolbar));
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+
+        boolean enable = getIntent().getBooleanExtra("enable", false);
+        boolean showStart = getIntent().getBooleanExtra("showStart", true);
+        returnToMain = getIntent().getBooleanExtra("returnToMain", true);
+
         settings = db.settings;
 
-        finishSetup = findViewById(R.id.btnFinishSetup);
-        finishSetup.setVisibility(View.VISIBLE);
-        finishSetup.setOnClickListener(v -> {
+        btnStart = findViewById(R.id.btnStart);
+        btnStart.setVisibility(showStart ? View.VISIBLE : View.GONE);
+        btnStart.setOnClickListener(v -> {
             ArrayList permissions = new ArrayList();
             permissions.add(Manifest.permission.SCHEDULE_EXACT_ALARM);
             permissions.add(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
@@ -82,6 +92,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         });
 
         checkInHours = findViewById(R.id.numberPickerHours);
+        checkInHours.setEnabled(enable);
         checkInHours.setMinValue(1);
         checkInHours.setMaxValue(24);
         checkInHours.setValue(settings.checkInHours);
@@ -92,6 +103,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         });
 
         respondMinutes = findViewById(R.id.numberPickerMinutes);
+        respondMinutes.setEnabled(enable);
         respondMinutes.setMinValue(1);
         respondMinutes.setMaxValue(59);
         respondMinutes.setValue(settings.respondMinutes);
@@ -175,20 +187,25 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         };
 
         allDay = findViewById(R.id.switchAllDay);
+        allDay.setEnabled(enable);
         allDay.setChecked(settings.allDay);
         allDay.setOnCheckedChangeListener(checkedChangeListener);
 
         tvFrom = findViewById(R.id.tvFrom);
+        tvFrom.setEnabled(enable);
         tvFrom.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
         tvTo = findViewById(R.id.tvTo);
+        tvTo.setEnabled(enable);
         tvTo.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
 
         fromTime = findViewById(R.id.tvFromTime);
+        fromTime.setEnabled(enable);
         fromTime.setOnClickListener(onTimeClickListener);
         fromTime.setText(getTime(settings.fromHour, settings.fromMinute));
         fromTime.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
 
         toTime = findViewById(R.id.tvToTime);
+        toTime.setEnabled(enable);
         toTime.setOnClickListener(onTimeClickListener);
         toTime.setText(getTime(settings.toHour, settings.toMinute));
         toTime.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
@@ -197,11 +214,14 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         setFirstCheckText();
 
         fallDetection = findViewById(R.id.switchFallDetection);
+        fallDetection.setEnabled(enable);
         fallDetection.setChecked(settings.fallDetection);
         fallDetection.setOnCheckedChangeListener(checkedChangeListener);
 
         tvSensitivity = findViewById(R.id.tvSensitivity);
+        tvSensitivity.setEnabled(enable);
         sbSensitivity = findViewById(R.id.seekBar_fallSensitivity);
+        sbSensitivity.setEnabled(enable);
         sbSensitivity.setKeyProgressIncrement(5);
         sbSensitivity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -224,8 +244,38 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         sbSensitivity.setVisibility(settings.fallDetection?View.VISIBLE:View.GONE);
 
         reportLocation = findViewById(R.id.switchReportLocation);
+        reportLocation.setEnabled(!settings.monitoringOn);
         reportLocation.setChecked(settings.reportLocation);
         reportLocation.setOnCheckedChangeListener(checkedChangeListener);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                NavUtils.navigateUpFromSameTask(this);
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    // Override BOTH getSupportParentActivityIntent() AND getParentActivityIntent() because
+    // if your device is running on API 11+ it will call the native
+    // getParentActivityIntent() method instead of the support version.
+    // The docs do **NOT** make this part clear and it is important!
+    @Override
+    public Intent getSupportParentActivityIntent() {
+        return getParentActivityIntentImpl();
+    }
+
+    @Override
+    public Intent getParentActivityIntent() {
+        return getParentActivityIntentImpl();
+    }
+
+    private Intent getParentActivityIntentImpl() {
+        return new Intent(this, returnToMain ? MainActivity.class : SetupContactsActivity.class)
+                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
     }
 
     @Override

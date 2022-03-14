@@ -16,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -38,6 +39,7 @@ import com.derrick.wellnesscheck.view.activities.MainActivity;
 import com.derrick.wellnesscheck.view.activities.SetupContactsActivity;
 import com.derrick.wellnesscheck.controller.SmsController;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
+import com.derrick.wellnesscheck.view.activities.SetupSettingsActivity;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 
 import java.util.Calendar;
@@ -49,6 +51,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     CircularProgressIndicator progressBar;
     TextView tvProgressBar, tvTimerLabel, tvNextCheckIn;
     Button btnTurnOff, callEmergencyNumber;
+    ImageView imgSettingsIcon;
     CountDownTimer timer;
     Bundle bundle;
     long responseInterval;
@@ -73,6 +76,12 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View homeFragmentView = inflater.inflate(R.layout.home, container, false);
+
+        imgSettingsIcon = homeFragmentView.findViewById(R.id.imgSettingsIcon);
+        imgSettingsIcon.setOnClickListener(v -> startActivity(new Intent(getActivity(), SetupSettingsActivity.class)
+                .putExtra("enable", !settings.monitoringOn)
+                .putExtra("showStart", false)
+                .putExtra("returnToMain", true)));
 
         callEmergencyNumber = homeFragmentView.findViewById(R.id.btnCallEmergencyNumber);
         ((PermissionsRequestingActivity) getActivity()).checkPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, new PermissionsListener() {

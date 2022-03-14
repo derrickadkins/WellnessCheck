@@ -3,9 +3,13 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/outline_settings_24.xml" value="0.263" />
+        <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/activity_main.xml" value="0.2578125" />
+        <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/activity_setup.xml" value="0.33" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/contact_list_item.xml" value="0.31567028985507245" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/contacts_fragment.xml" value="0.3625" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/emergency_contacts_fragment.xml" value="0.31567028985507245" />
+        <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/home.xml" value="0.5" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/mental_health_resources_fragment.xml" value="0.3482789855072464" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/resource_fragment.xml" value="0.1" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/layout/resources_fragment.xml" value="0.3482789855072464" />
