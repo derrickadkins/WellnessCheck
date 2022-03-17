@@ -92,7 +92,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                     callEmergencyNumber.setVisibility(View.GONE);
                     return;
                 }
-                callEmergencyNumber.setText("Call\n" + eNums[0] + "\nNOW");
+                callEmergencyNumber.setText(getString(R.string.call) + eNums[0] + getString(R.string.now));
                 callEmergencyNumber.setOnClickListener(v -> {
                     ((MainActivity)getActivity()).checkPermissions(new String[]{Manifest.permission.CALL_PHONE}, new PermissionsListener() {
                         @Override
@@ -124,13 +124,13 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 if(contact.riskLvl > riskLvl)
                     riskLvl = contact.riskLvl;
             }
-            String message = "Are you sure you want to turn off monitoring?";
-            if(riskLvl > 1) message = "Request permission from Emergency Contacts to turn off monitoring?";
+            String message = getString(R.string.are_you_sure_turn_off);
+            if(riskLvl > 1) message = getString(R.string.request_permission_turn_off);
 
             int finalRiskLvl = riskLvl;
             new AlertDialog.Builder(getActivity(), R.style.AppTheme_Dialog_Alert)
             .setMessage(message)
-            .setPositiveButton("Yes", (dialog, which) -> {
+            .setPositiveButton(getString(R.string.Yes), (dialog, which) -> {
                 if(finalRiskLvl == 1) {
                     stopMonitoring();
                     dialog.dismiss();
@@ -138,7 +138,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 }
                 requestTurnOff(finalRiskLvl);
             })
-            .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
+            .setNegativeButton(getString(R.string.no), (dialog, which) -> dialog.dismiss())
             .show();
         });
 
@@ -193,7 +193,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         stopTimer();
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(System.currentTimeMillis() + ms);
-        tvNextCheckIn.setText("at " + getTime(calendar));
+        tvNextCheckIn.setText(getString(R.string.at) + getTime(calendar));
         tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
         progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) (settings.nextCheckIn - settings.prevCheckIn));
         Log.d(TAG, "timer started; responseTimer: "+inResponseTimer+", millis:"+ms+", progressBarMax:"+progressBar.getMax());
@@ -233,7 +233,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         if(settings.monitoringOn){
             tvProgressBar.setTextSize(64);
         }else{
-            tvProgressBar.setText("Tap to Setup\nWellness Checks");
+            tvProgressBar.setText(R.string.tap_to_setup);
             progressBar.setProgress(progressBar.getMax());
             tvProgressBar.setTextSize(32);
         }
@@ -258,9 +258,9 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         final SmsReceiver smsReceiver = new SmsReceiver();
 
         AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), R.style.AppTheme_Dialog_Alert)
-                .setMessage("Sending request(s) via SMS ...")
+                .setMessage(getString(R.string.sending_requests))
                 .setView(new ProgressBar(getActivity()))
-                .setNegativeButton("Cancel", (dialog, which) -> {
+                .setNegativeButton(getString(R.string.cancel), (dialog, which) -> {
                     dialog.cancel();
                     getActivity().unregisterReceiver(smsReceiver);
                 })
@@ -280,7 +280,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 for (Contact contact : contacts.values()) {
                     if (sameNumbers(number, contact.number)){
                         messageReceivedFromContact = true;
-                        if(message.equals("yes")) {
+                        if(message.equals(getString(R.string.yes))) {
                             allowed = true;
                         }
                     }
@@ -293,8 +293,8 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 } else if (--unreceivedSMS == 0) {
                     alertDialog.cancel();
                     new AlertDialog.Builder(getContext(), R.style.AppTheme_Dialog_Alert)
-                            .setMessage("Sorry, you are not allowed to turn off monitoring at this time")
-                            .setNeutralButton("Okay", (dialog, which) -> dialog.cancel()).create().show();
+                            .setMessage(getString(R.string.sorry_not_allowed))
+                            .setNeutralButton(getString(R.string.okay), (dialog, which) -> dialog.cancel()).create().show();
                     getActivity().unregisterReceiver(smsReceiver);
                 }
             }
@@ -303,9 +303,9 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             public void onSmsFailedToSend() {
                 alertDialog.cancel();
                 new AlertDialog.Builder(getActivity(), R.style.AppTheme_Dialog_Alert)
-                        .setMessage("SMS Failed to Send")
-                        .setNegativeButton("Cancel", (dialog, which) -> dialog.cancel())
-                        .setPositiveButton("Retry", (dialog, which) -> {
+                        .setMessage(getString(R.string.sms_failed))
+                        .setNegativeButton(getString(R.string.cancel), (dialog, which) -> dialog.cancel())
+                        .setPositiveButton(getString(R.string.retry), (dialog, which) -> {
                             dialog.cancel();
                             requestTurnOff(riskLvl);
                         }).create().show();
@@ -315,11 +315,11 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             public void onSmsSent() {
                 unreceivedSMS++;
                 if (--unsentParts == 0) {
-                    alertDialog.setMessage("Messages Sent");
+                    alertDialog.setMessage(getString(R.string.messages_sent));
                     new Timer().schedule(new TimerTask() {
                         @Override
                         public void run() {
-                            alertDialog.setMessage("Waiting for response ...");
+                            alertDialog.setMessage(getString(R.string.waiting_for_response));
                         }
                     }, 1000);
                 }

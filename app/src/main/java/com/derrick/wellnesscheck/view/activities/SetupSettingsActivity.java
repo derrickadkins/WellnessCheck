@@ -309,7 +309,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
     void setFirstCheckText(){
         long firstCheckIn = WellnessCheck.getNextCheckIn();
-        tvFirstCheck.setText("First wellness check will be at " + getFirstCheckInString(firstCheckIn));
+        tvFirstCheck.setText(getString(R.string.first_wellness_check_will_be_at) + getFirstCheckInString(firstCheckIn));
         timer.cancel();
         timer = new Timer();
         Runnable runnable = new Runnable() {
@@ -346,7 +346,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(firstCheckIn);
         String time = getTime(calendar);
-        if(firstCheckIn > WellnessCheck.getMidnight(calendar)) time += " tomorrow";
+        if(firstCheckIn > WellnessCheck.getMidnight(calendar)) time += getString(R.string.tomorrow);
         return time;
     }
 }

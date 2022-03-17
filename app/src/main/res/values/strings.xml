@@ -1,10 +1,64 @@
 <resources>
     <string name="app_name">Wellness Check</string>
-    <string name="action_settings">Settings</string>
+    <!--titles-->
+    <string name="emergency_contacts">Emergency Contacts</string>
+    <string name="resources">Resources</string>
+    <string name="settings">Settings</string>
+    <!--settings-->
+    <string name="how_often">How often do you want to check in?</string>
+    <string name="every">Every</string>
+    <string name="hour_s">Hour(s)</string>
+    <string name="from">From</string>
+    <string name="to">to</string>
+    <string name="how_much_time_do_you_need">How much time do you need to respond?</string>
+    <string name="minute_s">Minute(s)</string>
+    <string name="all_day">All-day</string>
+    <string name="first_wellness_check_will_be_at">First wellness check will be at </string>
+    <string name="tomorrow"> tomorrow</string>
+    <string name="fall_detection">Fall Detection</string>
+    <string name="beta">Beta</string>
+    <string name="sensitivity">Sensitivity</string>
+    <string name="report_location">Report Location</string>
+    <!--misc-->
+    <string name="request_permission_turn_off">Request permission from Emergency Contacts to turn off monitoring?</string>
+    <string name="sorry_not_allowed">Sorry, you are not allowed to turn off monitoring at this time</string>
+    <string name="message_will_be_sent">Message will been sent to your emergency contacts.</string>
+    <string name="are_you_sure_turn_off">Are you sure you want to turn off monitoring?</string>
+    <string name="you_missed_check_in">You\'ve missed your check-in</string>
+    <string name="swipe_to_delete_contact">Swipe to Delete Contact</string>
+    <string name="sending_requests">Sending request(s) via SMS ...</string>
+    <string name="waiting_for_response">Waiting for response ...</string>
+    <string name="next_wellness_check_in">Next Wellness Check In</string>
+    <string name="sending_request">Sending request via SMS ...</string>
     <string name="progress_label_check">Next Wellness Check In</string>
+    <string name="tap_to_setup">Tap to Setup\nWellness Checks</string>
+    <string name="click_to_check_in_by">Click to check in by </string>
     <string name="progress_label_response">Tap to Check In</string>
+    <string name="time_to_check_in">Time To Check In</string>
+    <string name="sms_failed">SMS Failed to Send</string>
+    <string name="swipe_to_call">Swipe to call</string>
+    <string name="messages_sent">Messages Sent</string>
+    <string name="message_sent">Message Sent</string>
+    <!--one words-->
+    <string name="cancel">Cancel</string>
+    <string name="start">Start</string>
+    <string name="retry">Retry</string>
+    <string name="call">Call\n</string>
+    <string name="next">Next</string>
+    <string name="okay">Okay</string>
+    <string name="now">\nNOW</string>
+    <string name="yes">yes</string>
+    <string name="Yes">Yes</string>
+    <string name="no">No</string>
+    <string name="at">at</string>
+    <string name="Y1">Y1</string>
+    <string name="Y2">Y2</string>
+    <string name="Y3">Y3</string>
+    <string name="Y">Y</string>
+    <!--notification channel-->
     <string name="channel_name">MonitoringService</string>
     <string name="channel_description">Alerts the user to perform wellness check</string>
+    <!--SMS messages-->
     <string name="contact_request">
         Will you be my Emergency Contact for the Wellness Check app?\n
         \n

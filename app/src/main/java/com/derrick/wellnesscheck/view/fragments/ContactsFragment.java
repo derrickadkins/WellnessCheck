@@ -239,10 +239,10 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         final SmsReceiver smsReceiver = new SmsReceiver();
 
         AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), R.style.AppTheme_Dialog_Alert)
-                .setMessage("Sending request via SMS ...")
+                .setMessage(getString(R.string.sending_request))
                 .setView(new ProgressBar(getActivity()))
                 .setCancelable(false)
-                .setNegativeButton("Cancel", (dialog, which) -> {
+                .setNegativeButton(getString(R.string.cancel), (dialog, which) -> {
                     dialog.cancel();
                     getActivity().unregisterReceiver(smsReceiver);
                 })
@@ -253,10 +253,10 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
             public void onSmsReceived(String number, String message) {
                 message = message.toUpperCase(Locale.ROOT).trim();
                 if (sameNumbers(number, contact.number)) {
-                    if (message.replaceAll("\\d+", "").equals("Y")) {
-                        if (message.equals("Y1"))
+                    if (message.replaceAll("\\d+", "").equals(getString(R.string.Y))) {
+                        if (message.equals(getString(R.string.Y1)))
                             contact.riskLvl = 1;
-                        else if (message.equals("Y2"))
+                        else if (message.equals(getString(R.string.Y2)))
                             contact.riskLvl = 2;
                         else contact.riskLvl = 3;
 
@@ -275,11 +275,11 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
             @Override
             public void onSmsSent() {
                 if (--unsentParts == 0) {
-                    alertDialog.setMessage("Message Sent");
+                    alertDialog.setMessage(getString(R.string.message_sent));
                     new Timer().schedule(new TimerTask() {
                         @Override
                         public void run() {
-                            getActivity().runOnUiThread(() -> alertDialog.setMessage("Waiting for response ..."));
+                            getActivity().runOnUiThread(() -> alertDialog.setMessage(getString(R.string.waiting_for_response)));
                         }
                     }, 1000);
                 }

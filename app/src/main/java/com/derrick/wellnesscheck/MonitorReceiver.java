@@ -91,9 +91,9 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
 
                 Intent responseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_RESPONSE).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
                 PendingIntent responsePendingIntent = PendingIntent.getBroadcast(context, 2, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                builder.setContentTitle("Time To Check In")
+                builder.setContentTitle(context.getString(R.string.time_to_check_in))
                     .setOngoing(true)
-                    .setContentText("Click to check in by " + getTime(smsAlarmTime))
+                    .setContentText(context.getString(R.string.click_to_check_in_by) + getTime(smsAlarmTime))
                     .setContentIntent(responsePendingIntent);
                 notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
                 doDBStuff();
@@ -111,8 +111,8 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                 PendingIntent lateResponsePendingIntent = PendingIntent.getBroadcast(context, 3, lateResponseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
                 builder.setOngoing(false)
                         .setContentIntent(lateResponsePendingIntent)
-                        .setContentTitle("You've missed your check-in")
-                        .setContentText("Message will been sent to your emergency contacts.");
+                        .setContentTitle(context.getString(R.string.you_missed_check_in))
+                        .setContentText(context.getString(R.string.message_will_be_sent));
                 notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
                 sendMissedCheckInSMS();
                 break;

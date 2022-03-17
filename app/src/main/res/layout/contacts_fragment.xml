@@ -10,7 +10,7 @@
         android:id="@+id/tvContactsFragmentTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Emergency Contacts"
+        android:text="@string/emergency_contacts"
         android:textSize="32dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -45,7 +45,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         android:layout_marginBottom="16dp"
-        android:text="Next" />
+        android:text="@string/next" />
 
     <TextView
         android:id="@+id/tvSwipeToDeleteContact"
@@ -55,6 +55,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:text="Swipe to Delete Contact" />
+        android:text="@string/swipe_to_delete_contact" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

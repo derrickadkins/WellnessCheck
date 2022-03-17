@@ -36,7 +36,7 @@ public class ResourcesRecyclerAdapter extends RecyclerView.Adapter<ResourcesRecy
 
     @Override
     public void onBindViewHolder(@NonNull ResourcesRecyclerAdapter.ViewHolder holder, int position) {
-        holder.action.setText("Swipe to call");
+        holder.action.setText(context.getString(R.string.swipe_to_call));
         holder.number.setText(resources[position]);
     }
 
