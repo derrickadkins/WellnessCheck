@@ -154,10 +154,13 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         setupNext = emergencyContactsFragmentView.findViewById(R.id.btnSetupNext);
         setupNext.setVisibility(getActivity().getLocalClassName().contains("SetupContactsActivity") ? View.VISIBLE : View.GONE);
         setupNext.setEnabled(false);
-        setupNext.setOnClickListener(v -> startActivity(new Intent(getActivity(), SetupSettingsActivity.class)
-                .putExtra("enable", true)
-                .putExtra("showStart", true)
-                .putExtra("returnToMain", false)));
+        setupNext.setOnClickListener(v -> {
+            startActivity(new Intent(getActivity(), SetupSettingsActivity.class)
+                    .putExtra("enable", true)
+                    .putExtra("showStart", true)
+                    .putExtra("returnToMain", false));
+            getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+        });
         return emergencyContactsFragmentView;
     }
 
