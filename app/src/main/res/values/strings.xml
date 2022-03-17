@@ -13,7 +13,7 @@
     <string name="how_much_time_do_you_need">How much time do you need to respond?</string>
     <string name="minute_s">Minute(s)</string>
     <string name="all_day">All-day</string>
-    <string name="first_wellness_check_will_be_at">First wellness check will be at </string>
+    <string name="first_wellness_check_will_be_at">First wellness check will be at&#160;</string>
     <string name="tomorrow"> tomorrow</string>
     <string name="fall_detection">Fall Detection</string>
     <string name="beta">Beta</string>
@@ -32,7 +32,7 @@
     <string name="sending_request">Sending request via SMS ...</string>
     <string name="progress_label_check">Next Wellness Check In</string>
     <string name="tap_to_setup">Tap to Setup\nWellness Checks</string>
-    <string name="click_to_check_in_by">Click to check in by </string>
+    <string name="click_to_check_in_by">Click to check in by&#160;</string>
     <string name="progress_label_response">Tap to Check In</string>
     <string name="time_to_check_in">Time To Check In</string>
     <string name="sms_failed">SMS Failed to Send</string>
@@ -50,7 +50,7 @@
     <string name="yes">yes</string>
     <string name="Yes">Yes</string>
     <string name="no">No</string>
-    <string name="at">at</string>
+    <string name="at_">at&#160;</string>
     <string name="Y1">Y1</string>
     <string name="Y2">Y2</string>
     <string name="Y3">Y3</string>

@@ -238,7 +238,6 @@
         android:id="@+id/tvReportLocation"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="5dp"
         android:layout_marginTop="24dp"
         android:text="@string/report_location"
         android:textSize="18dp"
@@ -251,8 +250,7 @@
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="@+id/tvReportLocation"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/tvReportLocation"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintTop_toTopOf="@+id/tvReportLocation" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

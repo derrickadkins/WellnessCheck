@@ -193,7 +193,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         stopTimer();
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(System.currentTimeMillis() + ms);
-        tvNextCheckIn.setText(getString(R.string.at) + getTime(calendar));
+        tvNextCheckIn.setText(getString(R.string.at_) + getTime(calendar));
         tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
         progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) (settings.nextCheckIn - settings.prevCheckIn));
         Log.d(TAG, "timer started; responseTimer: "+inResponseTimer+", millis:"+ms+", progressBarMax:"+progressBar.getMax());
