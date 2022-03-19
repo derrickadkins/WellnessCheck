@@ -16,7 +16,7 @@
     <string name="first_wellness_check_will_be_at">First wellness check will be at&#160;</string>
     <string name="tomorrow"> tomorrow</string>
     <string name="fall_detection">Fall Detection</string>
-    <string name="beta">Beta</string>
+    <string name="beta" translatable="false">Beta</string>
     <string name="sensitivity">Sensitivity</string>
     <string name="report_location">Report Location</string>
     <!--misc-->
@@ -56,8 +56,8 @@
     <string name="Y3">Y3</string>
     <string name="Y">Y</string>
     <!--notification channel-->
-    <string name="channel_name">MonitoringService</string>
-    <string name="channel_description">Alerts the user to perform wellness check</string>
+    <string name="channel_name" translatable="false">MonitoringService</string>
+    <string name="channel_description" translatable="false">Alerts the user to perform wellness check</string>
     <!--SMS messages-->
     <string name="contact_request">
         Will you be my Emergency Contact for the Wellness Check app?\n

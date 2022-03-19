@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Control de Bienestar</string>
+    <string name="emergency_contacts">Contactos de Emergencia</string>
+    <string name="resources">Recursos</string>
+    <string name="settings">Ajustes</string>
+    <string name="how_often">¿Con qué frecuencia desea registrarse?</string>
+    <string name="every">Cada</string>
+    <string name="hour_s">Horas)</string>
+    <string name="from">Desde</string>
+    <string name="to">para</string>
+    <string name="how_much_time_do_you_need">¿Cuánto tiempo necesitas para responder?</string>
+    <string name="minute_s">Minutos)</string>
+    <string name="all_day">Todo el dia</string>
+    <string name="first_wellness_check_will_be_at">El primer chequeo de bienestar será en&#160;</string>
+    <string name="tomorrow">mañana</string>
+    <string name="fall_detection">Detección de caídas</string>
+    <string name="sensitivity">Sensibilidad</string>
+    <string name="report_location">Informar ubicación</string>
+    <string name="request_permission_turn_off">¿Solicitar permiso de los contactos de emergencia para desactivar la supervisión?</string>
+    <string name="sorry_not_allowed">Lo sentimos, no puedes desactivar el monitoreo en este momento</string>
+    <string name="message_will_be_sent">Se enviará un mensaje a sus contactos de emergencia.</string>
+    <string name="are_you_sure_turn_off">¿Está seguro de que desea desactivar la supervisión?</string>
+    <string name="you_missed_check_in">Te perdiste tu check-in</string>
+    <string name="swipe_to_delete_contact">Deslizar para eliminar contacto</string>
+    <string name="sending_requests">Enviando solicitud(es) por SMS...</string>
+    <string name="waiting_for_response">Esperando una respuesta ...</string>
+    <string name="next_wellness_check_in">Próximo control de bienestar</string>
+    <string name="sending_request">Enviando solicitud por SMS...</string>
+    <string name="progress_label_check">Próximo control de bienestar</string>
+    <string name="tap_to_setup">Toque para configurar\nControles de bienestar</string>
+    <string name="click_to_check_in_by">Haga clic para registrarse por&#160;</string>
+    <string name="progress_label_response">Toque para registrarse</string>
+    <string name="time_to_check_in">Hora de registrarse</string>
+    <string name="sms_failed">SMS no se pudo enviar</string>
+    <string name="swipe_to_call">Desliza para llamar</string>
+    <string name="messages_sent">Mensajes enviados</string>
+    <string name="message_sent">Mensaje enviado</string>
+    <string name="cancel">Cancelar</string>
+    <string name="start">Comienzo</string>
+    <string name="retry">Rever</string>
+    <string name="call">Llamada\n</string>
+    <string name="next">Próximo</string>
+    <string name="okay">Okey</string>
+    <string name="now">\nAHORA</string>
+    <string name="yes">sí</string>
+    <string name="Yes">sí</string>
+    <string name="no">No</string>
+    <string name="at_">en&#160;</string>
+    <string name="Y1">S1</string>
+    <string name="Y2">S2</string>
+    <string name="Y3">S3</string>
+    <string name="Y">S</string>
+    <string name="contact_request">
+        ¿Serás mi contacto de emergencia para la aplicación de control de bienestar?\n
+        \n
+        Respuesta:\n
+        S1 para aceptarme y calificarme como de bajo riesgo\n
+        S2 para aceptar y calificarme como de riesgo medio\n
+        S3 para aceptarme y clasificarme como de alto riesgo\n
+        No a declinar\n
+        \n
+        El bajo riesgo me permite desactivar mis propios controles de bienestar\n
+        El riesgo medio requiere el permiso de uno de mis contactos de emergencia para desactivar los controles de bienestar\n
+        Alto riesgo requiere permiso de todos mis contactos de emergencia para desactivar los controles de bienestar
+    </string>
+    <string name="turn_off_request">
+        ¿Puedo desactivar mis controles de bienestar? Respuesta: si o no
+    </string>
+    <string name="missed_check_in">
+        URGENTE\n
+        Perdí mi registro. Por favor, regístrenme.
+    </string>
+</resources>

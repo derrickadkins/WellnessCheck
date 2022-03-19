@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">健康檢查</string>
+    <string name="Y1">是的一</string>
+    <string name="Y2">是的二</string>
+    <string name="Y3">是的三</string>
+    <string name="Y">是的</string>
+    <string name="contact_request">
+        你會成為我的健康檢查應用程序的緊急聯繫人嗎？\n
+        \n
+        回复:\n
+        是的一接受並評價我為低風險\n
+        是的二接受並將我評為中等風險\n
+        是的三接受並評價我為高風險\n
+        不拒絕\n
+        \n
+        低風險讓我可以關閉自己的健康檢查\n
+        中等風險需要我的一位緊急聯繫人的許可才能關閉健康檢查\n
+        高風險需要我所有緊急聯繫人的許可才能關閉健康檢查
+    </string>
+    <string name="turn_off_request">
+        我可以關閉我的健康檢查嗎？回复：是或否
+    </string>
+    <string name="missed_check_in">
+        緊急\n
+        我錯過了簽到。請簽到我。
+    </string>
+    <string name="at_">在&#160;</string>
+    <string name="no">不</string>
+    <string name="Yes">是的</string>
+    <string name="yes">是的</string>
+    <string name="now">\n現在</string>
+    <string name="okay">好的</string>
+    <string name="next">下一個</string>
+    <string name="call">稱呼\n</string>
+    <string name="retry">重試</string>
+    <string name="start">開始</string>
+    <string name="cancel">取消</string>
+    <string name="message_sent">已發送消息</string>
+    <string name="messages_sent">發送的消息</string>
+    <string name="swipe_to_call">滑動通話</string>
+    <string name="sms_failed">短信發送失敗</string>
+    <string name="time_to_check_in">入住時間</string>
+    <string name="progress_label_response">點按即可入住</string>
+    <string name="click_to_check_in_by">點擊進入&#160;</string>
+    <string name="tap_to_setup">點擊設置健康檢查</string>
+    <string name="progress_label_check">下一次健康檢查</string>
+</resources>
