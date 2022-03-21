@@ -22,7 +22,7 @@ public class SetupContactsActivity extends PermissionsRequestingActivity {
         super.onCreate(savedInstanceState);
 
         contactsFragment = new ContactsFragment();
-        setContentView(R.layout.activity_setup);
+        setContentView(R.layout.activity_contacts);
         setSupportActionBar(findViewById(R.id.contacts_toolbar));
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);

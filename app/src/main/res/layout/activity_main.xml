@@ -10,11 +10,11 @@
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/main_activity_toolbar"
-        app:layout_constraintTop_toTopOf="parent"
         android:background="@color/colorPrimary"
-        app:titleTextColor="@android:color/white"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:titleTextColor="@android:color/white" />
 
     <FrameLayout
         android:id="@+id/main_content_fragment"

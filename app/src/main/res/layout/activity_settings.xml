@@ -11,10 +11,10 @@
         android:id="@+id/settings_toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        app:title="@string/settings"
         android:background="@color/colorPrimary"
+        android:theme="@style/ToolbarColoredBackArrow"
+        app:title="@string/settings"
         app:titleTextColor="@android:color/white"
-        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         app:layout_constraintTop_toTopOf="parent"/>
 
