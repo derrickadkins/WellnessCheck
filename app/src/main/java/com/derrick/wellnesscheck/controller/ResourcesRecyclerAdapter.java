@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,15 +14,16 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.derrick.wellnesscheck.R;
+import com.derrick.wellnesscheck.model.data.Resource;
 import com.derrick.wellnesscheck.utils.PermissionsListener;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 
 public class ResourcesRecyclerAdapter extends RecyclerView.Adapter<ResourcesRecyclerAdapter.ViewHolder> {
-    private String[] resources;
+    private Resource[] resources;
     private LayoutInflater inflater;
     private Context context;
 
-    public ResourcesRecyclerAdapter(Context context, String[] resources){
+    public ResourcesRecyclerAdapter(Context context, Resource[] resources){
         this.context = context;
         this.resources = resources;
         inflater = LayoutInflater.from(context);
@@ -30,14 +32,16 @@ public class ResourcesRecyclerAdapter extends RecyclerView.Adapter<ResourcesRecy
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = inflater.inflate(R.layout.contact_list_item, parent, false);
+        View view = inflater.inflate(R.layout.resource_list_item, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ResourcesRecyclerAdapter.ViewHolder holder, int position) {
-        holder.action.setText(context.getString(R.string.swipe_to_call));
-        holder.number.setText(resources[position]);
+        holder.action.setText(resources[position].isSMS ? "Swipe to SMS" : "Swipe to call");
+        holder.number.setText(resources[position].number);
+        holder.description.setText(resources[position].description);
+        holder.sms = resources[position].isSMS;
     }
 
     @Override
@@ -46,19 +50,27 @@ public class ResourcesRecyclerAdapter extends RecyclerView.Adapter<ResourcesRecy
     }
 
     public void contact(int pos){
-        ((PermissionsRequestingActivity)context).checkPermissions(new String[]{Manifest.permission.CALL_PHONE}, new PermissionsListener() {
-            @Override
-            public void permissionsGranted() {
-                String uri = "tel:" + resources[pos];
-                context.startActivity(new Intent(Intent.ACTION_CALL).setData(Uri.parse(uri)));
-            }
+        if(resources[pos].isSMS){
+            Intent intent = new Intent(Intent.ACTION_VIEW).setData(Uri.parse("sms:" + resources[pos].number));
+            if(!TextUtils.isEmpty(resources[pos].message)) intent.putExtra("sms_body", resources[pos].message);
+            context.startActivity(intent);
+        }else {
+            ((PermissionsRequestingActivity) context).checkPermissions(new String[]{Manifest.permission.CALL_PHONE}, new PermissionsListener() {
+                @Override
+                public void permissionsGranted() {
+                    String uri = "tel:" + resources[pos].number;
+                    context.startActivity(new Intent(Intent.ACTION_CALL).setData(Uri.parse(uri)));
+                }
 
-            @Override
-            public void permissionsDenied() { }
+                @Override
+                public void permissionsDenied() {
+                }
 
-            @Override
-            public void showRationale(String[] permissions) { }
-        });
+                @Override
+                public void showRationale(String[] permissions) {
+                }
+            });
+        }
         notifyItemChanged(pos);
     }
 
@@ -67,12 +79,13 @@ public class ResourcesRecyclerAdapter extends RecyclerView.Adapter<ResourcesRecy
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        TextView action, number;
+        TextView action, number, description;
         boolean sms = false;
         ViewHolder(View itemView){
             super(itemView);
-            action = itemView.findViewById(R.id.contact_number);
-            number = itemView.findViewById(R.id.contact_name);
+            description = itemView.findViewById(R.id.resource_description);
+            number = itemView.findViewById(R.id.resource_number);
+            action = itemView.findViewById(R.id.resource_action);
         }
     }
 }

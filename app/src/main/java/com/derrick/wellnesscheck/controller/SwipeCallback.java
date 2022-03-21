@@ -11,21 +11,31 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class SwipeToContactCallback extends ItemTouchHelper.SimpleCallback{
-    private final ResourcesRecyclerAdapter adapter;
+public class SwipeCallback extends ItemTouchHelper.SimpleCallback {
+
+    private final ContactsRecyclerAdapter adapter;
     private final Drawable[] icons;
     private final ColorDrawable[] backgrounds = new ColorDrawable[]{
+            new ColorDrawable(Color.RED),
             new ColorDrawable(Color.GREEN),
             new ColorDrawable(Color.BLUE)
     };
+    public enum Action{
+        DELETE, CALL, SMS
+    }
+    public Action leftAction, rightAction;
+    float prevDX=0;
 
-    public SwipeToContactCallback(ResourcesRecyclerAdapter adapter){
+    public SwipeCallback(ContactsRecyclerAdapter adapter, Action leftAction, Action rightAction){
         super(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT);
         this.adapter = adapter;
-        icons =  new Drawable[]{
+        icons = new Drawable[]{
+                ContextCompat.getDrawable(adapter.getContext(), android.R.drawable.ic_menu_delete),
                 ContextCompat.getDrawable(adapter.getContext(), android.R.drawable.ic_menu_call),
                 ContextCompat.getDrawable(adapter.getContext(), android.R.drawable.ic_menu_send)
         };
+        this.leftAction = leftAction;
+        this.rightAction = rightAction;
     }
 
     @Override
@@ -36,15 +46,25 @@ public class SwipeToContactCallback extends ItemTouchHelper.SimpleCallback{
     @Override
     public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
         int pos = viewHolder.getBindingAdapterPosition();
-        adapter.contact(pos);
+        if(direction == ItemTouchHelper.LEFT)
+            if(leftAction == Action.DELETE) adapter.delete(pos);
+            else adapter.contact(pos, leftAction == Action.SMS);
+        else if(rightAction == Action.DELETE) adapter.delete(pos);
+        else adapter.contact(pos, rightAction == Action.SMS);
     }
 
     @Override
     public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
         super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
         View itemView = viewHolder.itemView;
-        int i = ((ResourcesRecyclerAdapter.ViewHolder) viewHolder).sms ? 1 : 0;
         int backgroundCornerOffset = 20;
+        prevDX = dX;
+        int i = 0; //todo
+        if(dX > 0) i = rightAction.ordinal();
+        else if (dX < 0) i = leftAction.ordinal();
+        else if (prevDX > 0) i = rightAction.ordinal();
+        else if (prevDX < 0) i = leftAction.ordinal();
+
         int iconMargin = (itemView.getHeight() - icons[i].getIntrinsicHeight()) / 2;
         int iconTop = itemView.getTop() + (itemView.getHeight() - icons[i].getIntrinsicHeight()) / 2;
         int iconBottom = iconTop + icons[i].getIntrinsicHeight();

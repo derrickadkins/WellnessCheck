@@ -19,7 +19,9 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContract;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -34,8 +36,7 @@ import com.derrick.wellnesscheck.utils.PermissionsListener;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.derrick.wellnesscheck.SmsReceiver;
 import com.derrick.wellnesscheck.controller.SmsController;
-import com.derrick.wellnesscheck.controller.SwipeToDeleteCallback;
-import com.derrick.wellnesscheck.view.activities.MainActivity;
+import com.derrick.wellnesscheck.controller.SwipeCallback;
 import com.derrick.wellnesscheck.view.activities.SetupSettingsActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -54,7 +55,6 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
     RecyclerView contactsList;
     Button setupNext;
     Contacts contacts;
-    TextView tvSwipeToDeleteContact;
 
     ActivityResultLauncher<Object> contactChooserResult = registerForActivityResult(new ActivityResultContract<Object, Object>() {
         @NonNull
@@ -102,13 +102,16 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View emergencyContactsFragmentView = inflater.inflate(R.layout.contacts_fragment, container, false);
+        View contactsView = inflater.inflate(R.layout.contacts_fragment, container, false);
 
         contacts = db.contacts;
 
-        emergencyContactsFragmentView.findViewById(R.id.tvContactsFragmentTitle).setVisibility(getActivity() instanceof MainActivity ? View.VISIBLE : View.INVISIBLE);
+        //contactsView.findViewById(R.id.tvContactsFragmentTitle).setVisibility(getActivity() instanceof MainActivity ? View.VISIBLE : View.INVISIBLE);
+        ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
+        actionBar.setTitle("Emergency Contacts");
+        actionBar.show();
 
-        fab = emergencyContactsFragmentView.findViewById(R.id.fab);
+        fab = contactsView.findViewById(R.id.fab);
         fab.setOnClickListener(view -> ((PermissionsRequestingActivity) getContext()).checkPermissions(new String[]{Manifest.permission.READ_CONTACTS}, new PermissionsListener() {
             @Override
             public void permissionsGranted() {
@@ -126,9 +129,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
             }
         }));
 
-        tvSwipeToDeleteContact = emergencyContactsFragmentView.findViewById(R.id.tvSwipeToDeleteContact);
-
-        contactsList = emergencyContactsFragmentView.findViewById(R.id.emergency_contacts_recyclerview);
+        contactsList = contactsView.findViewById(R.id.emergency_contacts_recyclerview);
         contactsList.setLayoutManager(new LinearLayoutManager(getContext()));
 
         ((PermissionsRequestingActivity) getContext()).checkPermissions(new String[]{Manifest.permission.READ_CONTACTS}, new PermissionsListener() {
@@ -151,7 +152,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
             }
         });
 
-        setupNext = emergencyContactsFragmentView.findViewById(R.id.btnSetupNext);
+        setupNext = contactsView.findViewById(R.id.btnSetupNext);
         setupNext.setVisibility(getActivity().getLocalClassName().contains("SetupContactsActivity") ? View.VISIBLE : View.GONE);
         setupNext.setEnabled(false);
         setupNext.setOnClickListener(v -> {
@@ -161,18 +162,16 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
                     .putExtra("returnToMain", false));
             getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
         });
-        return emergencyContactsFragmentView;
+
+        return contactsView;
     }
 
     public void setupAdapter() {
         onContactListSizeChange(contacts.size());
-        contactsRecyclerAdapter = new ContactsRecyclerAdapter(getContext(), contacts, this);
+        contactsRecyclerAdapter = new ContactsRecyclerAdapter((AppCompatActivity) getActivity(), contacts, this);
         contactsList.setAdapter(contactsRecyclerAdapter);
-        if(!db.settings.monitoringOn || getActivity().getLocalClassName().equalsIgnoreCase("SetupContactsActivity")) {
-            ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new SwipeToDeleteCallback(contactsRecyclerAdapter));
-            itemTouchHelper.attachToRecyclerView(contactsList);
-            tvSwipeToDeleteContact.setVisibility(View.VISIBLE);
-        }
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new SwipeCallback(contactsRecyclerAdapter, SwipeCallback.Action.SMS, SwipeCallback.Action.CALL));
+        itemTouchHelper.attachToRecyclerView(contactsList);
     }
 
     public void loadContacts() {

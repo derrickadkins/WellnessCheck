@@ -10,7 +10,7 @@
         android:id="@+id/resource_description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Contact Name"
+        android:text="Resource Description"
         android:textSize="20dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -23,4 +23,12 @@
         android:layout_marginStart="20dp"
         app:layout_constraintTop_toBottomOf="@id/resource_description"
         app:layout_constraintStart_toStartOf="parent"/>
+
+    <TextView
+        android:id="@+id/resource_action"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Swipe to call"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/resource_description" />
 </androidx.constraintlayout.widget.ConstraintLayout>

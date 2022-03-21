@@ -1,12 +1,16 @@
 package com.derrick.wellnesscheck.view.activities;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
+import android.util.AttributeSet;
 import android.view.MenuItem;
+import android.view.View;
 
 import com.derrick.wellnesscheck.WellnessCheck;
 import com.derrick.wellnesscheck.model.DB;
@@ -34,12 +38,15 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        bottomNavigationView = findViewById(R.id.nav);
+        bottomNavigationView.setOnItemSelectedListener(this);
         DB.InitDB(this);
+        setSupportActionBar(findViewById(R.id.main_activity_toolbar));
     }
 
     @Override
     public void onDbReady(DB db) {
-        setContentView(R.layout.activity_main);
         Settings settings = db.settings;
         Log.d(TAG, "settings:" + settings.toString());
         WellnessCheck.applySettings(this, settings);
@@ -48,8 +55,6 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         fragments.add(contactsFragment);
         fragments.add(resourcesFragment);
 
-        bottomNavigationView = findViewById(R.id.nav);
-        bottomNavigationView.setOnItemSelectedListener(this);
         bottomNavigationView.setSelectedItemId(R.id.action_home);
     }
 

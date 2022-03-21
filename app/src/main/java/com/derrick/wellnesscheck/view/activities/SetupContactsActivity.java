@@ -26,7 +26,7 @@ public class SetupContactsActivity extends PermissionsRequestingActivity {
         setSupportActionBar(findViewById(R.id.contacts_toolbar));
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-        getSupportFragmentManager().beginTransaction().replace(R.id.activity_setup_layout, contactsFragment).commit();
+        getSupportFragmentManager().beginTransaction().replace(R.id.contacts_fragment, contactsFragment).commit();
     }
 
     @Override

@@ -21,7 +21,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NavUtils;
-import androidx.core.app.TaskStackBuilder;
 
 import com.derrick.wellnesscheck.FallDetectionService;
 import com.derrick.wellnesscheck.MonitorReceiver;
@@ -54,7 +53,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.settings_activity);
+        setContentView(R.layout.activity_settings);
 
         setSupportActionBar(findViewById(R.id.settings_toolbar));
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);

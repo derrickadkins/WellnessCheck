@@ -23,6 +23,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.derrick.wellnesscheck.FallDetectionService;
@@ -77,6 +78,8 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View homeFragmentView = inflater.inflate(R.layout.home, container, false);
 
+        ((AppCompatActivity) getActivity()).getSupportActionBar().hide();
+
         imgSettingsIcon = homeFragmentView.findViewById(R.id.imgSettingsIcon);
         imgSettingsIcon.setOnClickListener(v -> startActivity(new Intent(getActivity(), SetupSettingsActivity.class)
                 .putExtra("enable", !settings.monitoringOn)
@@ -87,17 +90,11 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         ((PermissionsRequestingActivity) getActivity()).checkPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, new PermissionsListener() {
             @Override
             public void permissionsGranted() {
-                String[] eNums = Utils.getEmergencyNumbers();
-                if(eNums.length == 0) {
-                    callEmergencyNumber.setVisibility(View.GONE);
-                    return;
-                }
-                callEmergencyNumber.setText(getString(R.string.call) + eNums[0] + getString(R.string.now));
                 callEmergencyNumber.setOnClickListener(v -> {
                     ((MainActivity)getActivity()).checkPermissions(new String[]{Manifest.permission.CALL_PHONE}, new PermissionsListener() {
                         @Override
                         public void permissionsGranted() {
-                            startActivity(new Intent(Intent.ACTION_CALL).setData(Uri.parse("tel:"+eNums[0])));
+                            startActivity(new Intent(Intent.ACTION_CALL).setData(Uri.parse("tel:911")));
                         }
 
                         @Override
