@@ -11,6 +11,8 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.derrick.wellnesscheck.R;
+
 public class SwipeToContactCallback extends ItemTouchHelper.SimpleCallback{
     private final ResourcesRecyclerAdapter adapter;
     private final Drawable[] icons;
@@ -24,7 +26,7 @@ public class SwipeToContactCallback extends ItemTouchHelper.SimpleCallback{
         this.adapter = adapter;
         icons =  new Drawable[]{
                 ContextCompat.getDrawable(adapter.getContext(), android.R.drawable.ic_menu_call),
-                ContextCompat.getDrawable(adapter.getContext(), android.R.drawable.ic_menu_send)
+                ContextCompat.getDrawable(adapter.getContext(), R.drawable.ic_sms)
         };
     }
 

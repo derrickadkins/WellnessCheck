@@ -16,19 +16,30 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
+        android:id="@+id/resource_description_alt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Text HOME to 741741 to reach a volunteer Crisis Counselor"
+        android:textSize="13dp"
+        android:textStyle="italic"
+        app:layout_constraintTop_toBottomOf="@id/resource_description"
+        app:layout_constraintStart_toStartOf="@id/resource_description" />
+
+    <TextView
         android:id="@+id/resource_number"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="(999) 999 - 9999"
         android:layout_marginStart="20dp"
-        app:layout_constraintTop_toBottomOf="@id/resource_description"
+        app:layout_constraintTop_toBottomOf="@id/resource_description_alt"
         app:layout_constraintStart_toStartOf="parent"/>
 
     <TextView
         android:id="@+id/resource_action"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textStyle="italic"
         android:text="Swipe to call"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/resource_description" />
+        app:layout_constraintTop_toBottomOf="@+id/resource_description_alt" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -41,6 +41,8 @@ public class ResourcesRecyclerAdapter extends RecyclerView.Adapter<ResourcesRecy
         holder.action.setText(resources[position].isSMS ? "Swipe to SMS" : "Swipe to call");
         holder.number.setText(resources[position].number);
         holder.description.setText(resources[position].description);
+        if(TextUtils.isEmpty(resources[position].descriptionAlt)) holder.descriptionAlt.setVisibility(View.GONE);
+        else holder.descriptionAlt.setText(resources[position].descriptionAlt);
         holder.sms = resources[position].isSMS;
     }
 
@@ -79,11 +81,12 @@ public class ResourcesRecyclerAdapter extends RecyclerView.Adapter<ResourcesRecy
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        TextView action, number, description;
+        TextView action, number, description, descriptionAlt;
         boolean sms = false;
         ViewHolder(View itemView){
             super(itemView);
             description = itemView.findViewById(R.id.resource_description);
+            descriptionAlt = itemView.findViewById(R.id.resource_description_alt);
             number = itemView.findViewById(R.id.resource_number);
             action = itemView.findViewById(R.id.resource_action);
         }
