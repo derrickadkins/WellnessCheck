@@ -35,14 +35,14 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
     private int mRecentlyDeletedItemPosition;
     private AppCompatActivity activity;
     private ActionMode actionMode;
-    private OnContactDeleteListener contactDeleteListener;
+    private OnContactActionListener contactActionListener;
     private int selectedPos=-1;
 
-    public ContactsRecyclerAdapter(AppCompatActivity activity, Contacts dataSet, OnContactDeleteListener contactDeleteListener){
+    public ContactsRecyclerAdapter(AppCompatActivity activity, Contacts dataSet, OnContactActionListener contactActionListener){
         this.activity = activity;
         mInflater = LayoutInflater.from(activity);
         mData = new ArrayList<>(dataSet.values());
-        this.contactDeleteListener = contactDeleteListener;
+        this.contactActionListener = contactActionListener;
     }
 
     @NonNull
@@ -92,7 +92,7 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
         mRecentlyDeletedItemPosition = pos;
         mData.remove(pos);
         notifyItemRemoved(pos);
-        contactDeleteListener.onDeleteContact(mRecentlyDeletedItem);
+        contactActionListener.onDeleteContact(mRecentlyDeletedItem);
         showUndoSnackbar();
     }
 
@@ -106,7 +106,7 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
 
     private void undoDelete() {
         mData.add(mRecentlyDeletedItemPosition, mRecentlyDeletedItem);
-        contactDeleteListener.onUndoDeleteContact(mRecentlyDeletedItem);
+        contactActionListener.onUndoDeleteContact(mRecentlyDeletedItem);
         notifyItemInserted(mRecentlyDeletedItemPosition);
     }
 
@@ -147,9 +147,10 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
         }
     }
 
-    public interface OnContactDeleteListener {
+    public interface OnContactActionListener {
         void onDeleteContact(Contact contact);
         void onUndoDeleteContact(Contact contact);
+        void onActionModeStateChanged(boolean enabled);
     }
 
     private ActionMode.Callback actionModeCallback = new ActionMode.Callback() {
@@ -161,6 +162,7 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
             MenuInflater inflater = mode.getMenuInflater();
             inflater.inflate(R.menu.menu_context_contacts, menu);
             mode.setTitle("Delete Contact");
+            contactActionListener.onActionModeStateChanged(true);
             return true;
         }
 
@@ -190,6 +192,7 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
             actionMode = null;
             selectedPos = -1;
             notifyDataSetChanged();
+            contactActionListener.onActionModeStateChanged(false);
         }
     };
 }

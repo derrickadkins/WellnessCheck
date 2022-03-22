@@ -22,6 +22,7 @@ public class SwipeCallback extends ItemTouchHelper.SimpleCallback {
             new ColorDrawable(Color.GREEN),
             new ColorDrawable(Color.BLUE)
     };
+    private final int transparent, white;
     public enum Action{
         DELETE, CALL, SMS
     }
@@ -36,6 +37,8 @@ public class SwipeCallback extends ItemTouchHelper.SimpleCallback {
                 ContextCompat.getDrawable(adapter.getContext(), android.R.drawable.ic_menu_call),
                 ContextCompat.getDrawable(adapter.getContext(), R.drawable.ic_sms)
         };
+        transparent = adapter.getContext().getColor(android.R.color.transparent);
+        white = adapter.getContext().getColor(android.R.color.white);
         this.leftAction = leftAction;
         this.rightAction = rightAction;
     }
@@ -66,6 +69,8 @@ public class SwipeCallback extends ItemTouchHelper.SimpleCallback {
         else if (dX < 0) i = leftAction.ordinal();
         else if (prevDX > 0) i = rightAction.ordinal();
         else if (prevDX < 0) i = leftAction.ordinal();
+
+        viewHolder.itemView.setBackgroundColor(dX == 0 ? transparent : white);
 
         int iconMargin = (itemView.getHeight() - icons[i].getIntrinsicHeight()) / 2;
         int iconTop = itemView.getTop() + (itemView.getHeight() - icons[i].getIntrinsicHeight()) / 2;

@@ -13,7 +13,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContract;
@@ -48,13 +47,14 @@ import static android.app.Activity.RESULT_OK;
 import static com.derrick.wellnesscheck.WellnessCheck.db;
 import static com.derrick.wellnesscheck.utils.Utils.sameNumbers;
 
-public class ContactsFragment extends Fragment implements ContactsRecyclerAdapter.OnContactDeleteListener {
+public class ContactsFragment extends Fragment implements ContactsRecyclerAdapter.OnContactActionListener {
     static final String TAG = "EmergencyContactsFragment";
     FloatingActionButton fab;
     ContactsRecyclerAdapter contactsRecyclerAdapter;
     RecyclerView contactsList;
     Button setupNext;
     Contacts contacts;
+    ItemTouchHelper itemTouchHelper;
 
     ActivityResultLauncher<Object> contactChooserResult = registerForActivityResult(new ActivityResultContract<Object, Object>() {
         @NonNull
@@ -170,7 +170,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         onContactListSizeChange(contacts.size());
         contactsRecyclerAdapter = new ContactsRecyclerAdapter((AppCompatActivity) getActivity(), contacts, this);
         contactsList.setAdapter(contactsRecyclerAdapter);
-        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new SwipeCallback(contactsRecyclerAdapter, SwipeCallback.Action.SMS, SwipeCallback.Action.CALL));
+        itemTouchHelper = new ItemTouchHelper(new SwipeCallback(contactsRecyclerAdapter, SwipeCallback.Action.SMS, SwipeCallback.Action.CALL));
         itemTouchHelper.attachToRecyclerView(contactsList);
     }
 
@@ -228,6 +228,11 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
     public void onUndoDeleteContact(Contact mContact) {
         contacts.add(mContact);
         onContactListSizeChange(contactsRecyclerAdapter.getItemCount());
+    }
+
+    @Override
+    public void onActionModeStateChanged(boolean enabled) {
+        itemTouchHelper.attachToRecyclerView(!enabled ? contactsList : null);
     }
 
     public void onContactListSizeChange(int size) {

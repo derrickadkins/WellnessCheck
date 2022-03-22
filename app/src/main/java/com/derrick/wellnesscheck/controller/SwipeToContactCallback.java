@@ -20,6 +20,7 @@ public class SwipeToContactCallback extends ItemTouchHelper.SimpleCallback{
             new ColorDrawable(Color.GREEN),
             new ColorDrawable(Color.BLUE)
     };
+    private final int transparent, white;
 
     public SwipeToContactCallback(ResourcesRecyclerAdapter adapter){
         super(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT);
@@ -28,6 +29,8 @@ public class SwipeToContactCallback extends ItemTouchHelper.SimpleCallback{
                 ContextCompat.getDrawable(adapter.getContext(), android.R.drawable.ic_menu_call),
                 ContextCompat.getDrawable(adapter.getContext(), R.drawable.ic_sms)
         };
+        transparent = adapter.getContext().getColor(android.R.color.transparent);
+        white = adapter.getContext().getColor(android.R.color.white);
     }
 
     @Override
@@ -50,6 +53,8 @@ public class SwipeToContactCallback extends ItemTouchHelper.SimpleCallback{
         int iconMargin = (itemView.getHeight() - icons[i].getIntrinsicHeight()) / 2;
         int iconTop = itemView.getTop() + (itemView.getHeight() - icons[i].getIntrinsicHeight()) / 2;
         int iconBottom = iconTop + icons[i].getIntrinsicHeight();
+
+        viewHolder.itemView.setBackgroundColor(dX == 0 ? transparent : white);
 
         if (dX > 0) { // Swiping to the right
             int iconRight = itemView.getLeft() + iconMargin + icons[i].getIntrinsicWidth();
