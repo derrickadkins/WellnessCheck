@@ -2,6 +2,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/settings_layout"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -29,7 +30,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     android:id="@+id/settings_fragment"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:paddingTop="12dp"
     android:paddingBottom="36dp"
     android:layout_marginStart="8dp"
@@ -40,10 +41,22 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/how_often"
-        android:textSize="18dp"
+        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
+
+    <ImageView
+        android:id="@+id/info_how_often"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_info"
+        app:layout_constraintBottom_toBottomOf="@+id/tvHowOften"
+        app:layout_constraintStart_toEndOf="@id/tvHowOften"
+        app:layout_constraintTop_toTopOf="@id/tvHowOften"
+        app:srcCompat="@drawable/ic_info"
+        tools:srcCompat="@drawable/ic_info"
+        android:contentDescription="Information for how often to check in" />
 
     <NumberPicker
         android:id="@+id/numberPickerHours"
@@ -61,8 +74,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/every"
-        android:textSize="18dp"
-        android:layout_marginRight="8dp"
+        android:textSize="18sp"
+        android:layout_marginEnd="8dp"
         app:layout_constraintRight_toLeftOf="@id/numberPickerHours"
         app:layout_constraintBottom_toBottomOf="@id/numberPickerHours"
         app:layout_constraintTop_toTopOf="@id/numberPickerHours" />
@@ -73,7 +86,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:text="@string/hour_s"
-        android:textSize="18dp"
+        android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="@id/numberPickerHours"
         app:layout_constraintStart_toEndOf="@id/numberPickerHours"
         app:layout_constraintTop_toTopOf="@id/numberPickerHours" />
@@ -84,14 +97,16 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:text="@string/fall_detection"
-        android:textSize="18dp"
+        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/numberPickerMinutes" />
 
-    <Switch
+    <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switchFallDetection"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
         app:layout_constraintBottom_toBottomOf="@+id/tvFallDetection"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/tvFallDetection" />
@@ -101,7 +116,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="First wellness check will be at 14:00"
-        android:textSize="18dp"
+        android:textSize="18sp"
         android:layout_marginTop="12dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -113,10 +128,22 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:text="@string/how_much_time_do_you_need"
-        android:textSize="18dp"
+        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvFirstCheck" />
+
+    <ImageView
+        android:id="@+id/info_response"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_info"
+        app:layout_constraintBottom_toBottomOf="@+id/tvRespond"
+        app:layout_constraintStart_toEndOf="@id/tvRespond"
+        app:layout_constraintTop_toTopOf="@id/tvRespond"
+        app:srcCompat="@drawable/ic_info"
+        tools:srcCompat="@drawable/ic_info"
+        android:contentDescription="Response time information" />
 
     <NumberPicker
         android:id="@+id/numberPickerMinutes"
@@ -135,7 +162,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:text="@string/minute_s"
-        android:textSize="18dp"
+        android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="@id/numberPickerMinutes"
         app:layout_constraintStart_toEndOf="@id/numberPickerMinutes"
         app:layout_constraintTop_toTopOf="@id/numberPickerMinutes" />
@@ -147,7 +174,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:text="@string/from"
-        android:textSize="18dp"
+        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvAllDay" />
 
@@ -157,7 +184,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:text="@string/to"
-        android:textSize="18dp"
+        android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="@id/tvFromTime"
         app:layout_constraintStart_toEndOf="@+id/tvFromTime"
         app:layout_constraintTop_toTopOf="@id/tvFromTime" />
@@ -168,7 +195,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:text="12:00 AM"
-        android:textSize="24dp"
+        android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="@id/tvFrom"
         app:layout_constraintStart_toEndOf="@+id/tvFrom"
         app:layout_constraintTop_toTopOf="@id/tvFrom" />
@@ -179,16 +206,18 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:text="12:00 PM"
-        android:textSize="24dp"
+        android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="@id/tvTo"
         app:layout_constraintStart_toEndOf="@+id/tvTo"
         app:layout_constraintTop_toTopOf="@id/tvTo" />
 
-    <Switch
+    <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switchAllDay"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="18dp"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="@+id/tvAllDay"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/tvAllDay" />
@@ -199,9 +228,21 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:text="@string/all_day"
-        android:textSize="18dp"
+        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/numberPickerHours" />
+
+    <ImageView
+        android:id="@+id/info_all_day"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_info"
+        app:layout_constraintBottom_toBottomOf="@+id/tvAllDay"
+        app:layout_constraintStart_toEndOf="@id/tvAllDay"
+        app:layout_constraintTop_toTopOf="@id/tvAllDay"
+        app:srcCompat="@drawable/ic_info"
+        tools:srcCompat="@drawable/ic_info"
+        android:contentDescription="All day information" />
 
     <TextView
         android:id="@+id/tvBeta"
@@ -241,14 +282,28 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:text="@string/report_location"
-        android:textSize="18dp"
+        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvSensitivity" />
 
-    <Switch
+    <ImageView
+        android:id="@+id/info_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_info"
+        app:layout_constraintBottom_toBottomOf="@+id/tvReportLocation"
+        app:layout_constraintStart_toEndOf="@id/tvReportLocation"
+        app:layout_constraintTop_toTopOf="@id/tvReportLocation"
+        app:srcCompat="@drawable/ic_info"
+        tools:srcCompat="@drawable/ic_info"
+        android:contentDescription="Report Location Information" />
+
+    <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switchReportLocation"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
         app:layout_constraintBottom_toBottomOf="@+id/tvReportLocation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/tvReportLocation" />
