@@ -39,8 +39,16 @@ public class ResourcesFragment extends Fragment {
             public void permissionsGranted() {
                 Resource[] resources = new Resource[]{
                         new Resource("Police/Fire/Ambulance", "911", false),
-                        new Resource("National Suicide Prevention Lifeline", "800-273-8255", false),
-                        new Resource("Crisis Text Line", "741741", true).setMessage("HOME").setDescriptionAlt("Text HOME to 741741 to reach a volunteer Crisis Counselor")
+                        new Resource("National Suicide Prevention Lifeline", "(800) 273-8255", false),
+                        new Resource("Crisis Text Line", "741741", true).setMessage("HOME").setDescriptionAlt("Text HOME to 741741 to reach a volunteer Crisis Counselor"),
+                        new Resource("National Domestic Violence Hotline", "(800) 799-7233", false),
+                        new Resource("National Sexual Assault Hotline", "(800) 656-4673", false),
+                        new Resource("Poison Control", "(800) 222-1222", false),
+                        new Resource("Veterans Crisis Line", "(800) 273-8255;1", false),
+                        new Resource("Veterans Crisis Line", "838255", true),
+                        new Resource("Childhelp National Child Abuse Hotline", "(800) 422-4453", false),
+                        new Resource("Childhelp National Child Abuse Hotline", "(800) 422-4453", true),
+                        new Resource("Substance Abuse and Mental Health Services Administration National Helpline", "(800) 662-4357", false)
                 };
                 RecyclerView recyclerView = v.findViewById(R.id.resources_recycler_view);
                 recyclerView.setVisibility(View.VISIBLE);

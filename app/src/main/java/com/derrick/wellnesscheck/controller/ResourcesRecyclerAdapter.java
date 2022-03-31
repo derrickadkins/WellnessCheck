@@ -38,7 +38,10 @@ public class ResourcesRecyclerAdapter extends RecyclerView.Adapter<ResourcesRecy
 
     @Override
     public void onBindViewHolder(@NonNull ResourcesRecyclerAdapter.ViewHolder holder, int position) {
-        holder.action.setText(resources[position].isSMS ? "Swipe to SMS" : "Swipe to call");
+        String action = "Swipe to call";
+        if(resources[position].number.equals("911")) action = "Swipe to dial";
+        else if (resources[position].isSMS) action = "Swipe to SMS";
+        holder.action.setText(action);
         holder.number.setText(resources[position].number);
         holder.description.setText(resources[position].description);
         if(TextUtils.isEmpty(resources[position].descriptionAlt)) holder.descriptionAlt.setVisibility(View.GONE);

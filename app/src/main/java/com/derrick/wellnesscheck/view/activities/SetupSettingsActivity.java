@@ -6,6 +6,7 @@ import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
 import static com.derrick.wellnesscheck.utils.Utils.getTime;
 
 import android.Manifest;
+import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -20,7 +21,11 @@ import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.AppCompatImageView;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.NavUtils;
+import androidx.core.widget.ImageViewCompat;
 
 import com.derrick.wellnesscheck.FallDetectionService;
 import com.derrick.wellnesscheck.MonitorReceiver;
@@ -42,9 +47,10 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     static final String TAG = "SetupSettingsActivity";
     boolean returnToMain;
     NumberPicker checkInHours, respondMinutes;
-    TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck, tvSensitivity;
-    SeekBar sbSensitivity;
-    Switch allDay, fallDetection, reportLocation;
+    TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck/*, tvSensitivity*/;
+    AppCompatImageView infoHowOften, infoAllDay, infoResponse, infoLocation;
+    //SeekBar sbSensitivity;
+    SwitchCompat allDay, reportLocation/*, fallDetection*/;
     Button btnStart;
     Timer timer = new Timer();
     Settings settings;
@@ -71,7 +77,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
             ArrayList permissions = new ArrayList();
             permissions.add(Manifest.permission.SCHEDULE_EXACT_ALARM);
             permissions.add(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-            if(settings.fallDetection) permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+            //if(settings.fallDetection) permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
             checkPermissions((String[])permissions.toArray(new String[permissions.size()]), new PermissionsListener() {
                 @Override
                 public void permissionsGranted() {
@@ -161,11 +167,11 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                                     public void showRationale(String[] permissions) { }
                                 });
                     break;
-                case R.id.switchFallDetection:
+                /*case R.id.switchFallDetection:
                     settings.fallDetection = isChecked;
                     tvSensitivity.setVisibility(isChecked?View.VISIBLE:View.GONE);
                     sbSensitivity.setVisibility(isChecked?View.VISIBLE:View.GONE);
-                    break;
+                    break;*/
                 case R.id.switchAllDay:
                     settings.allDay = isChecked;
                     int visibility = View.VISIBLE;
@@ -212,7 +218,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         tvFirstCheck = findViewById(R.id.tvFirstCheck);
         setFirstCheckText();
 
-        fallDetection = findViewById(R.id.switchFallDetection);
+        /*fallDetection = findViewById(R.id.switchFallDetection);
         fallDetection.setEnabled(enable);
         fallDetection.setChecked(settings.fallDetection);
         fallDetection.setOnCheckedChangeListener(checkedChangeListener);
@@ -240,12 +246,35 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
             }
         });
         tvSensitivity.setVisibility(settings.fallDetection?View.VISIBLE:View.GONE);
-        sbSensitivity.setVisibility(settings.fallDetection?View.VISIBLE:View.GONE);
+        sbSensitivity.setVisibility(settings.fallDetection?View.VISIBLE:View.GONE);*/
 
         reportLocation = findViewById(R.id.switchReportLocation);
         reportLocation.setEnabled(!settings.monitoringOn);
         reportLocation.setChecked(settings.reportLocation);
         reportLocation.setOnCheckedChangeListener(checkedChangeListener);
+
+        infoHowOften = findViewById(R.id.info_how_often);
+        infoAllDay = findViewById(R.id.info_all_day);
+        infoResponse = findViewById(R.id.info_response);
+        infoLocation = findViewById(R.id.info_location);
+
+        infoHowOften.setOnClickListener(v -> new AlertDialog.Builder(SetupSettingsActivity.this, android.R.style.Theme_DeviceDefault_Dialog)
+                .setTitle("Check-In Frequency")
+                .setMessage("Check-in frequency determines the rate at which you receive wellness check notifications. " +
+                        "If a check-in is not completed within the response time, your emergency contacts will be notified via SMS.")
+                .show());
+        infoAllDay.setOnClickListener(v -> new AlertDialog.Builder(SetupSettingsActivity.this, android.R.style.Theme_DeviceDefault_Dialog)
+                .setTitle("All-Day")
+                .setMessage("Turning this off will allow you to exclude a period of time each day to limit when you receive wellness check notifications.")
+                .show());
+        infoResponse.setOnClickListener(v -> new AlertDialog.Builder(SetupSettingsActivity.this, android.R.style.Theme_DeviceDefault_Dialog)
+                .setTitle("Response Time")
+                .setMessage("Response time determines how much time you have to respond to a wellness check notification before your emergency contacts are alerted via SMS.")
+                .show());
+        infoLocation.setOnClickListener(v -> new AlertDialog.Builder(SetupSettingsActivity.this, android.R.style.Theme_DeviceDefault_Dialog)
+                .setTitle("Report Location")
+                .setMessage("Turn this on to include a link to your location in the SMS sent to your emergency contacts when a wellness check is not completed within the response time.")
+                .show());
     }
 
     @Override
@@ -333,7 +362,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
         WellnessCheck.setAlarm(this, settings.nextCheckIn, MonitorReceiver.ACTION_ALARM, settings.toBundle());
 
-        if(settings.fallDetection) startService(new Intent(this, FallDetectionService.class));
+        //if(settings.fallDetection) startService(new Intent(this, FallDetectionService.class));
 
         startActivity(new Intent(SetupSettingsActivity.this, MainActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK));

@@ -40,7 +40,7 @@ public class WellnessCheck extends Application {
             if(!settings.checkedIn && settings.prevCheckIn + responseInterval > now)
                 time = settings.prevCheckIn + responseInterval - now;
 
-            if(settings.fallDetection) context.startService(new Intent(context, FallDetectionService.class));
+            //if(settings.fallDetection) context.startService(new Intent(context, FallDetectionService.class));
             WellnessCheck.setAlarm(context, time, MonitorReceiver.ACTION_ALARM, settings.toBundle());
             return true;
         }

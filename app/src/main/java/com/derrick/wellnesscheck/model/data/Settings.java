@@ -22,9 +22,9 @@ public class Settings {
     @NonNull
     @PrimaryKey
     public int id = 1;
-    public int checkInHours, respondMinutes, fromHour, fromMinute, toHour, toMinute, fallSensitivity;
+    public int checkInHours, respondMinutes, fromHour, fromMinute, toHour, toMinute/*, fallSensitivity*/;
     public long nextCheckIn, prevCheckIn;
-    public boolean fallDetection, allDay, monitoringOn, checkedIn, reportLocation;
+    public boolean allDay, monitoringOn, checkedIn, reportLocation/*, fallDetection*/;
 
     public Settings(){
         checkInHours = 1;
@@ -35,11 +35,11 @@ public class Settings {
         toMinute = 0;
         prevCheckIn = 0;
         nextCheckIn = 0;
-        fallSensitivity = 45;
+        //fallSensitivity = 45;
         allDay = false;
         monitoringOn = false;
         checkedIn = false;
-        fallDetection = false;
+        //fallDetection = false;
         reportLocation = false;
     }
 
