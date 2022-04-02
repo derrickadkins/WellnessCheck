@@ -13,6 +13,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -55,6 +56,7 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Contact contact = mData.get(position);
+        contact.applyPhoto(activity.getApplicationContext(), holder.contactImage);
         holder.name.setText(contact.name);
         holder.number.setText(contact.number);
         holder.itemView.setBackgroundColor(activity.getColor(position == selectedPos ? android.R.color.darker_gray : android.R.color.transparent));
@@ -139,11 +141,13 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         TextView name, number;
+        ImageView contactImage;
 
         ViewHolder(View itemView) {
             super(itemView);
             name = itemView.findViewById(R.id.resource_description);
             number = itemView.findViewById(R.id.resource_number);
+            contactImage = itemView.findViewById(R.id.contact_image);
         }
     }
 

@@ -6,13 +6,23 @@
     android:id="@+id/contact_fragment"
     android:padding="10dp">
 
+    <ImageView
+        android:id="@+id/contact_image"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@drawable/ic_contact_default"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
     <TextView
         android:id="@+id/resource_description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Contact Name"
         android:textSize="20dp"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="18dp"
+        app:layout_constraintStart_toEndOf="@id/contact_image"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -22,5 +32,5 @@
         android:text="(999) 999 - 9999"
         android:layout_marginStart="20dp"
         app:layout_constraintTop_toBottomOf="@id/resource_description"
-        app:layout_constraintStart_toStartOf="parent"/>
+        app:layout_constraintStart_toEndOf="@id/contact_image"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
