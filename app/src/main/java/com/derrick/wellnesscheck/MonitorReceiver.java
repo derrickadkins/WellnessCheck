@@ -11,6 +11,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 
@@ -28,6 +29,7 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
 
     final String TAG = "MonitorReceiver";
 
+    //todo: make enum?
     public static final String ACTION_ALARM = "com.derrick.wellnesscheck.ALARM_TRIGGERED";
     public static final String ACTION_RESPONSE = "com.derrick.wellnesscheck.CANCEL_TIMER";
     public static final String ACTION_SMS = "com.derrick.wellnesscheck.SEND_SMS";
@@ -67,7 +69,8 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
         notificationManagerCompat = NotificationManagerCompat.from(context);
 
         builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.alert_light_frame)
+                .setSmallIcon(R.drawable.wellness_check_icon_64_transparent_background)
+                .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.wellness_check_icon_64_transparent_background))
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setAutoCancel(true);
 

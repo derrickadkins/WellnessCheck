@@ -68,6 +68,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         settings = db.settings;
         contacts = db.contacts;
 
+        //todo: activity is reset and db is null when returning from turning off a permission
         responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
 
         bundle = settings.toBundle();
@@ -142,6 +143,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         tvProgressBar = homeFragmentView.findViewById(R.id.progressBarText);
 
         progressBar = homeFragmentView.findViewById(R.id.progressBar);
+        //progressBar.setIndicatorColor(getContext().getColor(R.color.colorPrimaryDark),getContext().getColor(R.color.colorAccent));
         progressBar.setOnClickListener(v -> {
             if (settings.monitoringOn) {
                 if (inResponseTimer)
@@ -170,6 +172,15 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
             startTimer(millis);
         }
+
+        View.OnClickListener onDonateClicked = v -> {
+            //https://www.paypal.com/pools/c/8IK7AMc2BZ
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.paypal.com/pools/c/8IK7AMc2BZ"));
+            startActivity(browserIntent);
+        };
+
+        homeFragmentView.findViewById(R.id.donate_image_view).setOnClickListener(onDonateClicked);
+        homeFragmentView.findViewById(R.id.donate_text_view).setOnClickListener(onDonateClicked);
 
         return homeFragmentView;
     }

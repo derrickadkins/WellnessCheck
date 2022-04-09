@@ -4,21 +4,43 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/donate_image_view"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_margin="16dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_donate"/>
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/donate_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/donate_image_view"
+        app:layout_constraintStart_toStartOf="@id/donate_image_view"
+        app:layout_constraintEnd_toEndOf="@id/donate_image_view"
+        android:text="Donate"/>
+
     <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/progressBar"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
         android:max="10000"
         android:progress="8000"
         app:trackColor="@android:color/darker_gray"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         app:indicatorColor="@android:color/holo_blue_dark"
         app:trackThickness="24dp"
         app:trackCornerRadius="12dp"
         app:indicatorSize="300dp"/>
+        <!--android:progressDrawable="@drawable/circle_indicator_gradient"
+        android:layout_height="400dp"
+        android:layout_width="400dp"/>-->
 
     <TextView
         android:id="@+id/progressBarText"
@@ -71,7 +93,7 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/progressBarText"/>
 
-    <ImageView
+    <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/imgSettingsIcon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

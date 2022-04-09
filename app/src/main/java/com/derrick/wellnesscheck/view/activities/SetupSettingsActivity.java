@@ -6,7 +6,6 @@ import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
 import static com.derrick.wellnesscheck.utils.Utils.getTime;
 
 import android.Manifest;
-import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -16,8 +15,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.NumberPicker;
-import android.widget.SeekBar;
-import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -25,9 +22,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.NavUtils;
-import androidx.core.widget.ImageViewCompat;
-
-import com.derrick.wellnesscheck.FallDetectionService;
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.WellnessCheck;
 import com.derrick.wellnesscheck.model.data.Log;
@@ -258,21 +252,18 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         infoResponse = findViewById(R.id.info_response);
         infoLocation = findViewById(R.id.info_location);
 
-        infoHowOften.setOnClickListener(v -> new AlertDialog.Builder(SetupSettingsActivity.this, android.R.style.Theme_DeviceDefault_Dialog)
-                .setTitle("Check-In Frequency")
+        AlertDialog.Builder builder = new AlertDialog.Builder(SetupSettingsActivity.this, R.style.AppTheme_Dialog_Alert);
+        infoHowOften.setOnClickListener(v -> builder.setTitle("Check-In Frequency")
                 .setMessage("Check-in frequency determines the rate at which you receive wellness check notifications. " +
                         "If a check-in is not completed within the response time, your emergency contacts will be notified via SMS.")
                 .show());
-        infoAllDay.setOnClickListener(v -> new AlertDialog.Builder(SetupSettingsActivity.this, android.R.style.Theme_DeviceDefault_Dialog)
-                .setTitle("All-Day")
+        infoAllDay.setOnClickListener(v -> builder.setTitle("All-Day")
                 .setMessage("Turning this off will allow you to exclude a period of time each day to limit when you receive wellness check notifications.")
                 .show());
-        infoResponse.setOnClickListener(v -> new AlertDialog.Builder(SetupSettingsActivity.this, android.R.style.Theme_DeviceDefault_Dialog)
-                .setTitle("Response Time")
+        infoResponse.setOnClickListener(v -> builder.setTitle("Response Time")
                 .setMessage("Response time determines how much time you have to respond to a wellness check notification before your emergency contacts are alerted via SMS.")
                 .show());
-        infoLocation.setOnClickListener(v -> new AlertDialog.Builder(SetupSettingsActivity.this, android.R.style.Theme_DeviceDefault_Dialog)
-                .setTitle("Report Location")
+        infoLocation.setOnClickListener(v -> builder.setTitle("Report Location")
                 .setMessage("Turn this on to include a link to your location in the SMS sent to your emergency contacts when a wellness check is not completed within the response time.")
                 .show());
     }
@@ -314,6 +305,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     }
 
     void checkInterval(){
+        //todo: is from - to > 1 ?
         //if interval is larger than non-excluded hours, set to 24
         if(!settings.allDay) {
             Calendar calendar = Calendar.getInstance();

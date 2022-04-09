@@ -35,6 +35,7 @@
         app:layout_constraintRight_toRightOf="parent"
         android:background="@android:color/white"
         app:labelVisibilityMode="unlabeled"
+        app:itemIconSize="36dp"
         app:menu="@menu/menu_main" />
 
 

@@ -24,6 +24,8 @@
         android:layout_margin="@dimen/fab_margin"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        android:scaleType="center"
+        app:maxImageSize="36dp"
         app:srcCompat="@drawable/ic_fab_add" />
 
     <Button
