@@ -1,6 +1,7 @@
 package com.derrick.wellnesscheck.controller;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -17,6 +18,7 @@ import com.derrick.wellnesscheck.R;
 import com.derrick.wellnesscheck.model.data.Resource;
 import com.derrick.wellnesscheck.utils.PermissionsListener;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
+import com.google.android.material.snackbar.Snackbar;
 
 public class ResourcesRecyclerAdapter extends RecyclerView.Adapter<ResourcesRecyclerAdapter.ViewHolder> {
     private Resource[] resources;
@@ -68,11 +70,20 @@ public class ResourcesRecyclerAdapter extends RecyclerView.Adapter<ResourcesRecy
                 }
 
                 @Override
-                public void permissionsDenied() {
-                }
+                public void permissionsDenied() { }
 
                 @Override
                 public void showRationale(String[] permissions) {
+                    View view = ((Activity)getContext()).findViewById(R.id.resources_fragment);
+                    Snackbar snackbar = Snackbar.make(view, "Phone permission required",
+                            Snackbar.LENGTH_LONG);
+                    snackbar.setAction("Settings", v -> {
+                        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        Uri uri = Uri.fromParts("package", getContext().getPackageName(), null);
+                        intent.setData(uri);
+                        getContext().startActivity(intent);
+                    });
+                    snackbar.show();
                 }
             });
         }

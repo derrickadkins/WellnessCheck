@@ -10,8 +10,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.telephony.TelephonyCallback;
-import android.telephony.emergency.EmergencyNumber;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,18 +28,20 @@ import com.derrick.wellnesscheck.FallDetectionService;
 import com.derrick.wellnesscheck.R;
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.SmsReceiver;
+import com.derrick.wellnesscheck.WellnessCheck;
+import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
 import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Settings;
 import com.derrick.wellnesscheck.utils.PermissionsListener;
-import com.derrick.wellnesscheck.utils.Utils;
 import com.derrick.wellnesscheck.view.activities.MainActivity;
 import com.derrick.wellnesscheck.view.activities.SetupContactsActivity;
 import com.derrick.wellnesscheck.controller.SmsController;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.derrick.wellnesscheck.view.activities.SetupSettingsActivity;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.Calendar;
 import java.util.Locale;
@@ -49,7 +49,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class HomeFragment extends Fragment implements MonitorReceiver.CheckInListener {
-    CircularProgressIndicator progressBar;
+    //CircularProgressIndicator circularProgressIndicator;
+    ProgressBar progressBar;
     TextView tvProgressBar, tvTimerLabel, tvNextCheckIn;
     Button btnTurnOff, callEmergencyNumber;
     ImageView imgSettingsIcon;
@@ -68,7 +69,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         settings = db.settings;
         contacts = db.contacts;
 
-        //todo: activity is reset and db is null when returning from turning off a permission
         responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
 
         bundle = settings.toBundle();
@@ -79,6 +79,8 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View homeFragmentView = inflater.inflate(R.layout.home, container, false);
 
+        //todo: onboarding
+
         ((AppCompatActivity) getActivity()).getSupportActionBar().hide();
 
         imgSettingsIcon = homeFragmentView.findViewById(R.id.imgSettingsIcon);
@@ -88,30 +90,29 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 .putExtra("returnToMain", true)));
 
         callEmergencyNumber = homeFragmentView.findViewById(R.id.btnCallEmergencyNumber);
-        ((PermissionsRequestingActivity) getActivity()).checkPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, new PermissionsListener() {
-            @Override
-            public void permissionsGranted() {
-                callEmergencyNumber.setOnClickListener(v -> {
-                    ((MainActivity)getActivity()).checkPermissions(new String[]{Manifest.permission.CALL_PHONE}, new PermissionsListener() {
-                        @Override
-                        public void permissionsGranted() {
-                            startActivity(new Intent(Intent.ACTION_CALL).setData(Uri.parse("tel:911")));
-                        }
+        callEmergencyNumber.setOnClickListener(v -> {
+            ((MainActivity) getActivity()).checkPermissions(new String[]{Manifest.permission.CALL_PHONE}, new PermissionsListener() {
+                @Override
+                public void permissionsGranted() {
+                    startActivity(new Intent(Intent.ACTION_CALL).setData(Uri.parse("tel:911")));
+                }
 
-                        @Override
-                        public void permissionsDenied() { }
+                @Override
+                public void permissionsDenied() { }
 
-                        @Override
-                        public void showRationale(String[] permissions) { }
+                @Override
+                public void showRationale(String[] permissions) {
+                    Snackbar snackbar = Snackbar.make(homeFragmentView, "Phone permission required",
+                            Snackbar.LENGTH_LONG);
+                    snackbar.setAction("Settings", v -> {
+                        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        Uri uri = Uri.fromParts("package", HomeFragment.this.getContext().getPackageName(), null);
+                        intent.setData(uri);
+                        startActivity(intent);
                     });
-                });
-            }
-
-            @Override
-            public void permissionsDenied() { callEmergencyNumber.setVisibility(View.GONE); }
-
-            @Override
-            public void showRationale(String[] permissions) { }
+                    snackbar.show();
+                }
+            });
         });
 
 
@@ -143,6 +144,8 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         tvProgressBar = homeFragmentView.findViewById(R.id.progressBarText);
 
         progressBar = homeFragmentView.findViewById(R.id.progressBar);
+
+        //circularProgressIndicator = homeFragmentView.findViewById(R.id.circularProgressIndicator);
         //progressBar.setIndicatorColor(getContext().getColor(R.color.colorPrimaryDark),getContext().getColor(R.color.colorAccent));
         progressBar.setOnClickListener(v -> {
             if (settings.monitoringOn) {
@@ -203,8 +206,10 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         calendar.setTimeInMillis(System.currentTimeMillis() + ms);
         tvNextCheckIn.setText(getString(R.string.at_) + getTime(calendar));
         tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
+        //circularProgressIndicator.setMax(inResponseTimer ? (int) responseInterval : (int) (settings.nextCheckIn - settings.prevCheckIn));
         progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) (settings.nextCheckIn - settings.prevCheckIn));
-        Log.d(TAG, "timer started; responseTimer: "+inResponseTimer+", millis:"+ms+", progressBarMax:"+progressBar.getMax());
+        progressBar.setSecondaryProgress(progressBar.getMax());
+        Log.d(TAG, "timer started; responseTimer: "+inResponseTimer+", millis:"+ms+", progressBarMax:"+ progressBar.getMax());
         timerOn = true;
         timer = new CountDownTimer(ms, 10) {
             @Override
@@ -215,6 +220,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
                 String progressText = hours > 0 ? hours + ":" : "";
                 progressText += String.format("%02d:%02d", minutes, seconds);
                 tvProgressBar.setText(progressText);
+                //circularProgressIndicator.setProgress((int) millisTilDone);
                 progressBar.setProgress((int) millisTilDone);
             }
 
@@ -233,6 +239,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     }
 
     void setTimerVisibility(){
+        Log.d(TAG, settings.toString());
         int visibility = settings.monitoringOn ? View.VISIBLE : View.GONE;
         btnTurnOff.setVisibility(visibility);
         tvTimerLabel.setVisibility(visibility);
@@ -242,6 +249,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             tvProgressBar.setTextSize(64);
         }else{
             tvProgressBar.setText(R.string.tap_to_setup);
+            //circularProgressIndicator.setProgress(circularProgressIndicator.getMax());
             progressBar.setProgress(progressBar.getMax());
             tvProgressBar.setTextSize(32);
         }

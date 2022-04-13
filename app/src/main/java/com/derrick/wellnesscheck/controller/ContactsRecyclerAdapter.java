@@ -128,11 +128,20 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
                 }
 
                 @Override
-                public void permissionsDenied() {
-                }
+                public void permissionsDenied() { }
 
                 @Override
                 public void showRationale(String[] permissions) {
+                    View view = ((Activity)getContext()).findViewById(R.id.emergency_contacts_fragment);
+                    Snackbar snackbar = Snackbar.make(view, "Phone permission required",
+                            Snackbar.LENGTH_LONG);
+                    snackbar.setAction("Settings", v -> {
+                        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        Uri uri = Uri.fromParts("package", getContext().getPackageName(), null);
+                        intent.setData(uri);
+                        getContext().startActivity(intent);
+                    });
+                    snackbar.show();
                 }
             });
         }

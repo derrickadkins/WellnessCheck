@@ -23,6 +23,7 @@ import java.util.List;
 
 @Database(entities = {Contact.class, Settings.class, Entry.class}, version = 1, exportSchema = false)
 public abstract class DB extends RoomDatabase {
+    private final static String TAG = "DB";
     public abstract ContactDao contactDao();
     public abstract SettingsDao settingsDao();
     public abstract LogDao logDao();
@@ -46,9 +47,7 @@ public abstract class DB extends RoomDatabase {
         if(contacts && db.contacts == null) db.contacts = Contacts.Init();
         if(log && db.log == null) db.log = Log.Init();
 
-        if(dbListener != null) {
-            new Handler(Looper.getMainLooper()).post(() -> dbListener.onDbReady(db));
-        }
+        if(dbListener != null) new Handler(Looper.getMainLooper()).post(() -> dbListener.onDbReady(db));
     }
 
     public static void InitDB(Context context){

@@ -24,7 +24,7 @@ public class Settings {
     public int id = 1;
     public int checkInHours, respondMinutes, fromHour, fromMinute, toHour, toMinute/*, fallSensitivity*/;
     public long nextCheckIn, prevCheckIn;
-    public boolean allDay, monitoringOn, checkedIn, reportLocation/*, fallDetection*/;
+    public boolean onboardingComplete, confirmAddContact, allDay, monitoringOn, checkedIn, reportLocation/*, fallDetection*/;
 
     public Settings(){
         checkInHours = 1;
@@ -41,6 +41,8 @@ public class Settings {
         checkedIn = false;
         //fallDetection = false;
         reportLocation = false;
+        onboardingComplete = false;
+        confirmAddContact = true;
     }
 
     public static Settings Init(){

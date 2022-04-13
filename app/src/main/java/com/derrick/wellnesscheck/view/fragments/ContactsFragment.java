@@ -12,7 +12,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContract;
@@ -38,6 +40,7 @@ import com.derrick.wellnesscheck.controller.SmsController;
 import com.derrick.wellnesscheck.controller.SwipeCallback;
 import com.derrick.wellnesscheck.view.activities.SetupSettingsActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.Locale;
 import java.util.Timer;
@@ -88,8 +91,26 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
                         String number = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
                         String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
                         Contact contact = new Contact(id, name, number, 0);
-                        if (!contactsRecyclerAdapter.contains(contact.id))
-                            onTryAddContact(contact);
+                        if (!contactsRecyclerAdapter.contains(contact.id)){
+                            if(db.settings.confirmAddContact) {
+                                View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.add_contact_confirmation_dialog, null);
+                                new AlertDialog.Builder(getContext(), R.style.AppTheme_Dialog_Alert)
+                                        .setView(dialogView)
+                                        .setMessage("Are you sure you want to ask " + contact.name + " to be your emergency contact?")
+                                        .setPositiveButton("Yes", (dialog, which) -> {
+                                            if (((CheckBox) dialogView.findViewById(R.id.never_ask_again)).isChecked()) {
+                                                db.settings.confirmAddContact = false;
+                                                db.settings.update();
+                                            }
+                                            onTryAddContact(contact);
+                                        })
+                                        .setNegativeButton("Cancel", (dialog, which) -> {
+                                            dialog.cancel();
+                                        })
+                                        .setCancelable(false)
+                                        .show();
+                            }else onTryAddContact(contact);
+                        }
                     }
                 }
             }
@@ -106,13 +127,13 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
 
         contacts = db.contacts;
 
-        //contactsView.findViewById(R.id.tvContactsFragmentTitle).setVisibility(getActivity() instanceof MainActivity ? View.VISIBLE : View.INVISIBLE);
         ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
         actionBar.setTitle("Emergency Contacts");
         actionBar.show();
 
         fab = contactsView.findViewById(R.id.fab);
-        fab.setOnClickListener(view -> ((PermissionsRequestingActivity) getContext()).checkPermissions(new String[]{Manifest.permission.READ_CONTACTS}, new PermissionsListener() {
+        fab.setOnClickListener(view -> ((PermissionsRequestingActivity) getContext()).checkPermissions(
+                new String[]{Manifest.permission.READ_CONTACTS, Manifest.permission.SEND_SMS}, new PermissionsListener() {
             @Override
             public void permissionsGranted() {
                 contactChooserResult.launch(null);
@@ -125,9 +146,35 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
 
             @Override
             public void showRationale(String[] permissions) {
+                Snackbar snackbar;
+                if(permissions.length > 1){
+                    snackbar = Snackbar.make(contactsView, "Contact and SMS\npermissions required", Snackbar.LENGTH_LONG);
+                    ((TextView)snackbar.getView().findViewById(com.google.android.material.R.id.snackbar_text)).setMaxLines(2);
+                }else{
+                    String pName = permissions[0] == Manifest.permission.READ_CONTACTS ? "Contact" : "SMS";
+                    snackbar = Snackbar.make(contactsView, pName + " permission required", Snackbar.LENGTH_LONG);
+                }
 
+                snackbar.setAction("Settings", v -> {
+                    Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    Uri uri = Uri.fromParts("package", getContext().getPackageName(), null);
+                    intent.setData(uri);
+                    startActivity(intent);
+                });
+                snackbar.show();
             }
         }));
+
+        setupNext = contactsView.findViewById(R.id.btnSetupNext);
+        setupNext.setVisibility(getActivity().getLocalClassName().contains("SetupContactsActivity") ? View.VISIBLE : View.GONE);
+        setupNext.setEnabled(false);
+        setupNext.setOnClickListener(v -> {
+            startActivity(new Intent(getActivity(), SetupSettingsActivity.class)
+                    .putExtra("enable", true)
+                    .putExtra("showStart", true)
+                    .putExtra("returnToMain", false));
+            getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+        });
 
         contactsList = contactsView.findViewById(R.id.emergency_contacts_recyclerview);
         contactsList.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -142,25 +189,10 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
             }
 
             @Override
-            public void permissionsDenied() {
-
-            }
+            public void permissionsDenied() { setupAdapter(); }
 
             @Override
-            public void showRationale(String[] permissions) {
-
-            }
-        });
-
-        setupNext = contactsView.findViewById(R.id.btnSetupNext);
-        setupNext.setVisibility(getActivity().getLocalClassName().contains("SetupContactsActivity") ? View.VISIBLE : View.GONE);
-        setupNext.setEnabled(false);
-        setupNext.setOnClickListener(v -> {
-            startActivity(new Intent(getActivity(), SetupSettingsActivity.class)
-                    .putExtra("enable", true)
-                    .putExtra("showStart", true)
-                    .putExtra("returnToMain", false));
-            getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+            public void showRationale(String[] permissions) { setupAdapter(); }
         });
 
         return contactsView;
@@ -241,7 +273,6 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
 
     public void onTryAddContact(Contact contact) {
         final SmsReceiver smsReceiver = new SmsReceiver();
-
         AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), R.style.AppTheme_Dialog_Alert)
                 .setMessage(getString(R.string.sending_request))
                 .setView(new ProgressBar(getActivity()))

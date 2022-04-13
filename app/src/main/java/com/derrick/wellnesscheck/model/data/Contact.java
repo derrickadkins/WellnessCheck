@@ -3,9 +3,11 @@ package com.derrick.wellnesscheck.model.data;
 import static com.derrick.wellnesscheck.WellnessCheck.db;
 import static com.derrick.wellnesscheck.utils.Utils.getRoundedCroppedBitmap;
 
+import android.Manifest;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -14,10 +16,12 @@ import android.provider.ContactsContract;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 import com.derrick.wellnesscheck.R;
+import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,7 +50,9 @@ public class Contact {
     public void delete() {new Thread(() -> db.contactDao().delete(this)).start();}
 
     public void applyPhoto(Context context, ImageView contactImage) {
-        Bitmap photo = retrieveContactPhoto(context);
+        Bitmap photo = null;
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
+            photo = retrieveContactPhoto(context);
         if(photo != null) contactImage.setImageBitmap(getRoundedCroppedBitmap(photo));
         else contactImage.setImageDrawable(context.getDrawable(R.drawable.ic_contact_default));
     }

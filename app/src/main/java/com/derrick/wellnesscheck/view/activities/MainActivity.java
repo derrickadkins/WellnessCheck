@@ -37,7 +37,9 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        //todo: find another solution
+        //null prevents crash after return from permission being revoked
+        super.onCreate(null);
         setContentView(R.layout.activity_main);
         bottomNavigationView = findViewById(R.id.nav);
         bottomNavigationView.setOnItemSelectedListener(this);

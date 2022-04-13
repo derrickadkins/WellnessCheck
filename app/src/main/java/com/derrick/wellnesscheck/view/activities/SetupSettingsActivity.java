@@ -1,13 +1,16 @@
 package com.derrick.wellnesscheck.view.activities;
 
 import static android.text.format.DateUtils.HOUR_IN_MILLIS;
+import static com.derrick.wellnesscheck.WellnessCheck.context;
 import static com.derrick.wellnesscheck.WellnessCheck.db;
 import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
 import static com.derrick.wellnesscheck.utils.Utils.getTime;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.format.DateFormat;
 import android.view.MenuItem;
@@ -16,6 +19,7 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.NumberPicker;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -29,6 +33,7 @@ import com.derrick.wellnesscheck.model.data.Settings;
 import com.derrick.wellnesscheck.model.data.Task;
 import com.derrick.wellnesscheck.utils.*;
 import com.derrick.wellnesscheck.R;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -71,6 +76,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
             ArrayList permissions = new ArrayList();
             permissions.add(Manifest.permission.SCHEDULE_EXACT_ALARM);
             permissions.add(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            permissions.add(Manifest.permission.SEND_SMS);
             //if(settings.fallDetection) permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
             checkPermissions((String[])permissions.toArray(new String[permissions.size()]), new PermissionsListener() {
                 @Override
@@ -85,7 +91,18 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
                 @Override
                 public void showRationale(String[] permissions) {
-
+                    for(String permission : permissions)
+                        if(permission == Manifest.permission.SEND_SMS){
+                            Snackbar snackbar = Snackbar.make(findViewById(R.id.settings_fragment), "SMS permission required",
+                                    Snackbar.LENGTH_LONG);
+                            snackbar.setAction("Settings", v -> {
+                                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                Uri uri = Uri.fromParts("package", getPackageName(), null);
+                                intent.setData(uri);
+                                startActivity(intent);
+                            });
+                            snackbar.show();
+                        }
                 }
             });
         });
@@ -148,18 +165,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
             switch (buttonView.getId()) {
                 case R.id.switchReportLocation:
                     settings.reportLocation = isChecked;
-                    if(isChecked)
-                        checkPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET},
-                                new PermissionsListener() {
-                                    @Override
-                                    public void permissionsGranted() { }
-
-                                    @Override
-                                    public void permissionsDenied() { reportLocation.setChecked(false); settings.reportLocation = false; }
-
-                                    @Override
-                                    public void showRationale(String[] permissions) { }
-                                });
+                    if(isChecked) checkLocationPermissions(true);
                     break;
                 /*case R.id.switchFallDetection:
                     settings.fallDetection = isChecked;
@@ -244,7 +250,8 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
         reportLocation = findViewById(R.id.switchReportLocation);
         reportLocation.setEnabled(!settings.monitoringOn);
-        reportLocation.setChecked(settings.reportLocation);
+        //reportLocation.setChecked(settings.reportLocation);
+        checkLocationPermissions(false);
         reportLocation.setOnCheckedChangeListener(checkedChangeListener);
 
         infoHowOften = findViewById(R.id.info_how_often);
@@ -258,7 +265,8 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                         "If a check-in is not completed within the response time, your emergency contacts will be notified via SMS.")
                 .show());
         infoAllDay.setOnClickListener(v -> builder.setTitle("All-Day")
-                .setMessage("Turning this off will allow you to exclude a period of time each day to limit when you receive wellness check notifications.")
+                .setMessage("Turning this off will allow you to exclude a period of time each day to limit when you receive wellness check notifications. " +
+                        "The 'From' time minute value determines the minute during the hour each wellness check will occur.")
                 .show());
         infoResponse.setOnClickListener(v -> builder.setTitle("Response Time")
                 .setMessage("Response time determines how much time you have to respond to a wellness check notification before your emergency contacts are alerted via SMS.")
@@ -368,5 +376,32 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         String time = getTime(calendar);
         if(firstCheckIn > WellnessCheck.getMidnight(calendar)) time += getString(R.string.tomorrow);
         return time;
+    }
+
+    private void checkLocationPermissions(boolean onCheckChanged){
+        checkPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET},
+            new PermissionsListener() {
+                @Override
+                public void permissionsGranted() { if(settings.reportLocation) reportLocation.setChecked(true); }
+
+                @Override
+                public void permissionsDenied() { reportLocation.setChecked(false); settings.reportLocation = false; }
+
+                @Override
+                public void showRationale(String[] permissions) {
+                    if(onCheckChanged) {
+                        Snackbar snackbar = Snackbar.make(findViewById(R.id.settings_fragment), "Location permission required",
+                                Snackbar.LENGTH_LONG);
+                        snackbar.setAction("Settings", v -> {
+                            Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            Uri uri = Uri.fromParts("package", getPackageName(), null);
+                            intent.setData(uri);
+                            startActivity(intent);
+                        });
+                        snackbar.show();
+                    }
+                    reportLocation.setChecked(false); settings.reportLocation = false;
+                }
+        });
     }
 }
