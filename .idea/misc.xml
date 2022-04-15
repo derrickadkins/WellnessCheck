@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/Derrick/.gradle/caches/transforms-3/89ee0297029f63507b20264a33577da2/transformed/jetified-paper-onboarding-1.1.3/res/layout/onboarding_main_layout.xml" value="0.10833333333333334" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.3185" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/button_rounded_corners.xml" value="0.3185" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/circle_indicator_gradient.xml" value="0.3185" />
@@ -43,6 +44,7 @@
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/mipmap-anydpi-v26/ic_launcher_primary.xml" value="0.208" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/mipmap-anydpi-v26/ic_launcher_primary_dark.xml" value="0.208" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" value="0.3185" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/layout/onboarding.xml" value="0.25" />
         <entry key="..\:/Users/derri/AppData/Local/Android/Sdk/platforms/android-31/data/res/layout/simple_list_item_1.xml" value="0.26979166666666665" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/button_rounded_corners.xml" value="0.3828125" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/ic_delete_white_36.xml" value="0.3828125" />

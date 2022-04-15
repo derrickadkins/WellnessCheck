@@ -10,6 +10,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.format.DateFormat;
@@ -165,7 +166,29 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
             switch (buttonView.getId()) {
                 case R.id.switchReportLocation:
                     settings.reportLocation = isChecked;
-                    if(isChecked) checkLocationPermissions(true);
+                    if(isChecked)
+                        checkPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET},
+                                new PermissionsListener() {
+                                    @Override
+                                    public void permissionsGranted() { if(settings.reportLocation) reportLocation.setChecked(true); }
+
+                                    @Override
+                                    public void permissionsDenied() { reportLocation.setChecked(false); settings.reportLocation = false; }
+
+                                    @Override
+                                    public void showRationale(String[] permissions) {
+                                        Snackbar snackbar = Snackbar.make(findViewById(R.id.settings_fragment), "Location permission required",
+                                                Snackbar.LENGTH_LONG);
+                                        snackbar.setAction("Settings", v -> {
+                                            Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                            Uri uri = Uri.fromParts("package", getPackageName(), null);
+                                            intent.setData(uri);
+                                            startActivity(intent);
+                                        });
+                                        snackbar.show();
+                                        reportLocation.setChecked(false); settings.reportLocation = false;
+                                    }
+                                });
                     break;
                 /*case R.id.switchFallDetection:
                     settings.fallDetection = isChecked;
@@ -250,8 +273,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
         reportLocation = findViewById(R.id.switchReportLocation);
         reportLocation.setEnabled(!settings.monitoringOn);
-        //reportLocation.setChecked(settings.reportLocation);
-        checkLocationPermissions(false);
+        reportLocation.setChecked(settings.reportLocation && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED);
         reportLocation.setOnCheckedChangeListener(checkedChangeListener);
 
         infoHowOften = findViewById(R.id.info_how_often);

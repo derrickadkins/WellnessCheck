@@ -148,10 +148,10 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
             public void showRationale(String[] permissions) {
                 Snackbar snackbar;
                 if(permissions.length > 1){
-                    snackbar = Snackbar.make(contactsView, "Contact and SMS\npermissions required", Snackbar.LENGTH_LONG);
+                    snackbar = Snackbar.make(contactsView, "Contacts and SMS\npermissions required", Snackbar.LENGTH_LONG);
                     ((TextView)snackbar.getView().findViewById(com.google.android.material.R.id.snackbar_text)).setMaxLines(2);
                 }else{
-                    String pName = permissions[0] == Manifest.permission.READ_CONTACTS ? "Contact" : "SMS";
+                    String pName = permissions[0] == Manifest.permission.READ_CONTACTS ? "Contacts" : "SMS";
                     snackbar = Snackbar.make(contactsView, pName + " permission required", Snackbar.LENGTH_LONG);
                 }
 

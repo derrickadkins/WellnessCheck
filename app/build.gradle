@@ -37,4 +37,6 @@ dependencies {
     implementation "androidx.core:core:$core_version"
     def work_version = "2.7.0-alpha05"
     implementation "androidx.work:work-runtime:$work_version"
+    implementation 'com.github.amlcurran.showcaseview:library:5.4.3'
+    implementation 'com.ramotion.paperonboarding:paper-onboarding:1.1.3'
 }

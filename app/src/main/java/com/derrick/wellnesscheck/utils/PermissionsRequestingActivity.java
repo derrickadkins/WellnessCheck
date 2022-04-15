@@ -55,7 +55,7 @@ public abstract class PermissionsRequestingActivity extends AppCompatActivity {
                 Log.d(TAG, "requesting permission: " + permissions.toString());
                 permissionsResult.launch(deniedPermissions.toArray(new String[deniedPermissions.size()]));
             }
-        } else permissionsListener.permissionsGranted();
+        } else if(permissionsListener != null) permissionsListener.permissionsGranted();
     }
 
     private void initPermissions(){
@@ -85,10 +85,10 @@ public abstract class PermissionsRequestingActivity extends AppCompatActivity {
                 public void onActivityResult(Map<String, Boolean> result) {
                     for (String permission : result.keySet())
                         if (!result.get(permission)) {
-                            permissionsListener.permissionsDenied();
+                            if(permissionsListener != null) permissionsListener.permissionsDenied();
                             return;
                         }
-                    permissionsListener.permissionsGranted();
+                    if(permissionsListener != null) permissionsListener.permissionsGranted();
                 }
             });
 }
