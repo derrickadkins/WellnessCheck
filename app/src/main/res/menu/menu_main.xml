@@ -3,7 +3,7 @@
     tools:context=".view.activities.MainActivity">
 
     <item
-        android:id="@+id/action_emergency_contacts"
+        android:id="@+id/action_contacts"
         android:icon="@drawable/ic_contacts"
         android:orderInCategory="100"
         android:title="Contacts" />
@@ -15,7 +15,7 @@
         android:icon="@drawable/ic_home"/>
 
     <item
-        android:id="@+id/action_mental_health_resources"
+        android:id="@+id/action_resources"
         android:icon="@drawable/ic_resources"
         android:orderInCategory="120"
         android:title="Resources" />

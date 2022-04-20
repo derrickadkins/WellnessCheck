@@ -21,6 +21,8 @@ public class SetupContactsActivity extends PermissionsRequestingActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getWindow().setNavigationBarColor(getColor(R.color.colorPrimary));
+
         contactsFragment = new ContactsFragment();
         setContentView(R.layout.activity_contacts);
         setSupportActionBar(findViewById(R.id.contacts_toolbar));

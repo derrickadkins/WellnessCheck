@@ -16,6 +16,21 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:listitem="@layout/contact_list_item" />
 
+    <TextView
+        android:id="@+id/add_a_contact_text_view"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_bias=".33"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="24dp"
+        android:textColor="@drawable/dark_primary_selector"
+        android:padding="48dp"
+        android:text="Add a Contact"/>
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"

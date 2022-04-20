@@ -33,6 +33,7 @@ import com.derrick.wellnesscheck.R;
 import com.derrick.wellnesscheck.controller.ContactsRecyclerAdapter;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
+import com.derrick.wellnesscheck.utils.FragmentReadyListener;
 import com.derrick.wellnesscheck.utils.PermissionsListener;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.derrick.wellnesscheck.SmsReceiver;
@@ -53,11 +54,13 @@ import static com.derrick.wellnesscheck.utils.Utils.sameNumbers;
 public class ContactsFragment extends Fragment implements ContactsRecyclerAdapter.OnContactActionListener {
     static final String TAG = "EmergencyContactsFragment";
     FloatingActionButton fab;
+    TextView addAContact;
     ContactsRecyclerAdapter contactsRecyclerAdapter;
     RecyclerView contactsList;
     Button setupNext;
     Contacts contacts;
     ItemTouchHelper itemTouchHelper;
+    FragmentReadyListener fragmentReadyListener;
 
     ActivityResultLauncher<Object> contactChooserResult = registerForActivityResult(new ActivityResultContract<Object, Object>() {
         @NonNull
@@ -120,6 +123,23 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
 
     public ContactsFragment(){super();}
 
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        try {
+            this.fragmentReadyListener = (FragmentReadyListener) context;
+        }
+        catch (final ClassCastException e) {
+            throw new ClassCastException(context.toString() + " must implement OnCompleteListener");
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if(fragmentReadyListener != null) fragmentReadyListener.onFragmentReady();
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -131,39 +151,44 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         actionBar.setTitle("Emergency Contacts");
         actionBar.show();
 
-        fab = contactsView.findViewById(R.id.fab);
-        fab.setOnClickListener(view -> ((PermissionsRequestingActivity) getContext()).checkPermissions(
-                new String[]{Manifest.permission.READ_CONTACTS, Manifest.permission.SEND_SMS}, new PermissionsListener() {
-            @Override
-            public void permissionsGranted() {
-                contactChooserResult.launch(null);
-            }
-
-            @Override
-            public void permissionsDenied() {
-                // todo: Add contact manually
-            }
-
-            @Override
-            public void showRationale(String[] permissions) {
-                Snackbar snackbar;
-                if(permissions.length > 1){
-                    snackbar = Snackbar.make(contactsView, "Contacts and SMS\npermissions required", Snackbar.LENGTH_LONG);
-                    ((TextView)snackbar.getView().findViewById(com.google.android.material.R.id.snackbar_text)).setMaxLines(2);
-                }else{
-                    String pName = permissions[0] == Manifest.permission.READ_CONTACTS ? "Contacts" : "SMS";
-                    snackbar = Snackbar.make(contactsView, pName + " permission required", Snackbar.LENGTH_LONG);
+        View.OnClickListener addContactClickListener = v -> ((PermissionsRequestingActivity) getContext()).checkPermissions(
+            new String[]{Manifest.permission.READ_CONTACTS, Manifest.permission.SEND_SMS}, new PermissionsListener() {
+                @Override
+                public void permissionsGranted() {
+                    contactChooserResult.launch(null);
                 }
 
-                snackbar.setAction("Settings", v -> {
-                    Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                    Uri uri = Uri.fromParts("package", getContext().getPackageName(), null);
-                    intent.setData(uri);
-                    startActivity(intent);
-                });
-                snackbar.show();
-            }
-        }));
+                @Override
+                public void permissionsDenied() {
+                    // todo: Add contact manually
+                }
+
+                @Override
+                public void showRationale(String[] permissions) {
+                    Snackbar snackbar;
+                    if(permissions.length > 1){
+                        snackbar = Snackbar.make(contactsView, "Contacts and SMS\npermissions required", Snackbar.LENGTH_LONG);
+                        ((TextView)snackbar.getView().findViewById(com.google.android.material.R.id.snackbar_text)).setMaxLines(2);
+                    }else{
+                        String pName = permissions[0] == Manifest.permission.READ_CONTACTS ? "Contacts" : "SMS";
+                        snackbar = Snackbar.make(contactsView, pName + " permission required", Snackbar.LENGTH_LONG);
+                    }
+
+                    snackbar.setAction("Settings", v -> {
+                        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        Uri uri = Uri.fromParts("package", getContext().getPackageName(), null);
+                        intent.setData(uri);
+                        startActivity(intent);
+                    });
+                    snackbar.show();
+                }
+            });
+
+        addAContact = contactsView.findViewById(R.id.add_a_contact_text_view);
+        addAContact.setOnClickListener(addContactClickListener);
+
+        fab = contactsView.findViewById(R.id.fab);
+        fab.setOnClickListener(addContactClickListener);
 
         setupNext = contactsView.findViewById(R.id.btnSetupNext);
         setupNext.setVisibility(getActivity().getLocalClassName().contains("SetupContactsActivity") ? View.VISIBLE : View.GONE);
@@ -269,6 +294,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
 
     public void onContactListSizeChange(int size) {
         setupNext.setEnabled(size > 0);
+        addAContact.setVisibility(size == 0 ? View.VISIBLE : View.GONE);
     }
 
     public void onTryAddContact(Contact contact) {

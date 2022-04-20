@@ -1,11 +1,13 @@
 package com.derrick.wellnesscheck.view.fragments;
 
+import static com.derrick.wellnesscheck.WellnessCheck.context;
 import static com.derrick.wellnesscheck.WellnessCheck.db;
 import static com.derrick.wellnesscheck.WellnessCheck.getNextCheckIn;
 import static com.derrick.wellnesscheck.utils.Utils.getTime;
 import static com.derrick.wellnesscheck.utils.Utils.sameNumbers;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -28,19 +30,17 @@ import com.derrick.wellnesscheck.FallDetectionService;
 import com.derrick.wellnesscheck.R;
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.SmsReceiver;
-import com.derrick.wellnesscheck.WellnessCheck;
-import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
 import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Settings;
+import com.derrick.wellnesscheck.utils.FragmentReadyListener;
 import com.derrick.wellnesscheck.utils.PermissionsListener;
 import com.derrick.wellnesscheck.view.activities.MainActivity;
 import com.derrick.wellnesscheck.view.activities.SetupContactsActivity;
 import com.derrick.wellnesscheck.controller.SmsController;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.derrick.wellnesscheck.view.activities.SetupSettingsActivity;
-import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.Calendar;
@@ -62,6 +62,18 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     static final long MINUTE_IN_MILLIS = 60 * 1000;
     Settings settings;
     Contacts contacts;
+    FragmentReadyListener fragmentReadyListener;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        try {
+            this.fragmentReadyListener = (FragmentReadyListener) context;
+        }
+        catch (final ClassCastException e) {
+            throw new ClassCastException(context.toString() + " must implement OnCompleteListener");
+        }
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -78,8 +90,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View homeFragmentView = inflater.inflate(R.layout.home, container, false);
-
-        //todo: onboarding
 
         ((AppCompatActivity) getActivity()).getSupportActionBar().hide();
 
@@ -192,6 +202,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     public void onResume() {
         super.onResume();
         MonitorReceiver.checkInListener = this;
+        if(fragmentReadyListener != null) fragmentReadyListener.onFragmentReady();
     }
 
     @Override

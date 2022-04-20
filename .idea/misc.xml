@@ -44,7 +44,19 @@
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/mipmap-anydpi-v26/ic_launcher_primary.xml" value="0.208" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/mipmap-anydpi-v26/ic_launcher_primary_dark.xml" value="0.208" />
         <entry key="..\:/Users/Derrick/Documents/GitHub/WellnessCheck/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" value="0.3185" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/drawable/bottom_nav_selector.xml" value="0.301" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/drawable/ic_contacts.xml" value="0.278" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/drawable/ic_donate.xml" value="0.301" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/drawable/ic_home.xml" value="0.278" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/drawable/ic_resources.xml" value="0.278" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/drawable/icon_action_selector.xml" value="0.301" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/drawable/text_action_selector.xml" value="0.301" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/layout/activity_main.xml" value="0.2734375" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/layout/contacts_fragment.xml" value="0.29739583333333336" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/layout/home.xml" value="0.3625" />
         <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/layout/onboarding.xml" value="0.25" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/menu/menu_context_contacts.xml" value="0.3625" />
+        <entry key="..\:/Users/Derrick/GitHub/WellnessCheck/app/src/main/res/menu/menu_main.xml" value="0.2734375" />
         <entry key="..\:/Users/derri/AppData/Local/Android/Sdk/platforms/android-31/data/res/layout/simple_list_item_1.xml" value="0.26979166666666665" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/button_rounded_corners.xml" value="0.3828125" />
         <entry key="..\:/Users/derri/Documents/GitHub/WellnessCheck/app/src/main/res/drawable/ic_delete_white_36.xml" value="0.3828125" />

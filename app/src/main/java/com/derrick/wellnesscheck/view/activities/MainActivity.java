@@ -16,16 +16,19 @@ import com.derrick.wellnesscheck.WellnessCheck;
 import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Settings;
+import com.derrick.wellnesscheck.utils.FragmentReadyListener;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.derrick.wellnesscheck.view.fragments.*;
 import com.derrick.wellnesscheck.R;
+import com.getkeepsafe.taptargetview.TapTarget;
+import com.getkeepsafe.taptargetview.TapTargetView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 import com.ramotion.paperonboarding.PaperOnboardingPage;
 
 import java.util.ArrayList;
 
-public class MainActivity extends PermissionsRequestingActivity implements NavigationBarView.OnItemSelectedListener, DB.DbListener {
+public class MainActivity extends PermissionsRequestingActivity implements NavigationBarView.OnItemSelectedListener, DB.DbListener, FragmentReadyListener {
     static final String TAG = "MainActivity";
     HomeFragment homeFragment = new HomeFragment();
     ContactsFragment contactsFragment = new ContactsFragment();
@@ -33,7 +36,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
     LogFragment logFragment = new LogFragment();
     FragmentManager fragmentManager = getSupportFragmentManager();
     ArrayList<Fragment> fragments = new ArrayList<>();
-    int currentFragmentIndex = 0;
+    int currentFragmentIndex = 0, showcaseStep = -1;
     BottomNavigationView bottomNavigationView;
 
     @Override
@@ -41,6 +44,8 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         //todo: find another solution
         //null prevents crash after return from permission being revoked
         super.onCreate(null);
+
+        getWindow().setNavigationBarColor(getColor(R.color.colorPrimary));
 
         if(getPreferences(Context.MODE_PRIVATE).getBoolean("onboardingComplete", false)) startNormal();
         else startOnboarding();
@@ -106,6 +111,130 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         bottomNavigationView.setSelectedItemId(R.id.action_home);
     }
 
+    public void showCase(int step){
+        switch (step){
+            case 0:
+                TapTargetView.showFor(this,                 // `this` is an Activity
+                        TapTarget.forView(findViewById(R.id.action_contacts), "Emergency Contacts", "Click here to add, call, SMS, or delete emergency contacts")
+                                .outerCircleColor(R.color.colorPrimary)      // Specify a color for the outer circle
+                                .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
+                                .titleTextSize(20)                  // Specify the size (in sp) of the title text
+                                .descriptionTextSize(14)            // Specify the size (in sp) of the description text
+                                .textColor(android.R.color.white)            // Specify a color for both the title and description text
+                                .dimColor(R.color.colorPrimaryDark)            // If set, will dim behind the view with 30% opacity of the given color
+                                .drawShadow(true)                   // Whether to draw a drop shadow or not
+                                .cancelable(false)                  // Whether tapping outside the outer circle dismisses the view
+                                .transparentTarget(true)           // Specify whether the target is transparent (displays the content underneath)
+                                .targetRadius(60),                  // Specify the target radius (in dp)
+                        new TapTargetView.Listener() {          // The listener can listen for regular clicks, long clicks or cancels
+                            @Override
+                            public void onTargetClick(TapTargetView view) {
+                                super.onTargetClick(view);
+                                bottomNavigationView.setSelectedItemId(R.id.action_contacts);
+                            }
+                        });
+                break;
+            case 1:
+                TapTargetView.showFor(this,                 // `this` is an Activity
+                        TapTarget.forView(findViewById(R.id.fab), "Add Emergency Contacts", "Click here to add people you can trust to support you")
+                                .outerCircleColor(R.color.colorPrimaryDark)      // Specify a color for the outer circle
+                                .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
+                                .titleTextSize(20)                  // Specify the size (in sp) of the title text
+                                .descriptionTextSize(14)            // Specify the size (in sp) of the description text
+                                .textColor(android.R.color.white)            // Specify a color for both the title and description text
+                                .dimColor(R.color.colorAccent)            // If set, will dim behind the view with 30% opacity of the given color
+                                .drawShadow(true)                   // Whether to draw a drop shadow or not
+                                .cancelable(false)                  // Whether tapping outside the outer circle dismisses the view
+                                .transparentTarget(true)           // Specify whether the target is transparent (displays the content underneath)
+                                .targetRadius(60),                  // Specify the target radius (in dp)
+                        new TapTargetView.Listener() {          // The listener can listen for regular clicks, long clicks or cancels
+                            @Override
+                            public void onTargetClick(TapTargetView view) {
+                                super.onTargetClick(view);
+                                showCase(++showcaseStep);
+                            }
+                        });
+                break;
+            case 2:
+                TapTargetView.showFor(this,                 // `this` is an Activity
+                        TapTarget.forView(findViewById(R.id.action_resources), "Resources", "Here you will find a variety of emergency resources, just swipe to use one")
+                                .outerCircleColor(R.color.colorPrimary)      // Specify a color for the outer circle
+                                .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
+                                .titleTextSize(20)                  // Specify the size (in sp) of the title text
+                                .descriptionTextSize(14)            // Specify the size (in sp) of the description text
+                                .textColor(android.R.color.white)            // Specify a color for both the title and description text
+                                .dimColor(R.color.colorPrimary)            // If set, will dim behind the view with 30% opacity of the given color
+                                .drawShadow(true)                   // Whether to draw a drop shadow or not
+                                .cancelable(false)                  // Whether tapping outside the outer circle dismisses the view
+                                .transparentTarget(true)           // Specify whether the target is transparent (displays the content underneath)
+                                .targetRadius(60),                  // Specify the target radius (in dp)
+                        new TapTargetView.Listener() {          // The listener can listen for regular clicks, long clicks or cancels
+                            @Override
+                            public void onTargetClick(TapTargetView view) {
+                                super.onTargetClick(view);
+                                bottomNavigationView.setSelectedItemId(R.id.action_resources);
+                            }
+                        });
+                break;
+            case 3:
+                TapTargetView.showFor(this,                 // `this` is an Activity
+                        TapTarget.forView(findViewById(R.id.action_home), "Wellness Checks", "Click here to access your wellness check status and settings")
+                                .outerCircleColor(R.color.colorPrimaryDark)      // Specify a color for the outer circle
+                                .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
+                                .titleTextSize(20)                  // Specify the size (in sp) of the title text
+                                .descriptionTextSize(14)            // Specify the size (in sp) of the description text
+                                .textColor(android.R.color.white)            // Specify a color for both the title and description text
+                                .dimColor(R.color.colorPrimaryDark)            // If set, will dim behind the view with 30% opacity of the given color
+                                .drawShadow(true)                   // Whether to draw a drop shadow or not
+                                .cancelable(false)                  // Whether tapping outside the outer circle dismisses the view
+                                .transparentTarget(true)           // Specify whether the target is transparent (displays the content underneath)
+                                .targetRadius(60),                  // Specify the target radius (in dp)
+                        new TapTargetView.Listener() {          // The listener can listen for regular clicks, long clicks or cancels
+                            @Override
+                            public void onTargetClick(TapTargetView view) {
+                                super.onTargetClick(view);
+                                bottomNavigationView.setSelectedItemId(R.id.action_home);
+                            }
+                        });
+                break;
+            case 4:
+                TapTargetView.showFor(this,                 // `this` is an Activity
+                        TapTarget.forView(findViewById(R.id.imgSettingsIcon), "Settings", "Click here to see your settings, they can only be changed while your wellness checks are turned off")
+                                .outerCircleColor(R.color.colorPrimary)      // Specify a color for the outer circle
+                                .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
+                                .titleTextSize(20)                  // Specify the size (in sp) of the title text
+                                .descriptionTextSize(14)            // Specify the size (in sp) of the description text
+                                .textColor(android.R.color.white)            // Specify a color for both the title and description text
+                                .dimColor(R.color.colorAccent)            // If set, will dim behind the view with 30% opacity of the given color
+                                .drawShadow(true)                   // Whether to draw a drop shadow or not
+                                .cancelable(false)                  // Whether tapping outside the outer circle dismisses the view
+                                .transparentTarget(true)           // Specify whether the target is transparent (displays the content underneath)
+                                .targetRadius(60),                  // Specify the target radius (in dp)
+                        new TapTargetView.Listener() {          // The listener can listen for regular clicks, long clicks or cancels
+                            @Override
+                            public void onTargetClick(TapTargetView view) {
+                                super.onTargetClick(view);
+                                showCase(++showcaseStep);
+                            }
+                        });
+                break;
+            case 5:
+                TapTargetView.showFor(this,                 // `this` is an Activity
+                        TapTarget.forView(findViewById(R.id.progressBar), "Wellness Checks", "Click here to start the setup process for wellness checks, check in, or see when your next wellness check is here")
+                                .outerCircleColor(R.color.colorPrimaryDark)      // Specify a color for the outer circle
+                                .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
+                                .titleTextSize(20)                  // Specify the size (in sp) of the title text
+                                .descriptionTextSize(14)            // Specify the size (in sp) of the description text
+                                .textColor(android.R.color.white)            // Specify a color for both the title and description text
+                                .dimColor(R.color.colorPrimary)            // If set, will dim behind the view with 30% opacity of the given color
+                                .drawShadow(true)                   // Whether to draw a drop shadow or not
+                                .cancelable(false)                  // Whether tapping outside the outer circle dismisses the view
+                                .transparentTarget(true)           // Specify whether the target is transparent (displays the content underneath)
+                                .targetRadius(180));
+                break;
+        }
+    }
+
     @Override
     public void onBackPressed() {
         if(currentFragmentIndex > 0) {
@@ -127,12 +256,17 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
 
         if (id == R.id.action_home) {
             setFragment(fragments.indexOf(homeFragment));
-        }else if (id == R.id.action_mental_health_resources) {
+        }else if (id == R.id.action_resources) {
             setFragment(fragments.indexOf(resourcesFragment));
-        }else if (id == R.id.action_emergency_contacts) {
+        }else if (id == R.id.action_contacts) {
             setFragment(fragments.indexOf(contactsFragment));
         }
 
         return true;
+    }
+
+    @Override
+    public void onFragmentReady() {
+        showCase(++showcaseStep);
     }
 }

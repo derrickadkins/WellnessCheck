@@ -59,6 +59,8 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getWindow().setNavigationBarColor(getColor(R.color.colorPrimary));
+
         setContentView(R.layout.activity_settings);
 
         setSupportActionBar(findViewById(R.id.settings_toolbar));

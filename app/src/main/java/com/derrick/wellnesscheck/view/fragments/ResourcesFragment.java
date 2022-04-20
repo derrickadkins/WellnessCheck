@@ -1,6 +1,7 @@
 package com.derrick.wellnesscheck.view.fragments;
 
 import android.Manifest;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,11 +21,31 @@ import com.derrick.wellnesscheck.R;
 import com.derrick.wellnesscheck.controller.ResourcesRecyclerAdapter;
 import com.derrick.wellnesscheck.controller.SwipeToContactCallback;
 import com.derrick.wellnesscheck.model.data.Resource;
+import com.derrick.wellnesscheck.utils.FragmentReadyListener;
 import com.derrick.wellnesscheck.utils.PermissionsListener;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.derrick.wellnesscheck.utils.Utils;
 
 public class ResourcesFragment extends Fragment {
+    FragmentReadyListener fragmentReadyListener;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        try {
+            this.fragmentReadyListener = (FragmentReadyListener) context;
+        }
+        catch (final ClassCastException e) {
+            throw new ClassCastException(context.toString() + " must implement OnCompleteListener");
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if(fragmentReadyListener != null) fragmentReadyListener.onFragmentReady();
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {

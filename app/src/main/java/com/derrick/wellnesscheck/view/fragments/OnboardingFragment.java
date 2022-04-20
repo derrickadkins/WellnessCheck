@@ -45,7 +45,6 @@ public class OnboardingFragment extends PaperOnboardingFragment {
         if (this.getArguments() != null) {
             this.mElements = (ArrayList)this.getArguments().get(ELEMENTS_PARAM);
         }
-
     }
 
     @Nullable

@@ -32,6 +32,8 @@ public class WellnessCheck extends Application {
     public static boolean applySettings(Context context, Settings settings){
         AlarmManager alarmManager = (AlarmManager) context.getApplicationContext().getSystemService(Service.ALARM_SERVICE);
         AlarmManager.AlarmClockInfo alarmClockInfo = alarmManager.getNextAlarmClock();
+        //todo: use shared preferences for settings instead of database
+        boolean monitoringOn = context.getSharedPreferences(context.getPackageName(), Context.MODE_PRIVATE).getBoolean("monitoringOn", false);
         if(settings.monitoringOn && alarmClockInfo == null){
             long now = System.currentTimeMillis();
             if(settings.nextCheckIn < now) settings.updateCheckIn(WellnessCheck.getNextCheckIn());
