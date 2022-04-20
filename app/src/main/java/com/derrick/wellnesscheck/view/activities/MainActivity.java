@@ -36,7 +36,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
     LogFragment logFragment = new LogFragment();
     FragmentManager fragmentManager = getSupportFragmentManager();
     ArrayList<Fragment> fragments = new ArrayList<>();
-    int currentFragmentIndex = 0, showcaseStep = -1;
+    int currentFragmentIndex = 0, showcaseStep = 0;
     BottomNavigationView bottomNavigationView;
 
     @Override
@@ -111,8 +111,9 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         bottomNavigationView.setSelectedItemId(R.id.action_home);
     }
 
-    public void showCase(int step){
-        switch (step){
+    public void showCase(){
+        if(getPreferences(MODE_PRIVATE).getBoolean("walkthroughComplete", false)) return;
+        switch (showcaseStep++){
             case 0:
                 TapTargetView.showFor(this,                 // `this` is an Activity
                         TapTarget.forView(findViewById(R.id.action_contacts), "Emergency Contacts", "Click here to add, call, SMS, or delete emergency contacts")
@@ -151,7 +152,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
                             @Override
                             public void onTargetClick(TapTargetView view) {
                                 super.onTargetClick(view);
-                                showCase(++showcaseStep);
+                                showCase();
                             }
                         });
                 break;
@@ -214,7 +215,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
                             @Override
                             public void onTargetClick(TapTargetView view) {
                                 super.onTargetClick(view);
-                                showCase(++showcaseStep);
+                                showCase();
                             }
                         });
                 break;
@@ -230,7 +231,14 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
                                 .drawShadow(true)                   // Whether to draw a drop shadow or not
                                 .cancelable(false)                  // Whether tapping outside the outer circle dismisses the view
                                 .transparentTarget(true)           // Specify whether the target is transparent (displays the content underneath)
-                                .targetRadius(180));
+                                .targetRadius(180),
+                        new TapTargetView.Listener(){
+                            @Override
+                            public void onTargetClick(TapTargetView view) {
+                                super.onTargetClick(view);
+                                getPreferences(MODE_PRIVATE).edit().putBoolean("walkthroughComplete", true).apply();
+                            }
+                        });
                 break;
         }
     }
@@ -267,6 +275,6 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
 
     @Override
     public void onFragmentReady() {
-        showCase(++showcaseStep);
+        showCase();
     }
 }
