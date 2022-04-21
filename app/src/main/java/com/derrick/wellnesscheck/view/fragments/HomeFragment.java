@@ -1,8 +1,6 @@
 package com.derrick.wellnesscheck.view.fragments;
 
-import static com.derrick.wellnesscheck.WellnessCheck.context;
 import static com.derrick.wellnesscheck.WellnessCheck.db;
-import static com.derrick.wellnesscheck.WellnessCheck.getNextCheckIn;
 import static com.derrick.wellnesscheck.utils.Utils.getTime;
 import static com.derrick.wellnesscheck.utils.Utils.sameNumbers;
 
@@ -60,6 +58,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     boolean inResponseTimer = false, timerOn = false;
     final String TAG = "HomeFragment";
     static final long MINUTE_IN_MILLIS = 60 * 1000;
+    String at;
     Settings settings;
     Contacts contacts;
     FragmentReadyListener fragmentReadyListener;
@@ -67,6 +66,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
+        Log.d(TAG, "onAttach");
         if(context instanceof FragmentReadyListener)
             this.fragmentReadyListener = (FragmentReadyListener) context;
     }
@@ -74,17 +74,23 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate");
+
         settings = db.settings;
         contacts = db.contacts;
 
         responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
 
         bundle = settings.toBundle();
+
+        at = getString(R.string.at_);
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        Log.d(TAG, "onCreateView");
+
         View homeFragmentView = inflater.inflate(R.layout.home, container, false);
 
         ((AppCompatActivity) getActivity()).getSupportActionBar().hide();
@@ -195,13 +201,16 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     @Override
     public void onResume() {
         super.onResume();
+        Log.d(TAG, "onResume");
         MonitorReceiver.checkInListener = this;
         if(fragmentReadyListener != null) fragmentReadyListener.onFragmentReady();
+        progressBar.setSecondaryProgress(progressBar.getMax());
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        Log.d(TAG, "onPause");
         MonitorReceiver.checkInListener = null;
     }
 
@@ -209,11 +218,12 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         stopTimer();
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(System.currentTimeMillis() + ms);
-        tvNextCheckIn.setText(getString(R.string.at_) + getTime(calendar));
+        tvNextCheckIn.setText(at + getTime(calendar));
         tvTimerLabel.setText(inResponseTimer ? R.string.progress_label_response : R.string.progress_label_check);
         //circularProgressIndicator.setMax(inResponseTimer ? (int) responseInterval : (int) (settings.nextCheckIn - settings.prevCheckIn));
-        progressBar.setMax(inResponseTimer ? (int) responseInterval : (int) (settings.nextCheckIn - settings.prevCheckIn));
-        progressBar.setSecondaryProgress(progressBar.getMax());
+        int max = inResponseTimer ? (int) responseInterval : (int) (settings.nextCheckIn - settings.prevCheckIn);
+        progressBar.setMax(max);
+        progressBar.setSecondaryProgress(max);
         Log.d(TAG, "timer started; responseTimer: "+inResponseTimer+", millis:"+ms+", progressBarMax:"+ progressBar.getMax());
         timerOn = true;
         timer = new CountDownTimer(ms, 10) {
@@ -233,7 +243,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             public void onFinish() {
                 if(!timerOn) return;
                 inResponseTimer = !inResponseTimer;
-                //todo: prevent this from getting called on a check in
+                //todo: prevent from being called on check in
                 startTimer(inResponseTimer ? responseInterval : settings.nextCheckIn - System.currentTimeMillis());
             }
         }.start();
