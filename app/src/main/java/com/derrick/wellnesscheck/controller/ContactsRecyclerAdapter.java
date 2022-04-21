@@ -15,6 +15,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
@@ -61,7 +63,9 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
         holder.number.setText(contact.number);
         holder.itemView.setBackgroundColor(activity.getColor(position == selectedPos ? android.R.color.darker_gray : android.R.color.transparent));
         holder.itemView.setOnLongClickListener(v -> {
-            if (actionMode != null || db.settings.monitoringOn) {
+            if (actionMode != null) return false;
+            if(db.settings.monitoringOn) {
+                Toast.makeText(getContext(), "Turn off wellness checks to delete contacts", Toast.LENGTH_SHORT).show();
                 return false;
             }
 

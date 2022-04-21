@@ -32,12 +32,8 @@ public class ResourcesFragment extends Fragment {
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        try {
+        if(context instanceof FragmentReadyListener)
             this.fragmentReadyListener = (FragmentReadyListener) context;
-        }
-        catch (final ClassCastException e) {
-            throw new ClassCastException(context.toString() + " must implement OnCompleteListener");
-        }
     }
 
     @Override

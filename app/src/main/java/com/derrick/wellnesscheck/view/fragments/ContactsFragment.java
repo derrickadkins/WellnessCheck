@@ -126,12 +126,8 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        try {
+        if(context instanceof FragmentReadyListener)
             this.fragmentReadyListener = (FragmentReadyListener) context;
-        }
-        catch (final ClassCastException e) {
-            throw new ClassCastException(context.toString() + " must implement OnCompleteListener");
-        }
     }
 
     @Override
@@ -195,8 +191,6 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         setupNext.setEnabled(false);
         setupNext.setOnClickListener(v -> {
             startActivity(new Intent(getActivity(), SetupSettingsActivity.class)
-                    .putExtra("enable", true)
-                    .putExtra("showStart", true)
                     .putExtra("returnToMain", false));
             getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
         });

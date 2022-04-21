@@ -67,12 +67,8 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        try {
+        if(context instanceof FragmentReadyListener)
             this.fragmentReadyListener = (FragmentReadyListener) context;
-        }
-        catch (final ClassCastException e) {
-            throw new ClassCastException(context.toString() + " must implement OnCompleteListener");
-        }
     }
 
     @Override
@@ -95,8 +91,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
         imgSettingsIcon = homeFragmentView.findViewById(R.id.imgSettingsIcon);
         imgSettingsIcon.setOnClickListener(v -> startActivity(new Intent(getActivity(), SetupSettingsActivity.class)
-                .putExtra("enable", !settings.monitoringOn)
-                .putExtra("showStart", false)
                 .putExtra("returnToMain", true)));
 
         callEmergencyNumber = homeFragmentView.findViewById(R.id.btnCallEmergencyNumber);
@@ -239,6 +233,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
             public void onFinish() {
                 if(!timerOn) return;
                 inResponseTimer = !inResponseTimer;
+                //todo: prevent this from getting called on a check in
                 startTimer(inResponseTimer ? responseInterval : settings.nextCheckIn - System.currentTimeMillis());
             }
         }.start();
