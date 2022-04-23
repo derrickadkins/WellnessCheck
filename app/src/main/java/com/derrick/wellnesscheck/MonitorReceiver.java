@@ -12,7 +12,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
@@ -24,6 +23,8 @@ import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Settings;
 import com.derrick.wellnesscheck.utils.Utils;
+import com.derrick.wellnesscheck.view.activities.CheckInActivity;
+import com.derrick.wellnesscheck.view.activities.MainActivity;
 
 public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener {
 
@@ -72,6 +73,9 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                 .setSmallIcon(R.drawable.wellness_check_icon_64_transparent_background)
                 .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.wellness_check_icon_64_transparent_background))
                 .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setLights(context.getColor(R.color.colorPrimary), 1000, 1000)
+                .setVibrate(new long[]{1000, 1000, 1000, 1000, 1000})
                 .setAutoCancel(true);
 
         switch (intent.getAction()){
@@ -94,10 +98,30 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
 
                 Intent responseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_RESPONSE).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
                 PendingIntent responsePendingIntent = PendingIntent.getBroadcast(context, 2, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+                Intent fullScreenIntent = new Intent(context, CheckInActivity.class)
+                        .addCategory("android.intent.category.LAUNCHER")
+                        .setAction(ACTION_RESPONSE)
+                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
+                                Intent.FLAG_ACTIVITY_CLEAR_TASK |
+                                Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS |
+                                Intent.FLAG_ACTIVITY_NO_USER_ACTION |
+                                Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        .putExtras(intent);
+                PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(context, 2, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+                if(context.getSharedPreferences(context.getPackageName(), Context.MODE_PRIVATE).getBoolean("alarm", false)) {
+                    builder.setFullScreenIntent(fullScreenPendingIntent, true);
+                    builder.setCategory(NotificationCompat.CATEGORY_ALARM);
+                    builder.setContentIntent(fullScreenPendingIntent);
+                }else{
+                    builder.setContentIntent(responsePendingIntent);
+                }
+
                 builder.setContentTitle(context.getString(R.string.time_to_check_in))
                     .setOngoing(true)
-                    .setContentText(context.getString(R.string.click_to_check_in_by) + getTime(smsAlarmTime))
-                    .setContentIntent(responsePendingIntent);
+                    .setContentText(context.getString(R.string.click_to_check_in_by) + getTime(smsAlarmTime));
+
                 notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
                 doDBStuff();
                 break;

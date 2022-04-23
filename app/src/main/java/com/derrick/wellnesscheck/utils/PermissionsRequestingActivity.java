@@ -71,10 +71,12 @@ public abstract class PermissionsRequestingActivity extends AppCompatActivity {
         permissions.add(Manifest.permission.READ_SMS);
         permissions.add(Manifest.permission.RECEIVE_SMS);
         permissions.add(Manifest.permission.RECEIVE_BOOT_COMPLETED);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-            permissions.add(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+        permissions.add(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
             permissions.add(Manifest.permission.FOREGROUND_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            permissions.add(Manifest.permission.USE_FULL_SCREEN_INTENT);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
             permissions.add(Manifest.permission.SCHEDULE_EXACT_ALARM);
     }

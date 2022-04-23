@@ -46,10 +46,10 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     static final String TAG = "SetupSettingsActivity";
     boolean returnToMain;
     NumberPicker checkInHours, respondMinutes;
-    TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck/*, tvSensitivity*/;
-    AppCompatImageView infoHowOften, infoAllDay, infoResponse, infoLocation;
+    TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck, tvAlarm/*, tvSensitivity*/;
+    AppCompatImageView infoHowOften, infoAllDay, infoResponse, infoLocation, infoAlarm;
     //SeekBar sbSensitivity;
-    SwitchCompat allDay, reportLocation/*, fallDetection*/;
+    SwitchCompat allDay, reportLocation, alarm/*, fallDetection*/;
     Button btnStart;
     Timer timer = new Timer();
     Settings settings;
@@ -216,6 +216,24 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                     checkInterval();
                     setFirstCheckText();
                     break;
+                case R.id.switchAlarm:
+                    if(isChecked)
+                        checkPermissions(new String[]{Manifest.permission.USE_FULL_SCREEN_INTENT}, new PermissionsListener() {
+                            @Override
+                            public void permissionsGranted() {
+                                getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean("alarm", true).apply();
+                            }
+
+                            @Override
+                            public void permissionsDenied() {
+                                alarm.setChecked(false);
+                                getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean("alarm", false).apply();
+                            }
+
+                            @Override
+                            public void showRationale(String[] permissions) { }
+                        });
+                    break;
             }
 
             settings.update();
@@ -284,6 +302,11 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         reportLocation.setOnTouchListener(touchListener);
         reportLocation.setChecked(settings.reportLocation && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED);
         reportLocation.setOnCheckedChangeListener(checkedChangeListener);
+
+        alarm = findViewById(R.id.switchAlarm);
+        alarm.setOnTouchListener(touchListener);
+        alarm.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean("alarm", false));
+        alarm.setOnCheckedChangeListener(checkedChangeListener);
 
         infoHowOften = findViewById(R.id.info_how_often);
         infoAllDay = findViewById(R.id.info_all_day);
