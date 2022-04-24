@@ -1,21 +1,36 @@
 package com.derrick.wellnesscheck.view.activities;
 
+import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
+import static com.derrick.wellnesscheck.utils.Utils.getTime;
+
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.PersistableBundle;
+import android.os.CountDownTimer;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.R;
+import com.derrick.wellnesscheck.model.DB;
+import com.derrick.wellnesscheck.model.data.Log;
+import com.derrick.wellnesscheck.model.data.Settings;
 
-public class CheckInActivity extends AppCompatActivity {
+import java.util.Calendar;
+
+public class CheckInActivity extends AppCompatActivity implements DB.DbListener {
+    private static final String TAG = "CheckInActivity";
+    ProgressBar progressBar;
+    TextView tvProgressBar, tvTimerLabel, tvNextCheckIn;
+    long responseInterval;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,11 +55,52 @@ public class CheckInActivity extends AppCompatActivity {
         findViewById(R.id.donate_image_view).setVisibility(View.GONE);
         findViewById(R.id.donate_text_view).setVisibility(View.GONE);
 
-        findViewById(R.id.progressBar).setOnClickListener(v -> {
+        tvNextCheckIn = findViewById(R.id.tvNextCheckIn);
+        tvProgressBar = findViewById(R.id.progressBarText);
+        tvTimerLabel = findViewById(R.id.tvTimerType);
+
+        progressBar = findViewById(R.id.progressBar);
+
+        DB.InitDB(this);
+    }
+
+    @Override
+    public void onDbReady(DB db) {
+        Settings settings = db.settings;
+        responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
+        progressBar.setOnClickListener(v -> {
             new MonitorReceiver()
                     .onReceive(CheckInActivity.this, new Intent(CheckInActivity.this, MonitorReceiver.class)
-                    .setAction(MonitorReceiver.ACTION_RESPONSE));
+                            .setAction(MonitorReceiver.ACTION_RESPONSE).putExtras(settings.toBundle()));
             finish();
         });
+        startTimer(settings.prevCheckIn + responseInterval - System.currentTimeMillis());
+    }
+
+    void startTimer(long ms){
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis() + ms);
+        tvNextCheckIn.setText(getString(R.string.at_) + getTime(calendar));
+        tvTimerLabel.setText(R.string.progress_label_response);
+        progressBar.setMax((int)responseInterval);
+        progressBar.setSecondaryProgress((int)responseInterval);
+        Log.d(TAG, "timer started; millis:"+ms+", progressBarMax:"+ progressBar.getMax());
+        new CountDownTimer(ms, 10) {
+            @Override
+            public void onTick(long millisTilDone) {
+                long hours = millisTilDone / (60 * 60 * 1000) % 24;
+                long minutes = millisTilDone / (60 * 1000) % 60;
+                long seconds = millisTilDone / 1000 % 60;
+                String progressText = hours > 0 ? hours + ":" : "";
+                progressText += String.format("%02d:%02d", minutes, seconds);
+                tvProgressBar.setText(progressText);
+                progressBar.setProgress((int) millisTilDone);
+            }
+
+            @Override
+            public void onFinish() {
+                finish();
+            }
+        }.start();
     }
 }

@@ -1,6 +1,8 @@
 package com.derrick.wellnesscheck.view.fragments;
 
+import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 import static com.derrick.wellnesscheck.WellnessCheck.db;
+import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
 import static com.derrick.wellnesscheck.utils.Utils.getTime;
 import static com.derrick.wellnesscheck.utils.Utils.sameNumbers;
 
@@ -57,7 +59,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     long responseInterval;
     boolean inResponseTimer = false, timerOn = false;
     final String TAG = "HomeFragment";
-    static final long MINUTE_IN_MILLIS = 60 * 1000;
     String at;
     Settings settings;
     Contacts contacts;
@@ -172,20 +173,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
         setTimerVisibility();
 
-        if(settings.monitoringOn) {
-            long now = System.currentTimeMillis();
-            long millis = settings.nextCheckIn - now;
-
-            if(!settings.checkedIn) {
-                inResponseTimer = settings.prevCheckIn + responseInterval > now;
-                if (inResponseTimer) {
-                    millis = settings.prevCheckIn + responseInterval - now;
-                }
-            }else inResponseTimer = false;
-
-            startTimer(millis);
-        }
-
         View.OnClickListener onDonateClicked = v -> {
             //https://www.paypal.com/pools/c/8IK7AMc2BZ
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.paypal.com/pools/c/8IK7AMc2BZ"));
@@ -204,7 +191,7 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         Log.d(TAG, "onResume");
         MonitorReceiver.checkInListener = this;
         if(fragmentReadyListener != null) fragmentReadyListener.onFragmentReady();
-        progressBar.setSecondaryProgress(progressBar.getMax());
+        updateTimer();
     }
 
     @Override
@@ -212,6 +199,85 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
         super.onPause();
         Log.d(TAG, "onPause");
         MonitorReceiver.checkInListener = null;
+    }
+
+    /*void updateTimer(){
+        if(settings.monitoringOn) {
+            long now = System.currentTimeMillis();
+            long millis = settings.nextCheckIn - now;
+
+            if(!settings.checkedIn) {
+                inResponseTimer = settings.prevCheckIn + responseInterval > now;
+                if (inResponseTimer)
+                    millis = settings.prevCheckIn + responseInterval - now;
+            }else inResponseTimer = false;
+
+            startTimer(millis);
+        }
+    }*/
+
+    void updateTimer(){
+        if(settings.monitoringOn) {
+            long now = System.currentTimeMillis();
+
+            if(!settings.checkedIn && settings.prevCheckIn + responseInterval > now) {
+                startTapToCheckInTimer(settings.prevCheckIn + responseInterval - now);
+            }else startNextCheckInTimer(settings.nextCheckIn - now);
+        }
+    }
+
+    String getProgressText(long ms){
+        long hours = ms / (60 * 60 * 1000) % 24;
+        long minutes = ms / (60 * 1000) % 60;
+        long seconds = ms / 1000 % 60;
+        String progressText = hours > 0 ? hours + ":" : "";
+        progressText += String.format("%02d:%02d", minutes, seconds);
+        return progressText;
+    }
+
+    void startNextCheckInTimer(long ms){
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis() + ms);
+        tvNextCheckIn.setText(at + getTime(calendar));
+        tvTimerLabel.setText(R.string.progress_label_check);
+        int max = (int) (settings.nextCheckIn - settings.prevCheckIn);
+        progressBar.setMax(max);
+        progressBar.setSecondaryProgress(max);
+        Log.d(TAG, "startNextCheckInTimer:timer started; "+getReadableTime(ms));
+        timer = new CountDownTimer(ms, 10) {
+            @Override
+            public void onTick(long millisTilDone) {
+                tvProgressBar.setText(getProgressText(millisTilDone));
+                progressBar.setProgress((int) millisTilDone);
+            }
+
+            @Override
+            public void onFinish() {
+                Log.d(TAG, "startNextCheckInTimer:onFinish");
+            }
+        }.start();
+    }
+
+    void startTapToCheckInTimer(long ms){
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis() + ms);
+        tvNextCheckIn.setText(at + getTime(calendar));
+        tvTimerLabel.setText(R.string.progress_label_response);
+        progressBar.setMax((int)responseInterval);
+        progressBar.setSecondaryProgress((int)responseInterval);
+        Log.d(TAG, "startTapToCheckInTimer:timer started; "+getReadableTime(ms));
+        timer = new CountDownTimer(ms, 10) {
+            @Override
+            public void onTick(long millisTilDone) {
+                tvProgressBar.setText(getProgressText(millisTilDone));
+                progressBar.setProgress((int) millisTilDone);
+            }
+
+            @Override
+            public void onFinish() {
+                Log.d(TAG, "startTapToCheckInTimer:onFinish");
+            }
+        }.start();
     }
 
     void startTimer(long ms){
@@ -241,17 +307,20 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
 
             @Override
             public void onFinish() {
-                if(!timerOn) return;
+                Log.d(TAG, "onFinish: timerOn="+timerOn+";inResponseTimer="+inResponseTimer);
+                updateTimer();
+                /*if(!timerOn) return;
                 inResponseTimer = !inResponseTimer;
                 //todo: prevent from being called on check in
-                startTimer(inResponseTimer ? responseInterval : settings.nextCheckIn - System.currentTimeMillis());
+                startTimer(inResponseTimer ? responseInterval : settings.nextCheckIn - System.currentTimeMillis());*/
             }
         }.start();
     }
 
     void stopTimer(){
         timerOn = false;
-        if(timer != null) timer.cancel();
+        if(timer != null)
+            timer.cancel();
     }
 
     void setTimerVisibility(){
@@ -283,7 +352,8 @@ public class HomeFragment extends Fragment implements MonitorReceiver.CheckInLis
     @Override
     public void onCheckIn() {
         inResponseTimer = false;
-        startTimer(settings.nextCheckIn - System.currentTimeMillis());
+        //startTimer(settings.nextCheckIn - System.currentTimeMillis());
+        updateTimer();
     }
 
     void requestTurnOff(int riskLvl) {

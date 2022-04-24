@@ -5,7 +5,6 @@ import static android.content.Intent.ACTION_DELETE;
 import static com.derrick.wellnesscheck.utils.Utils.getTime;
 
 import android.app.Notification;
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -14,6 +13,7 @@ import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 
+import androidx.core.app.NotificationChannelCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
@@ -24,7 +24,6 @@ import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Settings;
 import com.derrick.wellnesscheck.utils.Utils;
 import com.derrick.wellnesscheck.view.activities.CheckInActivity;
-import com.derrick.wellnesscheck.view.activities.MainActivity;
 
 public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener {
 
@@ -78,6 +77,8 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                 .setVibrate(new long[]{1000, 1000, 1000, 1000, 1000})
                 .setAutoCancel(true);
 
+        Notification notification;
+
         switch (intent.getAction()){
             case ACTION_ALARM:
                 int checkInHours = intent.getIntExtra(EXTRA_INTERVAL1, 1);
@@ -106,7 +107,8 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                                 Intent.FLAG_ACTIVITY_CLEAR_TASK |
                                 Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS |
                                 Intent.FLAG_ACTIVITY_NO_USER_ACTION |
-                                Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                                Intent.FLAG_ACTIVITY_SINGLE_TOP |
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP)
                         .putExtras(intent);
                 PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(context, 2, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
@@ -122,7 +124,10 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                     .setOngoing(true)
                     .setContentText(context.getString(R.string.click_to_check_in_by) + getTime(smsAlarmTime));
 
-                notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
+                notification = builder.build();
+                notification.flags |= Notification.FLAG_SHOW_LIGHTS;
+
+                notificationManagerCompat.notify(NOTIFICATION_ID, notification);
                 doDBStuff();
                 break;
             case ACTION_BOOT_COMPLETED:
@@ -140,7 +145,9 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                         .setContentIntent(lateResponsePendingIntent)
                         .setContentTitle(context.getString(R.string.you_missed_check_in))
                         .setContentText(context.getString(R.string.message_will_be_sent));
-                notificationManagerCompat.notify(NOTIFICATION_ID, builder.build());
+                notification = builder.build();
+                notification.flags |= Notification.FLAG_SHOW_LIGHTS;
+                notificationManagerCompat.notify(NOTIFICATION_ID, notification);
                 sendMissedCheckInSMS();
                 break;
             case ACTION_DELETE:
@@ -217,16 +224,18 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = context.getString(R.string.channel_name);
-            String description = context.getString(R.string.channel_description);
-            int importance = NotificationManager.IMPORTANCE_HIGH;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            NotificationChannelCompat channel = new NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManager.IMPORTANCE_HIGH)
+                .setName(context.getString(R.string.channel_name))
+                .setDescription(context.getString(R.string.channel_description))
+                //.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC)
+                .setVibrationEnabled(true)
+                .setLightsEnabled(true)
+                .setVibrationPattern(new long[]{1000, 1000, 1000, 1000, 1000})
+                .setLightColor(context.getColor(R.color.colorPrimary))
+                .build();
             // Register the channel with the system; you can't change the importance
             // or other notification behaviors after this
-            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
+            NotificationManagerCompat.from(context).createNotificationChannel(channel);
         }
     }
 }

@@ -217,22 +217,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                     setFirstCheckText();
                     break;
                 case R.id.switchAlarm:
-                    if(isChecked)
-                        checkPermissions(new String[]{Manifest.permission.USE_FULL_SCREEN_INTENT}, new PermissionsListener() {
-                            @Override
-                            public void permissionsGranted() {
-                                getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean("alarm", true).apply();
-                            }
-
-                            @Override
-                            public void permissionsDenied() {
-                                alarm.setChecked(false);
-                                getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean("alarm", false).apply();
-                            }
-
-                            @Override
-                            public void showRationale(String[] permissions) { }
-                        });
+                    getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean("alarm", isChecked).apply();
                     break;
             }
 
