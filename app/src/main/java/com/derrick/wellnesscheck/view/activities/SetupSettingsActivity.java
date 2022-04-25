@@ -297,6 +297,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         infoAllDay = findViewById(R.id.info_all_day);
         infoResponse = findViewById(R.id.info_response);
         infoLocation = findViewById(R.id.info_location);
+        infoAlarm = findViewById(R.id.info_alarm);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(SetupSettingsActivity.this, R.style.AppTheme_Dialog_Alert);
         infoHowOften.setOnClickListener(v -> builder.setTitle("Check-In Frequency")
@@ -312,6 +313,9 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                 .show());
         infoLocation.setOnClickListener(v -> builder.setTitle("Report Location")
                 .setMessage("Turn this on to include a link to your location in the SMS sent to your emergency contacts when a wellness check is not completed within the response time.")
+                .show());
+        infoAlarm.setOnClickListener(v -> builder.setTitle("Alarm")
+                .setMessage("Turn this on to include an alarm with your wellness check notifications.")
                 .show());
     }
 
