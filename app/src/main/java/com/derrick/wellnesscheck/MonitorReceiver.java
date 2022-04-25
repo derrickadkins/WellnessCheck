@@ -47,9 +47,11 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
     NotificationCompat.Builder builder;
     NotificationManagerCompat notificationManagerCompat;
 
-    public static CheckInListener checkInListener;
-    public interface CheckInListener {
+    public static EventListener eventListener;
+    public interface EventListener {
         void onCheckIn();
+        void onCheckInStart();
+        void onMissedCheckIn();
     }
 
     Intent intent;
@@ -115,12 +117,11 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                 if(context.getSharedPreferences(context.getPackageName(), Context.MODE_PRIVATE).getBoolean("alarm", false)) {
                     builder.setFullScreenIntent(fullScreenPendingIntent, true);
                     builder.setCategory(NotificationCompat.CATEGORY_ALARM);
-                    builder.setContentIntent(fullScreenPendingIntent);
-                }else{
-                    builder.setContentIntent(responsePendingIntent);
+                    context.startService(new Intent(context, RingAlarmService.class));
                 }
 
                 builder.setContentTitle(context.getString(R.string.time_to_check_in))
+                    .setContentIntent(responsePendingIntent)
                     .setOngoing(true)
                     .setContentText(context.getString(R.string.click_to_check_in_by) + getTime(smsAlarmTime));
 
@@ -134,11 +135,14 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                 doDBStuff();
                 break;
             case ACTION_RESPONSE:
+                context.stopService(new Intent(context, RingAlarmService.class));
                 notificationManagerCompat.cancel(NOTIFICATION_ID);
                 WellnessCheck.cancelAlarm(context, ACTION_SMS, intent.getExtras());
                 doDBStuff();
                 break;
             case ACTION_SMS:
+                context.stopService(new Intent(context, RingAlarmService.class));
+                if(eventListener != null) eventListener.onMissedCheckIn();
                 Intent lateResponseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_LATE_RESPONSE).setFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(intent);
                 PendingIntent lateResponsePendingIntent = PendingIntent.getBroadcast(context, 3, lateResponseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
                 builder.setOngoing(false)
@@ -151,6 +155,7 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
                 sendMissedCheckInSMS();
                 break;
             case ACTION_DELETE:
+                context.stopService(new Intent(context, RingAlarmService.class));
                 notificationManagerCompat.deleteNotificationChannel(CHANNEL_ID);
                 WellnessCheck.cancelAlarm(context, ACTION_ALARM, intent.getExtras());
                 WellnessCheck.cancelAlarm(context, ACTION_SMS, intent.getExtras());
@@ -172,11 +177,12 @@ public class MonitorReceiver extends BroadcastReceiver implements DB.DbListener 
             case ACTION_ALARM:
                 settings.checkedIn = false;
                 settings.updateCheckIn(nextCheckIn);
+                if(eventListener != null) eventListener.onCheckInStart();
                 break;
             case ACTION_RESPONSE:
                 settings.checkedIn = true;
                 settings.update();
-                if(checkInListener != null) checkInListener.onCheckIn();
+                if(eventListener != null) eventListener.onCheckIn();
                 break;
             case ACTION_BOOT_COMPLETED:
                 //todo: notify immediately if check-in was missed?

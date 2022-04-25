@@ -50,6 +50,8 @@
 
         <service android:name=".FallDetectionService" android:enabled="true" android:exported="true" />
 
+        <service android:name=".RingAlarmService" android:enabled="true" android:exported="true" />
+
         <activity android:exported="true"
             android:name=".view.activities.MainActivity"
             android:label="@string/app_name"

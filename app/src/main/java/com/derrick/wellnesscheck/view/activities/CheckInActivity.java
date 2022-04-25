@@ -25,7 +25,7 @@ import com.derrick.wellnesscheck.model.data.Settings;
 
 import java.util.Calendar;
 
-public class CheckInActivity extends AppCompatActivity implements DB.DbListener {
+public class CheckInActivity extends AppCompatActivity implements DB.DbListener, MonitorReceiver.EventListener {
     private static final String TAG = "CheckInActivity";
     ProgressBar progressBar;
     TextView tvProgressBar, tvTimerLabel, tvNextCheckIn;
@@ -34,6 +34,8 @@ public class CheckInActivity extends AppCompatActivity implements DB.DbListener 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        MonitorReceiver.eventListener = this;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
@@ -72,7 +74,6 @@ public class CheckInActivity extends AppCompatActivity implements DB.DbListener 
             new MonitorReceiver()
                     .onReceive(CheckInActivity.this, new Intent(CheckInActivity.this, MonitorReceiver.class)
                             .setAction(MonitorReceiver.ACTION_RESPONSE).putExtras(settings.toBundle()));
-            finish();
         });
         startTimer(settings.prevCheckIn + responseInterval - System.currentTimeMillis());
     }
@@ -99,8 +100,25 @@ public class CheckInActivity extends AppCompatActivity implements DB.DbListener 
 
             @Override
             public void onFinish() {
+                MonitorReceiver.eventListener = null;
                 finish();
             }
         }.start();
+    }
+
+    @Override
+    public void onCheckIn() {
+        MonitorReceiver.eventListener = null;
+        finish();
+    }
+
+    @Override
+    public void onCheckInStart() {
+
+    }
+
+    @Override
+    public void onMissedCheckIn() {
+
     }
 }
