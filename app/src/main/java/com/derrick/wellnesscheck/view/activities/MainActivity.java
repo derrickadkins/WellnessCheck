@@ -106,7 +106,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
 
         fragments.add(homeFragment);
         fragments.add(contactsFragment);
-        fragments.add(resourcesFragment);
+        fragments.add(logFragment);
 
         bottomNavigationView.setSelectedItemId(R.id.action_home);
     }
@@ -116,7 +116,9 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         switch (showcaseStep++){
             case 0:
                 TapTargetView.showFor(this,                 // `this` is an Activity
-                        TapTarget.forView(findViewById(R.id.action_contacts), "Emergency Contacts", "Click here to add, call, SMS, or delete emergency contacts")
+                        TapTarget.forView(findViewById(R.id.action_contacts),
+                                "Emergency Contacts",
+                                "Click here to add, call, SMS, or delete emergency contacts")
                                 .outerCircleColor(R.color.colorPrimary)      // Specify a color for the outer circle
                                 .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
                                 .titleTextSize(20)                  // Specify the size (in sp) of the title text
@@ -136,18 +138,20 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
                         });
                 break;
             case 1:
-                TapTargetView.showFor(this,                 // `this` is an Activity
-                        TapTarget.forView(findViewById(R.id.fab), "Add Emergency Contacts", "Click here to add people you can trust to support you")
-                                .outerCircleColor(R.color.colorPrimaryDark)      // Specify a color for the outer circle
-                                .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
-                                .titleTextSize(20)                  // Specify the size (in sp) of the title text
-                                .descriptionTextSize(14)            // Specify the size (in sp) of the description text
-                                .textColor(android.R.color.white)            // Specify a color for both the title and description text
-                                .dimColor(android.R.color.black)            // If set, will dim behind the view with 30% opacity of the given color
-                                .drawShadow(true)                   // Whether to draw a drop shadow or not
-                                .cancelable(false)                  // Whether tapping outside the outer circle dismisses the view
-                                .transparentTarget(true)           // Specify whether the target is transparent (displays the content underneath)
-                                .targetRadius(40),                  // Specify the target radius (in dp)
+                TapTargetView.showFor(this,
+                        TapTarget.forView(findViewById(R.id.fab),
+                                "Add Emergency Contacts",
+                                "Click here to add people you can trust to support you")
+                                .outerCircleColor(R.color.colorPrimaryDark)
+                                .outerCircleAlpha(0.96f)
+                                .titleTextSize(20)
+                                .descriptionTextSize(14)
+                                .textColor(android.R.color.white)
+                                .dimColor(android.R.color.black)
+                                .drawShadow(true)
+                                .cancelable(false)
+                                .transparentTarget(true)
+                                .targetRadius(40),
                         new TapTargetView.Listener() {          // The listener can listen for regular clicks, long clicks or cancels
                             @Override
                             public void onTargetClick(TapTargetView view) {
@@ -157,18 +161,20 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
                         });
                 break;
             case 2:
-                TapTargetView.showFor(this,                 // `this` is an Activity
-                        TapTarget.forView(findViewById(R.id.action_resources), "Resources", "Here you will find a variety of emergency resources, just swipe to use one")
-                                .outerCircleColor(R.color.colorPrimary)      // Specify a color for the outer circle
-                                .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
-                                .titleTextSize(20)                  // Specify the size (in sp) of the title text
-                                .descriptionTextSize(14)            // Specify the size (in sp) of the description text
-                                .textColor(android.R.color.white)            // Specify a color for both the title and description text
-                                .dimColor(android.R.color.black)            // If set, will dim behind the view with 30% opacity of the given color
-                                .drawShadow(true)                   // Whether to draw a drop shadow or not
-                                .cancelable(false)                  // Whether tapping outside the outer circle dismisses the view
-                                .transparentTarget(true)           // Specify whether the target is transparent (displays the content underneath)
-                                .targetRadius(40),                  // Specify the target radius (in dp)
+                TapTargetView.showFor(this,
+                        TapTarget.forView(findViewById(R.id.action_resources),
+                                "Resources",
+                                "Here you will find a variety of emergency resources, just swipe to use one")
+                                .outerCircleColor(R.color.colorPrimary)
+                                .outerCircleAlpha(0.96f)
+                                .titleTextSize(20)
+                                .descriptionTextSize(14)
+                                .textColor(android.R.color.white)
+                                .dimColor(android.R.color.black)
+                                .drawShadow(true)
+                                .cancelable(false)
+                                .transparentTarget(true)
+                                .targetRadius(40),
                         new TapTargetView.Listener() {          // The listener can listen for regular clicks, long clicks or cancels
                             @Override
                             public void onTargetClick(TapTargetView view) {
@@ -178,18 +184,20 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
                         });
                 break;
             case 3:
-                TapTargetView.showFor(this,                 // `this` is an Activity
-                        TapTarget.forView(findViewById(R.id.action_home), "Home", "Click here to access your wellness check status and settings")
-                                .outerCircleColor(R.color.colorPrimaryDark)      // Specify a color for the outer circle
-                                .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
-                                .titleTextSize(20)                  // Specify the size (in sp) of the title text
-                                .descriptionTextSize(14)            // Specify the size (in sp) of the description text
-                                .textColor(android.R.color.white)            // Specify a color for both the title and description text
-                                .dimColor(android.R.color.black)            // If set, will dim behind the view with 30% opacity of the given color
-                                .drawShadow(true)                   // Whether to draw a drop shadow or not
-                                .cancelable(false)                  // Whether tapping outside the outer circle dismisses the view
-                                .transparentTarget(true)           // Specify whether the target is transparent (displays the content underneath)
-                                .targetRadius(40),                  // Specify the target radius (in dp)
+                TapTargetView.showFor(this,
+                        TapTarget.forView(findViewById(R.id.action_home),
+                                "Home",
+                                "Click here to access your wellness check status and settings")
+                                .outerCircleColor(R.color.colorPrimaryDark)
+                                .outerCircleAlpha(0.96f)
+                                .titleTextSize(20)
+                                .descriptionTextSize(14)
+                                .textColor(android.R.color.white)
+                                .dimColor(android.R.color.black)
+                                .drawShadow(true)
+                                .cancelable(false)
+                                .transparentTarget(true)
+                                .targetRadius(40),
                         new TapTargetView.Listener() {          // The listener can listen for regular clicks, long clicks or cancels
                             @Override
                             public void onTargetClick(TapTargetView view) {
@@ -199,18 +207,20 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
                         });
                 break;
             case 4:
-                TapTargetView.showFor(this,                 // `this` is an Activity
-                        TapTarget.forView(findViewById(R.id.imgSettingsIcon), "Settings", "Click here to see your settings, they can only be changed while your wellness checks are turned off")
-                                .outerCircleColor(R.color.colorPrimary)      // Specify a color for the outer circle
-                                .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
-                                .titleTextSize(20)                  // Specify the size (in sp) of the title text
-                                .descriptionTextSize(14)            // Specify the size (in sp) of the description text
-                                .textColor(android.R.color.white)            // Specify a color for both the title and description text
-                                .dimColor(android.R.color.black)            // If set, will dim behind the view with 30% opacity of the given color
-                                .drawShadow(true)                   // Whether to draw a drop shadow or not
-                                .cancelable(false)                  // Whether tapping outside the outer circle dismisses the view
-                                .transparentTarget(true)           // Specify whether the target is transparent (displays the content underneath)
-                                .targetRadius(40),                  // Specify the target radius (in dp)
+                TapTargetView.showFor(this,
+                        TapTarget.forView(findViewById(R.id.imgSettingsIcon),
+                                "Settings",
+                                "Click here to see your settings, they can only be changed while your wellness checks are turned off")
+                                .outerCircleColor(R.color.colorPrimary)
+                                .outerCircleAlpha(0.96f)
+                                .titleTextSize(20)
+                                .descriptionTextSize(14)
+                                .textColor(android.R.color.white)
+                                .dimColor(android.R.color.black)
+                                .drawShadow(true)
+                                .cancelable(false)
+                                .transparentTarget(true)
+                                .targetRadius(40),
                         new TapTargetView.Listener() {          // The listener can listen for regular clicks, long clicks or cancels
                             @Override
                             public void onTargetClick(TapTargetView view) {
@@ -220,17 +230,19 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
                         });
                 break;
             case 5:
-                TapTargetView.showFor(this,                 // `this` is an Activity
-                        TapTarget.forView(findViewById(R.id.progressBar), "Wellness Checks", "Click here to start the setup process for wellness checks, check in, or see when your next wellness check is here")
-                                .outerCircleColor(R.color.colorPrimaryDark)      // Specify a color for the outer circle
-                                .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
-                                .titleTextSize(20)                  // Specify the size (in sp) of the title text
-                                .descriptionTextSize(14)            // Specify the size (in sp) of the description text
-                                .textColor(android.R.color.white)            // Specify a color for both the title and description text
-                                .dimColor(android.R.color.black)            // If set, will dim behind the view with 30% opacity of the given color
-                                .drawShadow(true)                   // Whether to draw a drop shadow or not
-                                .cancelable(false)                  // Whether tapping outside the outer circle dismisses the view
-                                .transparentTarget(true)           // Specify whether the target is transparent (displays the content underneath)
+                TapTargetView.showFor(this,
+                        TapTarget.forView(findViewById(R.id.progressBar),
+                                "Wellness Checks",
+                                "Click here to start the setup process for wellness checks, check in, or see when your next wellness check is here")
+                                .outerCircleColor(R.color.colorPrimaryDark)
+                                .outerCircleAlpha(0.96f)
+                                .titleTextSize(20)
+                                .descriptionTextSize(14)
+                                .textColor(android.R.color.white)
+                                .dimColor(android.R.color.black)
+                                .drawShadow(true)
+                                .cancelable(false)
+                                .transparentTarget(true)
                                 .targetRadius(160),
                         new TapTargetView.Listener(){
                             @Override
@@ -265,7 +277,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         if (id == R.id.action_home) {
             setFragment(fragments.indexOf(homeFragment));
         }else if (id == R.id.action_resources) {
-            setFragment(fragments.indexOf(resourcesFragment));
+            setFragment(fragments.indexOf(logFragment));
         }else if (id == R.id.action_contacts) {
             setFragment(fragments.indexOf(contactsFragment));
         }
