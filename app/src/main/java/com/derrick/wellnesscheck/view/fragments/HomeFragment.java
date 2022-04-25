@@ -29,6 +29,7 @@ import com.derrick.wellnesscheck.FallDetectionService;
 import com.derrick.wellnesscheck.R;
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.SmsReceiver;
+import com.derrick.wellnesscheck.WellnessCheck;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
 import com.derrick.wellnesscheck.model.data.Log;
@@ -175,7 +176,11 @@ public class HomeFragment extends Fragment implements MonitorReceiver.EventListe
 
             if(!settings.checkedIn && settings.prevCheckIn + responseInterval > now) {
                 startTimer(settings.prevCheckIn + responseInterval - now, true);
-            }else startTimer(settings.nextCheckIn - now, false);
+            }else {
+                if(settings.nextCheckIn - now < 0)
+                    settings.updateCheckIn(WellnessCheck.getNextCheckIn());
+                startTimer(settings.nextCheckIn - now, false);
+            }
         }
     }
 
