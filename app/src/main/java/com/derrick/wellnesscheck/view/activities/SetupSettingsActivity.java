@@ -1,7 +1,6 @@
 package com.derrick.wellnesscheck.view.activities;
 
 import static android.text.format.DateUtils.HOUR_IN_MILLIS;
-import static com.derrick.wellnesscheck.WellnessCheck.db;
 import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
 import static com.derrick.wellnesscheck.utils.Utils.getTime;
 
@@ -10,10 +9,11 @@ import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.text.format.DateFormat;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -29,7 +29,7 @@ import androidx.core.app.NavUtils;
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.WellnessCheck;
 import com.derrick.wellnesscheck.model.data.Log;
-import com.derrick.wellnesscheck.model.data.Settings;
+import com.derrick.wellnesscheck.model.data.Prefs;
 import com.derrick.wellnesscheck.model.data.Task;
 import com.derrick.wellnesscheck.utils.*;
 import com.derrick.wellnesscheck.R;
@@ -46,13 +46,12 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     static final String TAG = "SetupSettingsActivity";
     boolean returnToMain;
     NumberPicker checkInHours, respondMinutes;
-    TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck, tvAlarm/*, tvSensitivity*/;
+    TextView fromTime, toTime, tvFrom, tvTo, tvFirstCheck/*, tvSensitivity*/;
     AppCompatImageView infoHowOften, infoAllDay, infoResponse, infoLocation, infoAlarm;
     //SeekBar sbSensitivity;
     SwitchCompat allDay, reportLocation, alarm/*, fallDetection*/;
     Button btnStart;
     Timer timer = new Timer();
-    Settings settings;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -66,20 +65,19 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
-        settings = db.settings;
-
         returnToMain = getIntent().getBooleanExtra("returnToMain", true);
         boolean showStart = !returnToMain;
-        boolean enable = !settings.monitoringOn;
+        boolean enable = !Prefs.monitoringOn();
 
         btnStart = findViewById(R.id.btnStart);
         btnStart.setVisibility(showStart ? View.VISIBLE : View.GONE);
         btnStart.setOnClickListener(v -> {
             ArrayList permissions = new ArrayList();
-            permissions.add(Manifest.permission.SCHEDULE_EXACT_ALARM);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                permissions.add(Manifest.permission.SCHEDULE_EXACT_ALARM);
             permissions.add(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
             permissions.add(Manifest.permission.SEND_SMS);
-            //if(settings.fallDetection) permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+            //if(Prefs.fallDetection()) permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
             checkPermissions((String[])permissions.toArray(new String[permissions.size()]), new PermissionsListener() {
                 @Override
                 public void permissionsGranted() {
@@ -94,11 +92,11 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                 @Override
                 public void showRationale(String[] permissions) {
                     for(String permission : permissions)
-                        if(permission == Manifest.permission.SEND_SMS){
+                        if(permission.equals(Manifest.permission.SEND_SMS)){
                             Snackbar snackbar = Snackbar.make(findViewById(R.id.settings_fragment), "SMS permission required",
                                     Snackbar.LENGTH_LONG);
                             snackbar.setAction("Settings", v -> {
-                                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                                 Uri uri = Uri.fromParts("package", getPackageName(), null);
                                 intent.setData(uri);
                                 startActivity(intent);
@@ -119,10 +117,9 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         checkInHours.setOnTouchListener(touchListener);
         checkInHours.setMinValue(1);
         checkInHours.setMaxValue(24);
-        checkInHours.setValue(settings.checkInHours);
+        checkInHours.setValue(Prefs.checkInHours());
         checkInHours.setOnValueChangedListener((picker, oldVal, newVal) -> {
-            settings.checkInHours = newVal;
-            settings.update();
+            Prefs.checkInHours(newVal);
             setFirstCheckText();
         });
 
@@ -130,22 +127,19 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         respondMinutes.setOnTouchListener(touchListener);
         respondMinutes.setMinValue(1);
         respondMinutes.setMaxValue(59);
-        respondMinutes.setValue(settings.respondMinutes);
-        respondMinutes.setOnValueChangedListener((picker, oldVal, newVal) -> {
-            settings.respondMinutes = newVal;
-            settings.update();
-        });
+        respondMinutes.setValue(Prefs.respondMinutes());
+        respondMinutes.setOnValueChangedListener((picker, oldVal, newVal) -> Prefs.respondMinutes(newVal));
 
         View.OnClickListener onTimeClickListener = v -> {
             int hourOfDay, minute;
             switch (v.getId()){
                 case R.id.tvFromTime:
-                    hourOfDay = settings.fromHour;
-                    minute = settings.fromMinute;
+                    hourOfDay = Prefs.fromHour();
+                    minute = Prefs.fromMinute();
                     break;
                 case R.id.tvToTime:
-                    hourOfDay = settings.toHour;
-                    minute = settings.toMinute;
+                    hourOfDay = Prefs.toHour();
+                    minute = Prefs.toMinute();
                     break;
                 default:
                     hourOfDay = 0;
@@ -156,54 +150,53 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                         ((TextView) v).setText(getTime(hourOfDay1, minute1));
                         switch (v.getId()) {
                             case R.id.tvFromTime:
-                                settings.fromHour = hourOfDay1;
-                                settings.fromMinute = minute1;
+                                Prefs.fromHour(hourOfDay1);
+                                Prefs.fromMinute(minute1);
                                 break;
                             case R.id.tvToTime:
-                                settings.toHour = hourOfDay1;
-                                settings.toMinute = minute1;
+                                Prefs.toHour(hourOfDay1);
+                                Prefs.toMinute(minute1);
                         }
                         checkInterval();
                         setFirstCheckText();
-                        settings.update();
                     }, hourOfDay, minute, DateFormat.is24HourFormat(this)).show();
         };
 
         CompoundButton.OnCheckedChangeListener checkedChangeListener = (buttonView, isChecked) -> {
             switch (buttonView.getId()) {
                 case R.id.switchReportLocation:
-                    settings.reportLocation = isChecked;
+                    Prefs.reportLocation(isChecked);
                     if(isChecked)
                         checkPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET},
                                 new PermissionsListener() {
                                     @Override
-                                    public void permissionsGranted() { if(settings.reportLocation) reportLocation.setChecked(true); }
+                                    public void permissionsGranted() { if(Prefs.reportLocation()) reportLocation.setChecked(true); }
 
                                     @Override
-                                    public void permissionsDenied() { reportLocation.setChecked(false); settings.reportLocation = false; }
+                                    public void permissionsDenied() { reportLocation.setChecked(false); Prefs.reportLocation(false); }
 
                                     @Override
                                     public void showRationale(String[] permissions) {
                                         Snackbar snackbar = Snackbar.make(findViewById(R.id.settings_fragment), "Location permission required",
                                                 Snackbar.LENGTH_LONG);
                                         snackbar.setAction("Settings", v -> {
-                                            Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                                             Uri uri = Uri.fromParts("package", getPackageName(), null);
                                             intent.setData(uri);
                                             startActivity(intent);
                                         });
                                         snackbar.show();
-                                        reportLocation.setChecked(false); settings.reportLocation = false;
+                                        reportLocation.setChecked(false); Prefs.reportLocation(false);
                                     }
                                 });
                     break;
                 /*case R.id.switchFallDetection:
-                    settings.fallDetection = isChecked;
+                    Prefs.fallDetection(isChecked);
                     tvSensitivity.setVisibility(isChecked?View.VISIBLE:View.GONE);
                     sbSensitivity.setVisibility(isChecked?View.VISIBLE:View.GONE);
                     break;*/
                 case R.id.switchAllDay:
-                    settings.allDay = isChecked;
+                    Prefs.allDay(isChecked);
                     int visibility = View.VISIBLE;
                     if (isChecked) {
                         visibility = View.GONE;
@@ -217,37 +210,35 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
                     setFirstCheckText();
                     break;
                 case R.id.switchAlarm:
-                    getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean("alarm", isChecked).apply();
+                    Prefs.alarm(isChecked);
                     break;
             }
-
-            settings.update();
         };
 
         allDay = findViewById(R.id.switchAllDay);
         allDay.setOnTouchListener(touchListener);
-        allDay.setChecked(settings.allDay);
+        allDay.setChecked(Prefs.allDay());
         allDay.setOnCheckedChangeListener(checkedChangeListener);
 
         tvFrom = findViewById(R.id.tvFrom);
         tvFrom.setOnTouchListener(touchListener);
-        tvFrom.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
+        tvFrom.setVisibility(Prefs.allDay() ? View.GONE : View.VISIBLE);
 
         tvTo = findViewById(R.id.tvTo);
         tvTo.setOnTouchListener(touchListener);
-        tvTo.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
+        tvTo.setVisibility(Prefs.allDay() ? View.GONE : View.VISIBLE);
 
         fromTime = findViewById(R.id.tvFromTime);
         fromTime.setOnTouchListener(touchListener);
         fromTime.setOnClickListener(onTimeClickListener);
-        fromTime.setText(getTime(settings.fromHour, settings.fromMinute));
-        fromTime.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
+        fromTime.setText(getTime(Prefs.fromHour(), Prefs.fromMinute()));
+        fromTime.setVisibility(Prefs.allDay() ? View.GONE : View.VISIBLE);
 
         toTime = findViewById(R.id.tvToTime);
         toTime.setOnTouchListener(touchListener);
         toTime.setOnClickListener(onTimeClickListener);
-        toTime.setText(getTime(settings.toHour, settings.toMinute));
-        toTime.setVisibility(settings.allDay ? View.GONE : View.VISIBLE);
+        toTime.setText(getTime(Prefs.toHour(), Prefs.toMinute()));
+        toTime.setVisibility(Prefs.allDay() ? View.GONE : View.VISIBLE);
 
         tvFirstCheck = findViewById(R.id.tvFirstCheck);
         if(returnToMain) tvFirstCheck.setVisibility(View.GONE);
@@ -255,7 +246,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
         /*fallDetection = findViewById(R.id.switchFallDetection);
         fallDetection.setEnabled(enable);
-        fallDetection.setChecked(settings.fallDetection);
+        fallDetection.setChecked(Prefs.fallDetection());
         fallDetection.setOnCheckedChangeListener(checkedChangeListener);
 
         tvSensitivity = findViewById(R.id.tvSensitivity);
@@ -276,21 +267,20 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                settings.fallSensitivity = seekBar.getProgress();
-                settings.update();
+                Prefs.fallSensitivity(seekBar.getProgress());
             }
         });
-        tvSensitivity.setVisibility(settings.fallDetection?View.VISIBLE:View.GONE);
-        sbSensitivity.setVisibility(settings.fallDetection?View.VISIBLE:View.GONE);*/
+        tvSensitivity.setVisibility(Prefs.fallDetection()?View.VISIBLE:View.GONE);
+        sbSensitivity.setVisibility(Prefs.fallDetection()?View.VISIBLE:View.GONE);*/
 
         reportLocation = findViewById(R.id.switchReportLocation);
         reportLocation.setOnTouchListener(touchListener);
-        reportLocation.setChecked(settings.reportLocation && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED);
+        reportLocation.setChecked(Prefs.reportLocation() && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED);
         reportLocation.setOnCheckedChangeListener(checkedChangeListener);
 
         alarm = findViewById(R.id.switchAlarm);
         alarm.setOnTouchListener(touchListener);
-        alarm.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean("alarm", false));
+        alarm.setChecked(Prefs.alarm());
         alarm.setOnCheckedChangeListener(checkedChangeListener);
 
         infoHowOften = findViewById(R.id.info_how_often);
@@ -321,11 +311,10 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                NavUtils.navigateUpFromSameTask(this);
-                overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
-                return true;
+        if (item.getItemId() == android.R.id.home) {
+            NavUtils.navigateUpFromSameTask(this);
+            overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -358,17 +347,17 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     void checkInterval(){
         //todo: is from - to > 1 ?
         //if interval is larger than non-excluded hours, set to 24
-        if(!settings.allDay) {
+        if(!Prefs.allDay()) {
             Calendar calendar = Calendar.getInstance();
             calendar.set(Calendar.SECOND, 0);
             calendar.set(Calendar.MILLISECOND, 0);
-            calendar.set(Calendar.HOUR_OF_DAY, settings.fromHour);
-            calendar.set(Calendar.MINUTE, settings.fromMinute);
+            calendar.set(Calendar.HOUR_OF_DAY, Prefs.fromHour());
+            calendar.set(Calendar.MINUTE, Prefs.fromMinute());
             long fromTime = calendar.getTimeInMillis();
-            calendar.set(Calendar.HOUR_OF_DAY, settings.toHour);
-            calendar.set(Calendar.MINUTE, settings.toMinute);
+            calendar.set(Calendar.HOUR_OF_DAY, Prefs.toHour());
+            calendar.set(Calendar.MINUTE, Prefs.toMinute());
             long toTime = calendar.getTimeInMillis();
-            long interval = settings.checkInHours * HOUR_IN_MILLIS;
+            long interval = Prefs.checkInHours() * HOUR_IN_MILLIS;
             if (fromTime < toTime) {
                 if (toTime - fromTime < interval)
                     checkInHours.setValue(24);
@@ -396,16 +385,15 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
     void startMonitoring(){
         timer.cancel();
 
-        settings.monitoringOn = true;
-        settings.checkedIn = true;
-        settings.nextCheckIn = WellnessCheck.getNextCheckIn();
-        settings.prevCheckIn = System.currentTimeMillis();
-        settings.update();
-        Log.d(TAG, "triggering first alarm at " + getReadableTime(settings.nextCheckIn));
+        Prefs.monitoringOn(true);
+        Prefs.checkedIn(true);
+        Prefs.nextCheckIn(WellnessCheck.getNextCheckIn());
+        Prefs.prevCheckIn(System.currentTimeMillis());
+        Log.d(TAG, "triggering first alarm at " + getReadableTime(Prefs.nextCheckIn()));
 
-        WellnessCheck.setAlarm(this, settings.nextCheckIn, MonitorReceiver.ACTION_ALARM, settings.toBundle());
+        WellnessCheck.setAlarm(this, Prefs.nextCheckIn(), MonitorReceiver.ACTION_NOTIFY);
 
-        //if(settings.fallDetection) startService(new Intent(this, FallDetectionService.class));
+        //if(Prefs.fallDetection()) startService(new Intent(this, FallDetectionService.class));
 
         startActivity(new Intent(SetupSettingsActivity.this, MainActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK));

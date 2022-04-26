@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.derrick.wellnesscheck.R;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
+import com.derrick.wellnesscheck.model.data.Prefs;
 import com.derrick.wellnesscheck.utils.PermissionsListener;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.google.android.material.snackbar.Snackbar;
@@ -64,7 +65,7 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
         holder.itemView.setBackgroundColor(activity.getColor(position == selectedPos ? android.R.color.darker_gray : android.R.color.transparent));
         holder.itemView.setOnLongClickListener(v -> {
             if (actionMode != null) return false;
-            if(db.settings.monitoringOn) {
+            if(Prefs.monitoringOn()) {
                 Toast.makeText(getContext(), "Turn off wellness checks to delete contacts", Toast.LENGTH_SHORT).show();
                 return false;
             }

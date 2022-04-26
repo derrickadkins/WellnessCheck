@@ -7,6 +7,7 @@ import android.os.Looper;
 
 import com.derrick.wellnesscheck.WellnessCheck;
 import com.derrick.wellnesscheck.model.DB;
+import com.derrick.wellnesscheck.utils.FragmentReadyListener;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,7 +43,7 @@ public class Log extends ArrayList<Entry> {
         DB.InitDB(WellnessCheck.context, db -> {
             Entry entry = db.log.add(tag + ": " + msg);
             if(Log.listener != null) new Handler(Looper.getMainLooper()).post(() -> Log.listener.onLog(entry));
-        }, false, false, true);
+        }, false, true);
         return result;
     }
 

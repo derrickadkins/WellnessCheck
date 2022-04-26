@@ -15,6 +15,7 @@ import com.derrick.wellnesscheck.model.data.Log;
 import java.io.IOException;
 
 public class RingAlarmService extends Service {
+    final static String TAG = "RingAlarmService";
     MediaPlayer mp;
 
     @Nullable
@@ -26,17 +27,18 @@ public class RingAlarmService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "onCreate");
         ringAlarm();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.d(TAG, "onDestroy");
         if(mp != null) mp.stop();
     }
 
     public void ringAlarm() {
-
         Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
         if (alarmUri == null) {
             alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);

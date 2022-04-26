@@ -33,7 +33,7 @@ public class ResourcesFragment extends Fragment {
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         if(context instanceof FragmentReadyListener)
-            this.fragmentReadyListener = (FragmentReadyListener) context;
+            fragmentReadyListener = (FragmentReadyListener) context;
     }
 
     @Override

@@ -21,14 +21,12 @@ import com.derrick.wellnesscheck.model.data.*;
 
 import java.util.List;
 
-@Database(entities = {Contact.class, Settings.class, Entry.class}, version = 1, exportSchema = false)
+@Database(entities = {Contact.class, Entry.class}, version = 2, exportSchema = false)
 public abstract class DB extends RoomDatabase {
     private final static String TAG = "DB";
     public abstract ContactDao contactDao();
-    public abstract SettingsDao settingsDao();
     public abstract LogDao logDao();
 
-    public Settings settings;
     public Contacts contacts;
     public Log log;
 
@@ -36,14 +34,13 @@ public abstract class DB extends RoomDatabase {
         void onDbReady(DB db);
     }
 
-    synchronized static void InitDbSync(Context context, DbListener dbListener, boolean settings, boolean contacts, boolean log){
+    synchronized static void InitDbSync(Context context, DbListener dbListener, boolean contacts, boolean log){
         if(db == null)
             db = Room.databaseBuilder(context,
                     DB.class, "database-name")
                     .fallbackToDestructiveMigration()
                     .build();
 
-        if(settings && db.settings == null) db.settings = Settings.Init();
         if(contacts && db.contacts == null) db.contacts = Contacts.Init();
         if(log && db.log == null) db.log = Log.Init();
 
@@ -58,18 +55,18 @@ public abstract class DB extends RoomDatabase {
     }
 
     public static void InitDB(Context context, DbListener dbListener){
-        new Thread(() -> InitDbSync(context, dbListener, true, true, true)).start();
+        new Thread(() -> InitDbSync(context, dbListener, true, true)).start();
     }
 
-    public static void InitDB(Context context, boolean settings, boolean contacts, boolean log){
+    public static void InitDB(Context context, boolean contacts, boolean log){
         DbListener dbListener = null;
         if(context instanceof DbListener)
             dbListener = (DbListener) context;
-        InitDB(context, dbListener, settings, contacts, log);
+        InitDB(context, dbListener, contacts, log);
     }
 
-    public static void InitDB(Context context, DbListener dbListener, boolean settings, boolean contacts, boolean log){
-        new Thread(() -> InitDbSync(context, dbListener, settings, contacts, log)).start();
+    public static void InitDB(Context context, DbListener dbListener, boolean contacts, boolean log){
+        new Thread(() -> InitDbSync(context, dbListener, contacts, log)).start();
     }
 
     @Dao
@@ -107,32 +104,4 @@ public abstract class DB extends RoomDatabase {
         @Query("DELETE FROM contact")
         void nukeTable();
     }
-
-    @Dao
-    public interface SettingsDao {
-        @Query("SELECT * FROM settings LIMIT 1")
-        Settings getSettings();
-
-        @Update
-        void update(Settings settings);
-
-        @Insert
-        void insert(Settings settings);
-    }
-
-    static final Migration MIGRATION_1_2 = new Migration(1, 2) {
-        @Override
-        public void migrate(SupportSQLiteDatabase database) {
-            database.execSQL("CREATE TABLE `Fruit` (`id` INTEGER, "
-                    + "`name` TEXT, PRIMARY KEY(`id`))");
-        }
-    };
-
-//    static final Migration MIGRATION_2_3 = new Migration(2, 3) {
-//        @Override
-//        public void migrate(SupportSQLiteDatabase database) {
-//            database.execSQL("ALTER TABLE Book "
-//                    + " ADD COLUMN pub_year INTEGER");
-//        }
-//    };
 }

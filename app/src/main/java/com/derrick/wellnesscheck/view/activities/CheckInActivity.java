@@ -19,13 +19,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.R;
-import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Log;
-import com.derrick.wellnesscheck.model.data.Settings;
+import com.derrick.wellnesscheck.model.data.Prefs;
 
 import java.util.Calendar;
 
-public class CheckInActivity extends AppCompatActivity implements DB.DbListener, MonitorReceiver.EventListener {
+public class CheckInActivity extends AppCompatActivity implements MonitorReceiver.EventListener {
     private static final String TAG = "CheckInActivity";
     ProgressBar progressBar;
     TextView tvProgressBar, tvTimerLabel, tvNextCheckIn;
@@ -34,6 +33,7 @@ public class CheckInActivity extends AppCompatActivity implements DB.DbListener,
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate");
 
         MonitorReceiver.eventListener = this;
 
@@ -63,19 +63,13 @@ public class CheckInActivity extends AppCompatActivity implements DB.DbListener,
 
         progressBar = findViewById(R.id.progressBar);
 
-        DB.InitDB(this);
-    }
-
-    @Override
-    public void onDbReady(DB db) {
-        Settings settings = db.settings;
-        responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
+        responseInterval = Prefs.respondMinutes() * MINUTE_IN_MILLIS;
         progressBar.setOnClickListener(v -> {
             new MonitorReceiver()
                     .onReceive(CheckInActivity.this, new Intent(CheckInActivity.this, MonitorReceiver.class)
-                            .setAction(MonitorReceiver.ACTION_RESPONSE).putExtras(settings.toBundle()));
+                            .setAction(MonitorReceiver.ACTION_CHECK_IN));
         });
-        startTimer(settings.prevCheckIn + responseInterval - System.currentTimeMillis());
+        startTimer(Prefs.prevCheckIn() + responseInterval - System.currentTimeMillis());
     }
 
     void startTimer(long ms){
@@ -100,6 +94,7 @@ public class CheckInActivity extends AppCompatActivity implements DB.DbListener,
 
             @Override
             public void onFinish() {
+                Log.d(TAG, "CountDownTimer:onFinish");
                 MonitorReceiver.eventListener = null;
                 finish();
             }
@@ -108,6 +103,7 @@ public class CheckInActivity extends AppCompatActivity implements DB.DbListener,
 
     @Override
     public void onCheckIn() {
+        Log.d(TAG, "onCheckIn");
         MonitorReceiver.eventListener = null;
         finish();
     }

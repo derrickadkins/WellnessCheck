@@ -9,11 +9,10 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
 
 import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Log;
-import com.derrick.wellnesscheck.model.data.Settings;
+import com.derrick.wellnesscheck.model.data.Prefs;
 
 import java.util.Calendar;
 
@@ -29,51 +28,53 @@ public class WellnessCheck extends Application {
         Log.d(TAG, "onCreate");
     }
 
-    public static boolean applySettings(Context context, Settings settings){
+    public static boolean applyPrefs(Context context){
         AlarmManager alarmManager = (AlarmManager) context.getApplicationContext().getSystemService(Service.ALARM_SERVICE);
         AlarmManager.AlarmClockInfo alarmClockInfo = alarmManager.getNextAlarmClock();
-        //todo: use shared preferences for settings instead of database
-        boolean monitoringOn = context.getSharedPreferences(context.getPackageName(), Context.MODE_PRIVATE).getBoolean("monitoringOn", false);
-        if(settings.monitoringOn && alarmClockInfo == null){
+        if(Prefs.monitoringOn() && alarmClockInfo == null){
             long now = System.currentTimeMillis();
-            if(settings.nextCheckIn < now) settings.updateCheckIn(WellnessCheck.getNextCheckIn());
-            long time = settings.nextCheckIn;
-            long responseInterval = settings.respondMinutes * MINUTE_IN_MILLIS;
-            if(!settings.checkedIn && settings.prevCheckIn + responseInterval > now)
-                time = settings.prevCheckIn + responseInterval - now;
+            if(Prefs.nextCheckIn() < now) Prefs.updateCheckIn(WellnessCheck.getNextCheckIn());
+            long time = Prefs.nextCheckIn();
+            long responseInterval = Prefs.respondMinutes() * MINUTE_IN_MILLIS;
+            if(!Prefs.checkedIn() && Prefs.prevCheckIn() + responseInterval > now)
+                time = Prefs.prevCheckIn() + responseInterval - now;
 
-            //if(settings.fallDetection) context.startService(new Intent(context, FallDetectionService.class));
-            WellnessCheck.setAlarm(context, time, MonitorReceiver.ACTION_ALARM, settings.toBundle());
+            //if(Prefs.fallDetection()) context.startService(new Intent(context, FallDetectionService.class));
+            WellnessCheck.setAlarm(context, time, MonitorReceiver.ACTION_NOTIFY);
             return true;
         }
         return false;
     }
 
-    public static void setAlarm(Context context, long time, String action, Bundle bundle){
+    public static void setAlarm(Context context, long time, String action){
         context = context.getApplicationContext();
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Service.ALARM_SERVICE);
-        PendingIntent pendingIntent = getAlarmIntent(context, action, bundle);
+        PendingIntent pendingIntent = getAlarmIntent(context, action);
         AlarmManager.AlarmClockInfo alarmClockInfo = new AlarmManager.AlarmClockInfo(time, pendingIntent);
         alarmManager.setAlarmClock(alarmClockInfo, pendingIntent);
         Log.d(TAG, action + " alarm set for " + getReadableTime(time));
     }
 
-    public static void cancelAlarm(Context context, String action, Bundle bundle){
+    public static void cancelAlarm(Context context, String action){
         context = context.getApplicationContext();
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Service.ALARM_SERVICE);
-        alarmManager.cancel(getAlarmIntent(context, action, bundle));
+        alarmManager.cancel(getAlarmIntent(context, action));
         Log.d(TAG, action + " alarm canceled");
     }
 
-    static PendingIntent getAlarmIntent(Context context, String action, Bundle bundle){
+    static PendingIntent getAlarmIntent(Context context, String action){
         Intent intent = new Intent(context, MonitorReceiver.class).setAction(action)
-                .addFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtras(bundle);
-        int requestCode = action.equals(MonitorReceiver.ACTION_ALARM) ? 1 : 0;
+                .addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+        int requestCode = action.equals(MonitorReceiver.ACTION_NOTIFY) ? 1 : 0;
         return PendingIntent.getBroadcast(context, requestCode,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    public static long getNextCheckIn(int checkInHours, int fromHour, int fromMinute, int toHour, int toMinute, boolean allDay){
+    public static long getNextCheckIn() {
+        return getNextCheckIn(Prefs.checkInHours(), Prefs.fromHour(), Prefs.fromMinute(), Prefs.toHour(), Prefs.toMinute(), Prefs.allDay());
+    }
+
+    private static long getNextCheckIn(int checkInHours, int fromHour, int fromMinute, int toHour, int toMinute, boolean allDay){
         //used to get excluded time boundaries
         Calendar calendar = Calendar.getInstance();
         final long now = calendar.getTimeInMillis();
@@ -128,15 +129,6 @@ public class WellnessCheck extends Application {
         }
 
         return nextCheckIn;
-    }
-
-    public static long getNextCheckIn(Settings settings){
-        return getNextCheckIn(settings.checkInHours, settings.fromHour, settings.fromMinute, settings.toHour, settings.toMinute, settings.allDay);
-    }
-
-    public static long getNextCheckIn() throws NullPointerException{
-        if(db == null || db.settings == null) throw new NullPointerException("Settings are null, init db first");
-        return getNextCheckIn(db.settings);
     }
 
     public static long getMidnight(Calendar calendar){

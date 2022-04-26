@@ -33,6 +33,7 @@ import com.derrick.wellnesscheck.R;
 import com.derrick.wellnesscheck.controller.ContactsRecyclerAdapter;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
+import com.derrick.wellnesscheck.model.data.Prefs;
 import com.derrick.wellnesscheck.utils.FragmentReadyListener;
 import com.derrick.wellnesscheck.utils.PermissionsListener;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
@@ -95,16 +96,14 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
                         String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
                         Contact contact = new Contact(id, name, number, 0);
                         if (!contactsRecyclerAdapter.contains(contact.id)){
-                            if(db.settings.confirmAddContact) {
+                            if(Prefs.confirmAddContact()) {
                                 View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.add_contact_confirmation_dialog, null);
                                 new AlertDialog.Builder(getContext(), R.style.AppTheme_Dialog_Alert)
                                         .setView(dialogView)
                                         .setMessage("Are you sure you want to ask " + contact.name + " to be your emergency contact?")
                                         .setPositiveButton("Yes", (dialog, which) -> {
-                                            if (((CheckBox) dialogView.findViewById(R.id.never_ask_again)).isChecked()) {
-                                                db.settings.confirmAddContact = false;
-                                                db.settings.update();
-                                            }
+                                            if (((CheckBox) dialogView.findViewById(R.id.never_ask_again)).isChecked())
+                                                Prefs.confirmAddContact(false);
                                             onTryAddContact(contact);
                                         })
                                         .setNegativeButton("Cancel", (dialog, which) -> {
@@ -127,7 +126,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         if(context instanceof FragmentReadyListener)
-            this.fragmentReadyListener = (FragmentReadyListener) context;
+            fragmentReadyListener = (FragmentReadyListener) context;
     }
 
     @Override

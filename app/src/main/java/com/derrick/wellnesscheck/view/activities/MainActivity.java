@@ -15,7 +15,7 @@ import android.widget.TextView;
 import com.derrick.wellnesscheck.WellnessCheck;
 import com.derrick.wellnesscheck.model.DB;
 import com.derrick.wellnesscheck.model.data.Log;
-import com.derrick.wellnesscheck.model.data.Settings;
+import com.derrick.wellnesscheck.model.data.Prefs;
 import com.derrick.wellnesscheck.utils.FragmentReadyListener;
 import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.derrick.wellnesscheck.view.fragments.*;
@@ -28,7 +28,7 @@ import com.ramotion.paperonboarding.PaperOnboardingPage;
 
 import java.util.ArrayList;
 
-public class MainActivity extends PermissionsRequestingActivity implements NavigationBarView.OnItemSelectedListener, DB.DbListener, FragmentReadyListener {
+public class MainActivity extends PermissionsRequestingActivity implements NavigationBarView.OnItemSelectedListener, FragmentReadyListener {
     static final String TAG = "MainActivity";
     HomeFragment homeFragment = new HomeFragment();
     ContactsFragment contactsFragment = new ContactsFragment();
@@ -45,18 +45,28 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         //null prevents crash after return from permission being revoked
         super.onCreate(null);
 
+        DB.InitDB(this);
+
         getWindow().setNavigationBarColor(getColor(R.color.colorPrimary));
 
-        if(getPreferences(Context.MODE_PRIVATE).getBoolean("onboardingComplete", false)) startNormal();
+        if(Prefs.onboardingComplete()) startNormal();
         else startOnboarding();
     }
 
     private void startNormal(){
+        Log.d(TAG, new Prefs().toString());
+        WellnessCheck.applyPrefs(this);
+
         setContentView(R.layout.activity_main);
+        setSupportActionBar(findViewById(R.id.main_activity_toolbar));
+
+        fragments.add(homeFragment);
+        fragments.add(contactsFragment);
+        fragments.add(logFragment);
+
         bottomNavigationView = findViewById(R.id.nav);
         bottomNavigationView.setOnItemSelectedListener(this);
-        DB.InitDB(this);
-        setSupportActionBar(findViewById(R.id.main_activity_toolbar));
+        bottomNavigationView.setSelectedItemId(R.id.action_home);
     }
 
     private void startOnboarding(){
@@ -84,35 +94,21 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
             i = onboardingFragment.onboardingEngine.getActiveElementIndex();
             onboardingButtonLeft.setVisibility(i == 0 ? View.INVISIBLE : View.VISIBLE);
             onboardingButtonRight.setText(i == onboardingPages.size() - 1 ? "Let's Go" : "Next >");
-            if(i == onboardingPages.size() - 1){
+            if(i == onboardingPages.size() - 1)
                 checkPermissions(new String[]{Manifest.permission.READ_CONTACTS, Manifest.permission.SEND_SMS}, null);
-            }
         });
         fragmentManager.beginTransaction().add(R.id.onboarding_frame_layout, onboardingFragment).commit();
         onboardingButtonRight.setOnClickListener(v -> {
             if(onboardingFragment.onboardingEngine.getActiveElementIndex() == onboardingPages.size() - 1) {
-                getPreferences(Context.MODE_PRIVATE).edit().putBoolean("onboardingComplete", true).apply();
+                Prefs.onboardingComplete(true);
                 startNormal();
             }else onboardingFragment.onboardingEngine.toggleContent(false);
         });
         onboardingButtonLeft.setOnClickListener(v -> onboardingFragment.onboardingEngine.toggleContent(true));
     }
 
-    @Override
-    public void onDbReady(DB db) {
-        Settings settings = db.settings;
-        Log.d(TAG, "settings:" + settings.toString());
-        WellnessCheck.applySettings(this, settings);
-
-        fragments.add(homeFragment);
-        fragments.add(contactsFragment);
-        fragments.add(logFragment);
-
-        bottomNavigationView.setSelectedItemId(R.id.action_home);
-    }
-
     public void showCase(){
-        if(getPreferences(MODE_PRIVATE).getBoolean("walkthroughComplete", false)) return;
+        if(Prefs.walkthroughComplete()) return;
         switch (showcaseStep++){
             case 0:
                 TapTargetView.showFor(this,                 // `this` is an Activity
@@ -248,7 +244,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
                             @Override
                             public void onTargetClick(TapTargetView view) {
                                 super.onTargetClick(view);
-                                getPreferences(MODE_PRIVATE).edit().putBoolean("walkthroughComplete", true).apply();
+                                Prefs.walkthroughComplete(true);
                             }
                         });
                 break;

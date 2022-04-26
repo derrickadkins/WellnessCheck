@@ -3,6 +3,7 @@ package com.derrick.wellnesscheck.view.fragments;
 import static com.derrick.wellnesscheck.WellnessCheck.db;
 import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,8 +19,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.derrick.wellnesscheck.R;
 import com.derrick.wellnesscheck.model.data.Entry;
 import com.derrick.wellnesscheck.model.data.Log;
+import com.derrick.wellnesscheck.utils.FragmentReadyListener;
 
 public class LogFragment extends Fragment implements Log.Listener {
+    static final String TAG = "LogFragment";
+    FragmentReadyListener fragmentReadyListener;
     LogAdapter logAdapter = new LogAdapter();
     @Nullable
     @Override
@@ -34,9 +38,18 @@ public class LogFragment extends Fragment implements Log.Listener {
     }
 
     @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        Log.d(TAG, "onAttach");
+        if(context instanceof FragmentReadyListener)
+            fragmentReadyListener = (FragmentReadyListener) context;
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         Log.listener = this;
+        if(fragmentReadyListener != null) fragmentReadyListener.onFragmentReady();
     }
 
     @Override
