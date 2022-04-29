@@ -29,11 +29,17 @@ public class WellnessCheck extends Application {
     }
 
     public static boolean applyPrefs(Context context){
+        if(!Prefs.monitoringOn()) return false;
+        Prefs.updateCheckIn(WellnessCheck.getNextCheckIn());
         AlarmManager alarmManager = (AlarmManager) context.getApplicationContext().getSystemService(Service.ALARM_SERVICE);
         AlarmManager.AlarmClockInfo alarmClockInfo = alarmManager.getNextAlarmClock();
-        if(Prefs.monitoringOn() && alarmClockInfo == null){
+        if(alarmClockInfo != null && alarmClockInfo.getTriggerTime() == Prefs.nextCheckIn()) return false;
+        else{
+            if(alarmClockInfo != null) {
+                Log.d(TAG, "alarm already set for " + getReadableTime(alarmClockInfo.getTriggerTime()));
+                cancelAlarm(context, MonitorReceiver.ACTION_NOTIFY);
+            }
             long now = System.currentTimeMillis();
-            if(Prefs.nextCheckIn() < now) Prefs.updateCheckIn(WellnessCheck.getNextCheckIn());
             long time = Prefs.nextCheckIn();
             long responseInterval = Prefs.respondMinutes() * MINUTE_IN_MILLIS;
             if(!Prefs.checkedIn() && Prefs.prevCheckIn() + responseInterval > now)
@@ -43,7 +49,6 @@ public class WellnessCheck extends Application {
             WellnessCheck.setAlarm(context, time, MonitorReceiver.ACTION_NOTIFY);
             return true;
         }
-        return false;
     }
 
     public static void setAlarm(Context context, long time, String action){
