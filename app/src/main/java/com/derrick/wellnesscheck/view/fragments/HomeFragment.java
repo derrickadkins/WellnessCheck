@@ -256,9 +256,6 @@ public class HomeFragment extends Fragment implements MonitorReceiver.EventListe
         SmsController smsController = new SmsController() {
             @Override
             public void onSmsReceived(String number, String message) {
-                //todo: different action for high risk
-                //if(riskLvl == 3)
-
                 boolean allowed = false;
                 boolean messageReceivedFromContact = false;
                 message = message.trim().toLowerCase(Locale.ROOT);
@@ -268,20 +265,39 @@ public class HomeFragment extends Fragment implements MonitorReceiver.EventListe
                         if(message.equals(getString(R.string.yes))) {
                             allowed = true;
                         }
+                        Log.d(TAG, contact.name + " responded; allowed=" + allowed);
                     }
                 }
                 if(!messageReceivedFromContact) return;
-                if (allowed) {
-                    alertDialog.cancel();
-                    stopMonitoring();
-                    getActivity().unregisterReceiver(smsReceiver);
-                } else if (--unreceivedSMS == 0) {
-                    alertDialog.cancel();
-                    new AlertDialog.Builder(getContext(), R.style.AppTheme_Dialog_Alert)
-                            .setMessage(getString(R.string.sorry_not_allowed))
-                            .setNeutralButton(getString(R.string.okay), (dialog, which) -> dialog.cancel()).create().show();
-                    getActivity().unregisterReceiver(smsReceiver);
+                if(riskLvl == 2) {
+                    if (allowed) {
+                        Log.d(TAG, "riskLvl:2; turning off");
+                        turnOffMonitoring();
+                    } else if (--unreceivedSMS == 0) {
+                        Log.d(TAG, "riskLvl:2; turn off denied");
+                        alertNotAllowed();
+                    }
+                }else if(!allowed) {
+                    Log.d(TAG, "riskLvl:3; turn off denied");
+                    alertNotAllowed();
+                }else if (--unreceivedSMS == 0){
+                    Log.d(TAG, "riskLvl:3; turning off");
+                    turnOffMonitoring();
                 }
+            }
+
+            void alertNotAllowed(){
+                alertDialog.cancel();
+                new AlertDialog.Builder(getContext(), R.style.AppTheme_Dialog_Alert)
+                        .setMessage(getString(R.string.sorry_not_allowed))
+                        .setNeutralButton(getString(R.string.okay), (dialog, which) -> dialog.cancel()).create().show();
+                getActivity().unregisterReceiver(smsReceiver);
+            }
+
+            void turnOffMonitoring(){
+                alertDialog.cancel();
+                stopMonitoring();
+                getActivity().unregisterReceiver(smsReceiver);
             }
 
             @Override
