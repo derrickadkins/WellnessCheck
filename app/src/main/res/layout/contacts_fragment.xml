@@ -9,10 +9,18 @@
     <TextView
         android:id="@+id/user_risk_lvl"
         android:text="Your Risk Level is: Low"
-        android:textSize="18sp"
+        android:textSize="24sp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <ImageView
+        android:id="@+id/info_risk"
+        android:src="@drawable/ic_info"
+        app:layout_constraintTop_toTopOf="@id/user_risk_lvl"
+        app:layout_constraintStart_toEndOf="@id/user_risk_lvl"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 

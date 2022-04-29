@@ -146,16 +146,8 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         actionBar.setTitle("Emergency Contacts");
         actionBar.show();
 
-        int r = 1;
-        for(Contact contact : contacts.values()){
-            if(contact.riskLvl > r)
-                r = contact.riskLvl;
-        }
-        String risk = "Low";
-        if(r == 2) risk = "Medium";
-        else if(r == 3) risk = "High";
         riskLvl = contactsView.findViewById(R.id.user_risk_lvl);
-        riskLvl.setText("Your Risk Level is: " + risk);
+        riskLvl.setText("Your Risk Level is: " + getRiskLvl());
 
         View.OnClickListener addContactClickListener = v -> ((PermissionsRequestingActivity) getContext()).checkPermissions(
             new String[]{Manifest.permission.READ_CONTACTS, Manifest.permission.SEND_SMS}, new PermissionsListener() {
@@ -224,7 +216,32 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
             public void showRationale(String[] permissions) { setupAdapter(); }
         });
 
+        contactsView.findViewById(R.id.info_risk).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new AlertDialog.Builder(getContext(), R.style.AppTheme_Dialog_Alert)
+                        .setTitle("Risk Level")
+                        .setMessage("Your risk level determines how you are allowed to turn off " +
+                                "your monitoring and is assigned to you by the emergency contacts " +
+                                "you choose. Your overall risk level is determined by the highest " +
+                                "rating you receive from your emergency contacts.")
+                        .show();
+            }
+        });
+
         return contactsView;
+    }
+
+    String getRiskLvl(){
+        int r = 1;
+        for(Contact contact : contacts.values()){
+            if(contact.riskLvl > r)
+                r = contact.riskLvl;
+        }
+        String risk = "Low";
+        if(r == 2) risk = "Medium";
+        else if(r == 3) risk = "High";
+        return risk;
     }
 
     public void setupAdapter() {
@@ -294,6 +311,12 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
     @Override
     public void onActionModeStateChanged(boolean enabled) {
         itemTouchHelper.attachToRecyclerView(!enabled ? contactsList : null);
+    }
+
+    @Override
+    public void onUpdateContact(Contact contact){
+        contacts.update(contact);
+        riskLvl.setText("Your Risk Level is: " + getRiskLvl());
     }
 
     public void onContactListSizeChange(int size) {

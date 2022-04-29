@@ -73,6 +73,15 @@
         Medium Risk requires permission from one of my Emergency Contacts to turn off wellness checks\n
         High risk requires permission from all of my Emergency Contacts to turn off wellness checks
     </string>
+    <string name="new_risk_lvl_request">
+        May I please be considered for a new risk level?\n
+        \n
+        Reply:\n
+        Y1 to rate me as low risk\n
+        Y2 to rate me as medium risk\n
+        Y3 to rate me as high risk\n
+        No to decline
+    </string>
     <string name="turn_off_request">
         May I turn off my wellness checks? Reply: Yes or No
     </string>

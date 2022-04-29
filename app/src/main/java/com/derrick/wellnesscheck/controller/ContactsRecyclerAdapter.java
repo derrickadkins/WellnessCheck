@@ -1,6 +1,6 @@
 package com.derrick.wellnesscheck.controller;
 
-import static com.derrick.wellnesscheck.WellnessCheck.db;
+import static com.derrick.wellnesscheck.utils.Utils.sameNumbers;
 
 import android.Manifest;
 import android.app.Activity;
@@ -14,15 +14,18 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.derrick.wellnesscheck.R;
+import com.derrick.wellnesscheck.SmsReceiver;
 import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Contacts;
 import com.derrick.wellnesscheck.model.data.Prefs;
@@ -31,6 +34,9 @@ import com.derrick.wellnesscheck.utils.PermissionsRequestingActivity;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
+import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecyclerAdapter.ViewHolder> {
     private ArrayList<Contact> mData;
@@ -66,15 +72,11 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
         holder.itemView.setBackgroundColor(activity.getColor(position == selectedPos ? android.R.color.darker_gray : android.R.color.transparent));
         holder.itemView.setOnLongClickListener(v -> {
             if (actionMode != null) return false;
-            if(Prefs.monitoringOn()) {
-                Toast.makeText(getContext(), "Turn off wellness checks to delete contacts", Toast.LENGTH_SHORT).show();
-                return false;
-            }
 
             // Start the CAB using the ActionMode.Callback defined above
+            selectedPos = holder.getBindingAdapterPosition();
             actionMode = activity.startSupportActionMode(actionModeCallback);
             v.setSelected(true);
-            selectedPos = holder.getBindingAdapterPosition();
             notifyItemChanged(selectedPos);
             return true;
         });
@@ -167,10 +169,80 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
         }
     }
 
+    private void requestNewRiskLvl(int selectedPos){
+        final SmsReceiver smsReceiver = new SmsReceiver();
+        AlertDialog alertDialog = new androidx.appcompat.app.AlertDialog.Builder(activity, R.style.AppTheme_Dialog_Alert)
+                .setMessage(activity.getString(R.string.sending_requests))
+                .setView(new ProgressBar(activity))
+                .setNegativeButton(activity.getString(R.string.cancel), (dialog, which) -> {
+                    dialog.cancel();
+                    activity.unregisterReceiver(smsReceiver);
+                })
+                .setCancelable(false)
+                .create();
+        alertDialog.show();
+
+        SmsController smsController = new SmsController() {
+            @Override
+            public void onSmsReceived(String number, String message) {
+                message = message.toUpperCase(Locale.ROOT).trim();
+                if (sameNumbers(number, mData.get(selectedPos).number)) {
+                    if (message.replaceAll("\\d+", "").equals(activity.getString(R.string.Y))) {
+                        if (message.equals(activity.getString(R.string.Y1)))
+                            mData.get(selectedPos).riskLvl = 1;
+                        else if (message.equals(activity.getString(R.string.Y2)))
+                            mData.get(selectedPos).riskLvl = 2;
+                        else mData.get(selectedPos).riskLvl = 3;
+
+                        notifyItemChanged(selectedPos);
+                        if(contactActionListener != null)
+                            contactActionListener.onUpdateContact(mData.get(selectedPos));
+                    }
+                    alertDialog.cancel();
+                    activity.unregisterReceiver(smsReceiver);
+                    actionMode.finish();
+                }
+            }
+
+            @Override
+            public void onSmsFailedToSend() {
+                alertDialog.cancel();
+                new AlertDialog.Builder(activity, R.style.AppTheme_Dialog_Alert)
+                        .setMessage(activity.getString(R.string.sms_failed))
+                        .setNegativeButton(activity.getString(R.string.cancel), (dialog, which) -> dialog.cancel())
+                        .setPositiveButton(activity.getString(R.string.retry), (dialog, which) -> {
+                            dialog.cancel();
+                            requestNewRiskLvl(selectedPos);
+                        }).create().show();
+            }
+
+            @Override
+            public void onSmsSent() {
+                unreceivedSMS++;
+                if (--unsentParts == 0) {
+                    alertDialog.setMessage(activity.getString(R.string.messages_sent));
+                    new Timer().schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            alertDialog.setMessage(activity.getString(R.string.waiting_for_response));
+                        }
+                    }, 1000);
+                }
+            }
+        };
+
+        smsController.sendSMS((PermissionsRequestingActivity) getContext(),
+                smsReceiver,
+                smsController,
+                mData.get(selectedPos).number,
+                activity.getString(R.string.new_risk_lvl_request));
+    }
+
     public interface OnContactActionListener {
         void onDeleteContact(Contact contact);
         void onUndoDeleteContact(Contact contact);
         void onActionModeStateChanged(boolean enabled);
+        void onUpdateContact(Contact contact);
     }
 
     private ActionMode.Callback actionModeCallback = new ActionMode.Callback() {
@@ -181,7 +253,8 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
             // Inflate a menu resource providing context menu items
             MenuInflater inflater = mode.getMenuInflater();
             inflater.inflate(R.menu.menu_context_contacts, menu);
-            mode.setTitle("Delete Contact");
+            if(Prefs.monitoringOn()) menu.removeItem(R.id.context_menu_item_delete);
+            mode.setTitle(mData.get(selectedPos).name);
             contactActionListener.onActionModeStateChanged(true);
             return true;
         }
@@ -200,6 +273,9 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
                 case R.id.context_menu_item_delete:
                     delete(selectedPos);
                     mode.finish(); // Action picked, so close the CAB
+                    return true;
+                case R.id.context_menu_ask_for_new_risk_lvl:
+                    requestNewRiskLvl(selectedPos);
                     return true;
                 default:
                     return false;
