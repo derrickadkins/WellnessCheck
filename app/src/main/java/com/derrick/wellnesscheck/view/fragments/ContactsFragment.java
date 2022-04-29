@@ -55,7 +55,7 @@ import static com.derrick.wellnesscheck.utils.Utils.sameNumbers;
 public class ContactsFragment extends Fragment implements ContactsRecyclerAdapter.OnContactActionListener {
     static final String TAG = "EmergencyContactsFragment";
     FloatingActionButton fab;
-    TextView addAContact;
+    TextView addAContact, riskLvl;
     ContactsRecyclerAdapter contactsRecyclerAdapter;
     RecyclerView contactsList;
     Button setupNext;
@@ -145,6 +145,17 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
         actionBar.setTitle("Emergency Contacts");
         actionBar.show();
+
+        int r = 1;
+        for(Contact contact : contacts.values()){
+            if(contact.riskLvl > r)
+                r = contact.riskLvl;
+        }
+        String risk = "Low";
+        if(r == 2) risk = "Medium";
+        else if(r == 3) risk = "High";
+        riskLvl = contactsView.findViewById(R.id.user_risk_lvl);
+        riskLvl.setText("Your Risk Level is: " + risk);
 
         View.OnClickListener addContactClickListener = v -> ((PermissionsRequestingActivity) getContext()).checkPermissions(
             new String[]{Manifest.permission.READ_CONTACTS, Manifest.permission.SEND_SMS}, new PermissionsListener() {

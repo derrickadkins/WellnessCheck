@@ -62,6 +62,7 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
         contact.applyPhoto(activity.getApplicationContext(), holder.contactImage);
         holder.name.setText(contact.name);
         holder.number.setText(contact.number);
+        holder.riskLvl.setText(contact.getRiskLvl());
         holder.itemView.setBackgroundColor(activity.getColor(position == selectedPos ? android.R.color.darker_gray : android.R.color.transparent));
         holder.itemView.setOnLongClickListener(v -> {
             if (actionMode != null) return false;
@@ -154,7 +155,7 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        TextView name, number;
+        TextView name, number, riskLvl;
         ImageView contactImage;
 
         ViewHolder(View itemView) {
@@ -162,6 +163,7 @@ public class ContactsRecyclerAdapter extends RecyclerView.Adapter<ContactsRecycl
             name = itemView.findViewById(R.id.resource_description);
             number = itemView.findViewById(R.id.resource_number);
             contactImage = itemView.findViewById(R.id.contact_image);
+            riskLvl = itemView.findViewById(R.id.assigned_risk_lvl);
         }
     }
 

@@ -41,6 +41,15 @@ public class Contact {
         this.riskLvl = riskLvl;
     }
 
+    public String getRiskLvl(){
+        switch (riskLvl){
+            case 1 : return "Low";
+            case 2 : return "Medium";
+            case 3 : return "High";
+            default: return "";
+        }
+    }
+
     public boolean matches(Contact contact){
         return contact.id.equals(id) && contact.name.equals(name) && contact.number.equals(number);
     }
