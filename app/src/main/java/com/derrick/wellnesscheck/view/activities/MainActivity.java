@@ -62,7 +62,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
 
         fragments.add(homeFragment);
         fragments.add(contactsFragment);
-        fragments.add(logFragment);
+        fragments.add(resourcesFragment);
 
         bottomNavigationView = findViewById(R.id.nav);
         bottomNavigationView.setOnItemSelectedListener(this);
@@ -273,7 +273,7 @@ public class MainActivity extends PermissionsRequestingActivity implements Navig
         if (id == R.id.action_home) {
             setFragment(fragments.indexOf(homeFragment));
         }else if (id == R.id.action_resources) {
-            setFragment(fragments.indexOf(logFragment));
+            setFragment(fragments.indexOf(resourcesFragment));
         }else if (id == R.id.action_contacts) {
             setFragment(fragments.indexOf(contactsFragment));
         }
