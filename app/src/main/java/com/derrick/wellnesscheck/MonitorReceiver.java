@@ -86,22 +86,20 @@ public class MonitorReceiver extends BroadcastReceiver {
                 Intent responseIntent = new Intent(context, MonitorReceiver.class).setAction(ACTION_CHECK_IN).setFlags(Intent.FLAG_RECEIVER_FOREGROUND);
                 PendingIntent responsePendingIntent = PendingIntent.getBroadcast(context, 2, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-                Intent fullScreenIntent = new Intent(context, CheckInActivity.class)
-                        .addCategory("android.intent.category.LAUNCHER")
-                        .setAction(ACTION_CHECK_IN)
-                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
-                                Intent.FLAG_ACTIVITY_CLEAR_TASK |
-                                Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS |
-                                Intent.FLAG_ACTIVITY_NO_USER_ACTION |
-                                Intent.FLAG_ACTIVITY_SINGLE_TOP |
-                                Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(context, 2, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
                 if(Prefs.alarm()) {
                     Log.d(TAG, "alarm:true; setting full screen intent");
+                    Intent fullScreenIntent = new Intent(context, CheckInActivity.class)
+                            .addCategory("android.intent.category.LAUNCHER")
+                            .setAction(ACTION_CHECK_IN)
+                            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
+                                    Intent.FLAG_ACTIVITY_CLEAR_TASK |
+                                    Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS |
+                                    Intent.FLAG_ACTIVITY_NO_USER_ACTION |
+                                    Intent.FLAG_ACTIVITY_SINGLE_TOP |
+                                    Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(context, 2, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT);
                     builder.setFullScreenIntent(fullScreenPendingIntent, true);
                     builder.setCategory(NotificationCompat.CATEGORY_ALARM);
-                    context.startService(new Intent(context, RingAlarmService.class));
                 }
 
                 builder.setContentTitle(context.getString(R.string.time_to_check_in))

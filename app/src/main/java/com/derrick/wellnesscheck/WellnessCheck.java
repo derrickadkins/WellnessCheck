@@ -64,7 +64,8 @@ public class WellnessCheck extends Application {
 
     static PendingIntent getAlarmIntent(Context context, String action){
         Intent intent = new Intent(context, MonitorReceiver.class).setAction(action)
-                .addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+                .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
         int requestCode = action.equals(MonitorReceiver.ACTION_NOTIFY) ? 1 : 0;
         return PendingIntent.getBroadcast(context, requestCode,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);

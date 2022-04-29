@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.R;
+import com.derrick.wellnesscheck.RingAlarmService;
 import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Prefs;
 
@@ -70,6 +71,7 @@ public class CheckInActivity extends AppCompatActivity implements MonitorReceive
                             .setAction(MonitorReceiver.ACTION_CHECK_IN));
         });
         startTimer(Prefs.prevCheckIn() + responseInterval - System.currentTimeMillis());
+        startService(new Intent(this, RingAlarmService.class));
     }
 
     void startTimer(long ms){
