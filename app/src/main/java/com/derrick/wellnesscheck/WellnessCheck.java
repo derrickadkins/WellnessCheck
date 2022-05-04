@@ -80,7 +80,7 @@ public class WellnessCheck extends Application {
         return getNextCheckIn(Prefs.checkInHours(), Prefs.fromHour(), Prefs.fromMinute(), Prefs.toHour(), Prefs.toMinute(), Prefs.allDay());
     }
 
-    private static long getNextCheckIn(int checkInHours, int fromHour, int fromMinute, int toHour, int toMinute, boolean allDay){
+    /*private static long getNextCheckIn(int checkInHours, int fromHour, int fromMinute, int toHour, int toMinute, boolean allDay){
         //used to get excluded time boundaries
         Calendar calendar = Calendar.getInstance();
         final long now = calendar.getTimeInMillis();
@@ -98,11 +98,10 @@ public class WellnessCheck extends Application {
         calendar.set(Calendar.MINUTE, fromMinute);
         long startOfDay = calendar.getTimeInMillis();
 
-        /*
-        set first to one interval after midnight if all day
-        because midnight will always be behind now. if not
-        all day, set it to the start
-         */
+
+        //set first to one interval after midnight if all day
+        //because midnight will always be behind now. if not
+        //all day, set it to the start
         long nextCheckIn = startOfDay;
         if(allDay){
             calendar.set(Calendar.HOUR_OF_DAY, checkInHours);
@@ -134,6 +133,78 @@ public class WellnessCheck extends Application {
             nextCheckIn = calendar.getTimeInMillis();
         }
 
+        return nextCheckIn;
+    }*/
+
+    private static long getNextCheckIn(int checkInHours, int fromHour, int fromMinute, int toHour, int toMinute, boolean allDay){
+        //used to get excluded time boundaries
+        Calendar calendar = Calendar.getInstance();
+        final long now = calendar.getTimeInMillis();
+        Log.d(TAG, "now:"+now+";"+getReadableTime(now));
+        //clear for precision
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        //get to time
+        calendar.set(Calendar.HOUR_OF_DAY, toHour);
+        calendar.set(Calendar.MINUTE, toMinute);
+        long endOfDay = calendar.getTimeInMillis();
+        Log.d(TAG, "endOfDay:"+endOfDay+";"+getReadableTime(endOfDay));
+
+        //get first check as from time
+        calendar.set(Calendar.HOUR_OF_DAY, fromHour);
+        calendar.set(Calendar.MINUTE, fromMinute);
+        long startOfDay = calendar.getTimeInMillis();
+        Log.d(TAG, "startOfDay:"+startOfDay+";"+getReadableTime(startOfDay));
+
+        /*
+        set first to one interval after midnight if all day
+        because midnight will always be behind now. if not
+        all day, set it to the start
+         */
+        long nextCheckIn = startOfDay;
+        Log.d(TAG, "nextCheckIn:"+nextCheckIn+";"+getReadableTime(nextCheckIn));
+        if(allDay){
+            calendar.set(Calendar.HOUR_OF_DAY, checkInHours);
+            calendar.set(Calendar.MINUTE, 0);
+            nextCheckIn = calendar.getTimeInMillis();
+            Log.d(TAG, "allDay:nextCheckIn:"+nextCheckIn+";"+getReadableTime(nextCheckIn));
+        }else if(startOfDay < endOfDay && now > endOfDay) {
+            calendar.add(Calendar.DATE, 1);
+            nextCheckIn = calendar.getTimeInMillis();
+            Log.d(TAG, "afterLast:nextCheckIn:"+nextCheckIn+";"+getReadableTime(nextCheckIn));
+        }else if(startOfDay > endOfDay && now > startOfDay && now < endOfDay){
+            nextCheckIn = endOfDay;
+            Log.d(TAG, "revAfterLast:nextCheckIn:"+nextCheckIn+";"+getReadableTime(nextCheckIn));
+        }
+
+        //reminder: INTERVAL <= 24
+        while(nextCheckIn < now) {
+            calendar.add(Calendar.HOUR, checkInHours);
+            nextCheckIn = calendar.getTimeInMillis();
+            Log.d(TAG, "add "+checkInHours+"hrs:nextCheckIn:"+nextCheckIn+";"+getReadableTime(nextCheckIn));
+        }
+
+        //if all day and first check in is after midnight, set it to midnight
+        if(allDay){
+            long midnight = getMidnight(calendar);
+            if(nextCheckIn > midnight) nextCheckIn = midnight;
+            Log.d(TAG, "allDayAfterMidnight:nextCheckIn:"+nextCheckIn+";"+getReadableTime(nextCheckIn));
+        }
+        //if after end of day push to next start
+        else if (nextCheckIn > endOfDay && startOfDay < endOfDay) {
+            calendar.setTimeInMillis(startOfDay);
+            calendar.add(Calendar.DATE, 1);
+            nextCheckIn = calendar.getTimeInMillis();
+            Log.d(TAG, "afterLast:nextCheckIn:"+nextCheckIn+";"+getReadableTime(nextCheckIn));
+        }else if (startOfDay > endOfDay && nextCheckIn > startOfDay && nextCheckIn < endOfDay){
+            calendar.setTimeInMillis(endOfDay);
+            calendar.add(Calendar.DATE, 1);
+            nextCheckIn = calendar.getTimeInMillis();
+            Log.d(TAG, "revAfterLast:nextCheckIn:"+nextCheckIn+";"+getReadableTime(nextCheckIn));
+        }
+
+        Log.d(TAG, "nextCheckIn:"+nextCheckIn+";"+getReadableTime(nextCheckIn));
         return nextCheckIn;
     }
 

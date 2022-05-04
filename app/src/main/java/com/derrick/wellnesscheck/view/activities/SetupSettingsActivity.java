@@ -1,6 +1,7 @@
 package com.derrick.wellnesscheck.view.activities;
 
 import static android.text.format.DateUtils.HOUR_IN_MILLIS;
+import static com.derrick.wellnesscheck.WellnessCheck.db;
 import static com.derrick.wellnesscheck.utils.Utils.getReadableTime;
 import static com.derrick.wellnesscheck.utils.Utils.getTime;
 
@@ -28,6 +29,7 @@ import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.NavUtils;
 import com.derrick.wellnesscheck.MonitorReceiver;
 import com.derrick.wellnesscheck.WellnessCheck;
+import com.derrick.wellnesscheck.model.data.Contact;
 import com.derrick.wellnesscheck.model.data.Log;
 import com.derrick.wellnesscheck.model.data.Prefs;
 import com.derrick.wellnesscheck.model.data.Task;
@@ -68,6 +70,28 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         returnToMain = getIntent().getBooleanExtra("returnToMain", true);
         boolean showStart = !returnToMain;
         boolean enable = !Prefs.monitoringOn();
+
+        int riskLvl = 1;
+        for(Contact contact : db.contacts.values()){
+            if(contact.riskLvl > riskLvl)
+                riskLvl = contact.riskLvl;
+        }
+        String risk = "Low";
+        int freqMax = 24;
+        int excludedMax = 24;
+        int respMax = 59;
+        if(riskLvl == 2) {
+            risk = "Medium";
+            freqMax = 6;
+            excludedMax = 12;
+            respMax = 59;
+        }
+        else if(riskLvl == 3) {
+            risk = "High";
+            freqMax = 3;
+            excludedMax = 12;
+            respMax = 30;
+        }
 
         btnStart = findViewById(R.id.btnStart);
         btnStart.setVisibility(showStart ? View.VISIBLE : View.GONE);
@@ -116,7 +140,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         checkInHours = findViewById(R.id.numberPickerHours);
         checkInHours.setOnTouchListener(touchListener);
         checkInHours.setMinValue(1);
-        checkInHours.setMaxValue(24);
+        checkInHours.setMaxValue(freqMax);
         checkInHours.setValue(Prefs.checkInHours());
         checkInHours.setOnValueChangedListener((picker, oldVal, newVal) -> {
             Prefs.checkInHours(newVal);
@@ -126,7 +150,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
         respondMinutes = findViewById(R.id.numberPickerMinutes);
         respondMinutes.setOnTouchListener(touchListener);
         respondMinutes.setMinValue(1);
-        respondMinutes.setMaxValue(59);
+        respondMinutes.setMaxValue(respMax);
         respondMinutes.setValue(Prefs.respondMinutes());
         respondMinutes.setOnValueChangedListener((picker, oldVal, newVal) -> Prefs.respondMinutes(newVal));
 
@@ -369,7 +393,7 @@ public class SetupSettingsActivity extends PermissionsRequestingActivity {
 
     void setFirstCheckText(){
         long firstCheckIn = WellnessCheck.getNextCheckIn();
-        tvFirstCheck.setText(getString(R.string.first_wellness_check_will_be_at) + getFirstCheckInString(firstCheckIn));
+        tvFirstCheck.setText(getString(R.string.wellness_check_will_be_at) + getFirstCheckInString(firstCheckIn));
         timer.cancel();
         timer = new Timer();
         Runnable runnable = new Runnable() {

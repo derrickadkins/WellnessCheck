@@ -13,7 +13,7 @@
     <string name="how_much_time_do_you_need">How much time do you need to respond?</string>
     <string name="minute_s">Minute(s)</string>
     <string name="all_day">All-day</string>
-    <string name="first_wellness_check_will_be_at">First wellness check will be at&#160;</string>
+    <string name="wellness_check_will_be_at">Next wellness check will be at&#160;</string>
     <string name="tomorrow"> tomorrow</string>
     <string name="fall_detection">Fall Detection</string>
     <string name="beta" translatable="false">Beta</string>

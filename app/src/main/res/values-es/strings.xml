@@ -12,7 +12,7 @@
     <string name="how_much_time_do_you_need">¿Cuánto tiempo necesitas para responder?</string>
     <string name="minute_s">Minutos)</string>
     <string name="all_day">Todo el dia</string>
-    <string name="first_wellness_check_will_be_at">El primer chequeo de bienestar será en&#160;</string>
+    <string name="wellness_check_will_be_at">El primer chequeo de bienestar será en&#160;</string>
     <string name="tomorrow">mañana</string>
     <string name="fall_detection">Detección de caídas</string>
     <string name="sensitivity">Sensibilidad</string>
