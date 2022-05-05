@@ -21,7 +21,7 @@ import com.derrick.wellnesscheck.model.data.*;
 
 import java.util.List;
 
-@Database(entities = {Contact.class, Entry.class}, version = 2, exportSchema = false)
+@Database(entities = {Contact.class, Entry.class}, version = 1, exportSchema = false)
 public abstract class DB extends RoomDatabase {
     private final static String TAG = "DB";
     public abstract ContactDao contactDao();

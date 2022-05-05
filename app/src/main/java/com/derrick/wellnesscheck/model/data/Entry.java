@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey;
 @Entity
 public class Entry {
     @NonNull
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
     public int id;
     public long time;
     public String entry;
@@ -18,8 +18,7 @@ public class Entry {
     public Entry(){}
 
     @Ignore
-    public Entry(int id, String entry){
-        this.id = id;
+    public Entry(String entry){
         this.time = System.currentTimeMillis();
         this.entry = entry;
     }

@@ -32,7 +32,7 @@ public class Log extends ArrayList<Entry> {
     }
 
     public Entry add(String msg) {
-        Entry entry = new Entry(size(), msg);
+        Entry entry = new Entry(msg);
         logQ.add(entry);
         processQueue();
         return entry;
