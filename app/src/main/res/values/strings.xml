@@ -20,6 +20,8 @@
     <string name="sensitivity">Sensitivity</string>
     <string name="report_location">Report Location</string>
     <!--misc-->
+    <string name="confirm_add_contact_msg">Clicking yes will immediately send them a message via SMS asking to accept their role and rank your risk level.</string>
+    <string name="confirm_new_risk_msg">Clicking yes will immediately send them a message via SMS asking for a new risk level.</string>
     <string name="request_permission_turn_off">Request permission from Emergency Contacts to turn off monitoring?</string>
     <string name="sorry_not_allowed">Sorry, you are not allowed to turn off monitoring at this time</string>
     <string name="message_will_be_sent">Message will been sent to your emergency contacts.</string>
@@ -89,4 +91,9 @@
         URGENT\n
         I missed my check in. Please check in on me.
     </string>
+    <string name="battery_optimization">Battery Optimization</string>
+    <string name="battery_optimization_msg">Battery optimization prevents this app from initiating wellness checks. To fix this, click \'Settings\' and change filter to \'All Apps\' and turn off battery optimization for this app.</string>
+    <string name="risk_lvl">Risk Level</string>
+    <string name="risk_lvl_info">Your risk level determines how you are allowed to turn off your monitoring and is assigned to you by the emergency contacts you choose. Your overall risk level is determined by the highest rating you receive from your emergency contacts.</string>
+    <string name="your_risk_lvl">"Your Risk Level is: "</string>
 </resources>
