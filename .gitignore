@@ -11,3 +11,6 @@
 /captures
 .externalNativeBuild
 .cxx
+*.jks
+keystore_pw.txt
+*.aab
