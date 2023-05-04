@@ -35,7 +35,7 @@ public abstract class SmsController {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0,
                 new Intent(context, SmsReceiver.class)
                         .setAction(SmsReceiver.ACTION_SEND_SMS_RESULT),
-                PendingIntent.FLAG_UPDATE_CURRENT);
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         //Get smsManager
         SmsManager smsManager = context.getSystemService(SmsManager.class);

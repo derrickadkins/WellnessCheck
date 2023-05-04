@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-sdk android:targetSdkVersion="31" />
+    <uses-sdk android:targetSdkVersion="33" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -44,7 +47,7 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:enabled="true" android:exported="true" android:name=".utils.sms.SmsReceiver"/>
+        <receiver android:name=".utils.sms.SmsReceiver" android:enabled="true" android:exported="true"/>
 
         <service android:name=".services.FallDetectionService" android:enabled="true" android:exported="true" />
 

@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.ContactsContract;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -73,9 +75,10 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         @Override
         public Object parseResult(int resultCode, @Nullable Intent intent) {
             if (resultCode == RESULT_OK) {
+                if(intent == null) return null;
                 Uri contactData = intent.getData();
-                Cursor cursor = new CursorLoader(getActivity(), contactData, null, null, null, null).loadInBackground();
-                if (cursor.moveToFirst()) {
+                Cursor cursor = new CursorLoader(requireActivity(), contactData, null, null, null, null).loadInBackground();
+                if (cursor != null && cursor.moveToFirst()) {
                     String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
                     //make sure id doesn't already exist in DB
                     for (String contactId : contacts.keySet())
@@ -83,7 +86,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
                             return null;
                     String hasPhone = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER));
                     if (hasPhone.equalsIgnoreCase("1")) {
-                        Cursor phones = getActivity().getContentResolver().query(
+                        Cursor phones = requireActivity().getContentResolver().query(
                                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                                 null,
                                 ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
@@ -119,6 +122,52 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
     public ContactsFragment(){super();}
 
     @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+        if (resultCode == RESULT_OK) {
+            if(intent == null) return;
+            Uri contactData = intent.getData();
+            Cursor cursor = new CursorLoader(requireActivity(), contactData, null, null, null, null).loadInBackground();
+            if (cursor != null && cursor.moveToFirst()) {
+                String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
+                //make sure id doesn't already exist in DB
+                for (String contactId : contacts.keySet())
+                    if (contactId.equalsIgnoreCase(id))
+                        return;
+                String hasPhone = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER));
+                if (hasPhone.equalsIgnoreCase("1")) {
+                    Cursor phones = requireActivity().getContentResolver().query(
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                            null,
+                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                            new String[]{id},
+                            null);
+                    phones.moveToFirst();
+                    String number = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                    String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
+                    Contact contact = new Contact(id, name, number, 0);
+                    if (!contactsRecyclerAdapter.contains(contact.id)) {
+                        if (Prefs.confirmAddContact()) {
+                            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.confirmation_dialog, null);
+                            new AlertDialog.Builder(requireContext(), R.style.AppTheme_Dialog_Alert)
+                                    .setView(dialogView)
+                                    .setMessage("Are you sure you want to ask " + contact.name + " to be your emergency contact?")
+                                    .setPositiveButton("Yes", (dialog, which) -> {
+                                        if (((CheckBox) dialogView.findViewById(R.id.never_ask_again)).isChecked())
+                                            Prefs.confirmAddContact(false);
+                                        onTryAddContact(contact);
+                                    })
+                                    .setNegativeButton(R.string.cancel, null)
+                                    .setCancelable(false)
+                                    .show();
+                        } else onTryAddContact(contact);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         if(context instanceof FragmentReadyListener)
@@ -138,18 +187,23 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
 
         contacts = db.contacts;
 
-        ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
-        actionBar.setTitle("Emergency Contacts");
-        actionBar.show();
+        ActionBar actionBar = ((AppCompatActivity) requireActivity()).getSupportActionBar();
+        if(actionBar != null) {
+            actionBar.setTitle("Emergency Contacts");
+            actionBar.show();
+        }
 
         riskLvl = contactsView.findViewById(R.id.user_risk_lvl);
         calcRiskLvl();
 
-        View.OnClickListener addContactClickListener = v -> ((PermissionsRequestingActivity) getContext()).checkPermissions(
+        View.OnClickListener addContactClickListener = v -> ((PermissionsRequestingActivity) requireContext()).checkPermissions(
             new String[]{Manifest.permission.READ_CONTACTS, Manifest.permission.SEND_SMS}, new PermissionsListener() {
                 @Override
                 public void permissionsGranted() {
-                    contactChooserResult.launch(null);
+                    //contactChooserResult.launch(null);
+                    Intent intent = new Intent(Intent.ACTION_PICK);
+                    intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);
+                    startActivityForResult(intent, 0);
                 }
 
                 @Override
@@ -170,7 +224,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
 
                     snackbar.setAction("Settings", v -> {
                         Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                        Uri uri = Uri.fromParts("package", getContext().getPackageName(), null);
+                        Uri uri = Uri.fromParts("package", requireContext().getPackageName(), null);
                         intent.setData(uri);
                         startActivity(intent);
                     });
@@ -185,23 +239,23 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         fab.setOnClickListener(addContactClickListener);
 
         setupNext = contactsView.findViewById(R.id.btnSetupNext);
-        setupNext.setVisibility(getActivity().getLocalClassName().contains("SetupContactsActivity") ? View.VISIBLE : View.GONE);
+        setupNext.setVisibility(requireActivity().getLocalClassName().contains("SetupContactsActivity") ? View.VISIBLE : View.GONE);
         setupNext.setEnabled(false);
         setupNext.setOnClickListener(v -> {
             startActivity(new Intent(getActivity(), SetupSettingsActivity.class)
                     .putExtra("returnToMain", false));
-            getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+            requireActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
         });
 
         contactsList = contactsView.findViewById(R.id.emergency_contacts_recyclerview);
         contactsList.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        ((PermissionsRequestingActivity) getContext()).checkPermissions(new String[]{Manifest.permission.READ_CONTACTS}, new PermissionsListener() {
+        ((PermissionsRequestingActivity) requireContext()).checkPermissions(new String[]{Manifest.permission.READ_CONTACTS}, new PermissionsListener() {
             @Override
             public void permissionsGranted() {
                 new Thread(() -> {
                     loadContacts();
-                    getActivity().runOnUiThread(() -> setupAdapter());
+                    new Handler(Looper.getMainLooper()).post(() -> setupAdapter());
                 }).start();
             }
 
@@ -213,7 +267,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         });
 
         contactsView.findViewById(R.id.info_risk).setOnClickListener(
-            view -> new AlertDialog.Builder(getContext(), R.style.AppTheme_Dialog_Alert)
+            view -> new AlertDialog.Builder(requireContext(), R.style.AppTheme_Dialog_Alert)
                 .setTitle(R.string.risk_lvl)
                 .setMessage(R.string.risk_lvl_info)
                 .show());
@@ -221,7 +275,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         return contactsView;
     }
 
-    String calcRiskLvl(){
+    void calcRiskLvl(){
         int r = 1;
         if(contacts != null) {
             for (Contact contact : contacts.values()) {
@@ -233,8 +287,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
         if(r == 2) risk = "Medium";
         else if(r == 3) risk = "High";
 
-        riskLvl.setText(getString(R.string.your_risk_lvl) + risk);
-        return risk;
+        riskLvl.setText(new StringBuilder().append(getString(R.string.your_risk_lvl)).append(risk));
     }
 
     public void setupAdapter() {
@@ -246,7 +299,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
     }
 
     public void loadContacts() {
-        ContentResolver contentResolver = getActivity().getContentResolver();
+        ContentResolver contentResolver = requireActivity().getContentResolver();
         for(Contact contact : contacts.values()) {
             Cursor cursor = contentResolver.query(ContactsContract.Contacts.CONTENT_URI, null, ContactsContract.Contacts._ID + " = ?", new String[]{contact.id}, null);
             if (!cursor.moveToFirst()) {
@@ -346,7 +399,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
                         addContact(contact);
                     }
                     alertDialog.cancel();
-                    getActivity().unregisterReceiver(smsReceiver);
+                    requireActivity().unregisterReceiver(smsReceiver);
                 }
             }
 
@@ -362,7 +415,7 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
                     new Timer().schedule(new TimerTask() {
                         @Override
                         public void run() {
-                            getActivity().runOnUiThread(() -> alertDialog.setMessage(getString(R.string.waiting_for_response)));
+                            new Handler(Looper.getMainLooper()).post(() -> alertDialog.setMessage(getString(R.string.waiting_for_response)));
                         }
                     }, 1000);
                 }
@@ -371,6 +424,6 @@ public class ContactsFragment extends Fragment implements ContactsRecyclerAdapte
 
         alertDialog.show();
 
-        smsController.sendSMS((PermissionsRequestingActivity) getContext(), smsReceiver, smsController, contact.number, getString(R.string.contact_request));
+        smsController.sendSMS((PermissionsRequestingActivity) requireActivity(), smsReceiver, smsController, contact.number, getString(R.string.contact_request));
     }
 }
